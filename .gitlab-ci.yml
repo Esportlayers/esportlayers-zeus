@@ -13,7 +13,7 @@ include:
 
 build:
   stage: build
-  image: node:13.1.0
+  image: node:13.11.0
   before_script:
     - yarn config set cache-folder .yarn
     - yarn install
@@ -33,7 +33,7 @@ staging:
   needs:
     - job: build
       artifacts: true
-  image: node:13.1.0
+  image: node:13.11.0
   before_script:
     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
     - eval $(ssh-agent -s)
