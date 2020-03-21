@@ -1,4 +1,4 @@
-import { loadUserById } from '../services/entity/user';
+import { loadUserById } from '../services/entity/User';
 import { PassportStatic } from 'passport';
 import {Strategy, ExtractJwt, StrategyOptions} from 'passport-jwt';
 import config from '../config';
