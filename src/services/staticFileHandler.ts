@@ -1,4 +1,4 @@
-import uuid from 'uuid/v5';
+import {v5} from 'uuid';
 import fs from 'fs';
 import fetch from 'node-fetch';
 import sharp from 'sharp';
@@ -12,7 +12,7 @@ function buildPathWithType(type: FileTypes, identifier: string, name: string): s
 }
 function buildPath(type: FileTypes, identifier: string): string {
     const bonusHash = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 10); ;
-    const imgHash = uuid(identifier + bonusHash, uuid.URL);
+    const imgHash = v5(identifier + bonusHash, v5.URL);
     return `/static/${type}/${imgHash}`;
 }
 

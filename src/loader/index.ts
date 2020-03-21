@@ -8,7 +8,7 @@ import {cyan} from 'chalk';
 import { PassportStatic } from 'passport';
 
 export default async ({ app, passport }: {app: express.Application, passport: PassportStatic}) => {
-    await expressLoader({ app });
+    await expressLoader({ app, passport});
     console.info(cyan('🔌 Express loaded'));
 
     await twitchOAuthLoader({ app, passport });

@@ -2,9 +2,10 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import routes from '../api';
 import cors from 'cors';
+import { PassportStatic } from 'passport';
 
 
-export default async ({ app }: { app: express.Application}) => {
+export default async ({ app, passport }: { app: express.Application; passport: PassportStatic}) => {
     app.use(cors());
 
     app.use('/static', express.static('static', {
@@ -16,5 +17,7 @@ export default async ({ app }: { app: express.Application}) => {
     app.head('/status', (req, res) => res.status(200).end());
 
     app.use(bodyParser.json());
-    app.use(routes());
+    app.use(passport.initialize());
+    app.use(passport.session());
+    app.use(routes({passport}));
 };
