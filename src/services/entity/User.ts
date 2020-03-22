@@ -32,14 +32,11 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT * FROM user WHERE twitch_id = ?;', [twitchId]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl FROM user WHERE twitch_id = ?;', [twitchId]);
     let user = null;
     
     if(userRows.length === 1) {
-        const userId = userRows[0].id;
-        user = {
-            ...userRows[0],
-        };
+        user = userRows[0];
     }
     await conn.end();
 
@@ -48,14 +45,11 @@ export async function loadUserByTwitchId(twitchId: number): Promise<User | null>
 
 export async function loadUserById(id: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT * FROM user WHERE id = ?;', [id]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl FROM user WHERE id = ?;', [id]);
     let user = null;
     
     if(userRows.length === 1) {
-        const userId = userRows[0].id;
-        user = {
-            ...userRows[0],
-        };
+        user = userRows[0];
     }
     await conn.end();
 
