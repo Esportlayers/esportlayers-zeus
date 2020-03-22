@@ -1,4 +1,4 @@
-import { User } from "../../@types/Entities/User";
+import { User, SteamConnection } from "../../@types/Entities/User";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
@@ -32,7 +32,7 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl FROM user WHERE twitch_id = ?;', [twitchId]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth FROM user WHERE twitch_id = ?;', [twitchId]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -45,7 +45,7 @@ export async function loadUserByTwitchId(twitchId: number): Promise<User | null>
 
 export async function loadUserById(id: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl FROM user WHERE id = ?;', [id]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth FROM user WHERE id = ?;', [id]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -54,4 +54,18 @@ export async function loadUserById(id: number): Promise<User | null> {
     await conn.end();
 
     return user;
+}
+
+interface SteamConnectionRows extends RowDataPacket {
+    id: number;
+    userId: number;
+    steamId: string;
+}
+
+export async function loadSteamConnections(userId: number): Promise<SteamConnection[]> {
+    const conn = await getConn();
+    const [steamRows] = await conn.query<SteamConnectionRows[]>('SELECT id, user_id as userId, steam_id as steamId FROM steam_connections WHERE user_id = ?;', [userId]);
+    await conn.end();
+
+    return steamRows;
 }

@@ -45,6 +45,7 @@
   "scripts": {
     "build": "tsc -p .",
     "migrate": "node scripts/migration.ts up",
+    "rollback": "node scripts/migration.ts down",
     "start": "node lib/index.js"
   }
 }

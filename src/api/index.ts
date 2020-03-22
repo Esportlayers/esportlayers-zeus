@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import baseRoutes from './routes/base';
+import userRoutes from './routes/user';
 import { PassportStatic } from 'passport';
 
 export default ({passport}: {passport: PassportStatic}) => {
@@ -7,6 +8,7 @@ export default ({passport}: {passport: PassportStatic}) => {
 	app.use(passport.authenticate(['jwt', 'anonymous'], { session: false }));
 	
 	baseRoutes(app);
+	userRoutes(app);
 	
 	return app;
 }
