@@ -10,6 +10,7 @@ if (!envFound) {
 
 export default {
   env: process.env.NODE_ENV || 'production',
+  gsiPort: process.env.DOTA_GSI_PORT || 8443,
   jwtSecret: process.env.JWT_VERIFY_SEED || '8372gjh2b3u23g8bf',
   mysql: {
     host: process.env.MYSQL_HOST || 'localhost',

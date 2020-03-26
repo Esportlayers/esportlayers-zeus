@@ -5,6 +5,7 @@ import https from 'https';
 import http from 'http';
 import {green} from 'chalk';
 import passport from 'passport';
+import './tasks';
 
 let key: string;
 let cert: string;
