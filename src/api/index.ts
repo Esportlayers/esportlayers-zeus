@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import baseRoutes from './routes/base';
 import userRoutes from './routes/user';
+import dotaGsiRoutes from './routes/dotaGsi';
 import { PassportStatic } from 'passport';
 
 export default ({passport}: {passport: PassportStatic}) => {
@@ -9,6 +10,7 @@ export default ({passport}: {passport: PassportStatic}) => {
 	
 	baseRoutes(app);
 	userRoutes(app);
+	dotaGsiRoutes(app);
 	
 	return app;
 }

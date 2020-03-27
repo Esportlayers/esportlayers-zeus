@@ -17,7 +17,7 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
         const [original, webp, jp2] = await downloadUserAvatar(avatar, twitchId);
         const profileUrl = 'https://twitch.tv/' + displayName;
         conn.execute<OkPacket>(
-            "INSERT INTO user (id, twitch_id, display_name, avatar, avatar_webp, avatar_jp2, profile_url) VALUES (NULL, ?, ?, ?, ?, ?, ?);",
+            "INSERT INTO user (id, twitch_id, display_name, avatar, avatar_webp, avatar_jp2, profile_url, gsi_auth) VALUES (NULL, ?, ?, ?, ?, ?, ?, '');",
             [twitchId, displayName, original, webp, jp2, profileUrl]
         );
         const [userRow] = await conn.query<UserResponse[]>('SELECT * FROM user WHERE twitch_id = ?;', [twitchId]);
@@ -68,4 +68,14 @@ export async function loadSteamConnections(userId: number): Promise<SteamConnect
     await conn.end();
 
     return steamRows;
+}
+
+export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<number | void> {
+    const conn = await getConn();
+    const [authRows] = await conn.query<Array<RowDataPacket & {id: number}>>('SELECT id FROM user WHERE gsi_auth = ?;', [gsiAuthToken]);
+    await conn.end();
+
+    if(authRows.length > 0) {
+        return authRows[0].id;
+    }
 }
