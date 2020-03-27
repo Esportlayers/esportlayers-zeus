@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { checkGSIAuth } from '../../middleware/dotaGsi';
+
 const route = Router();
 
 export default (app: Router) => {

@@ -17,10 +17,10 @@ class GsiClient {
     }
 }
 
-export const checkGSIAuth = () => async (req: Request & {client: GsiClient}, res: Response, next: NextFunction) => {
+export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
         console.log(grey('[Dota-GSI] Rejected access from ' + req.ip + ' as no auth key was given.'));
-        return res.status(403).json('Foridden').end();
+        return res.status(403).json('Forbidden').end();
     }
 
     const userId = await gsiAuthTokenUnknown(req.body.auth.token);
@@ -31,6 +31,7 @@ export const checkGSIAuth = () => async (req: Request & {client: GsiClient}, res
     
     for (var i = 0; i < clients.length; i++) {
         if (clients[i].ip === req.ip) {
+            //@ts-ignore
             req.client = clients[i];
             return next();
         }
@@ -38,7 +39,9 @@ export const checkGSIAuth = () => async (req: Request & {client: GsiClient}, res
 
     const newClient = new GsiClient(req.ip, req.body.auth, userId);
     clients.push(newClient);
+    //@ts-ignore
     req.client = newClient;
+    //@ts-ignore
     req.client.gamestate = req.body;
 
     console.log(grey('[Dota-GSI] Connected new user with id ' + userId + ' from ' + req.ip));
