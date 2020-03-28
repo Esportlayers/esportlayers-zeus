@@ -8,13 +8,20 @@ class GsiClient {
     ip: string;
     auth: string;
     userId: number;
+    displayName: string;
     gamestate: object = {};
 
-    constructor(ip: string, auth: string, userId: number) {
+    constructor(ip: string, auth: string, userId: number, displayName: string) {
         this.ip = ip;
         this.auth = auth;
         this.userId = userId;
+        this.displayName = displayName;
     }
+}
+
+enum GameState {
+    running = 'DOTA_GAMERULES_STATE_GAME_IN_PROGRESS',
+    postGame = 'DOTA_GAMERULES_STATE_POST_GAME'
 }
 
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
@@ -23,8 +30,8 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
         return res.status(403).json('Forbidden').end();
     }
 
-    const userId = await gsiAuthTokenUnknown(req.body.auth.token);
-    if(!userId) {
+    const userData = await gsiAuthTokenUnknown(req.body.auth.token);
+    if(!userData) {
         console.log(grey('[Dota-GSI] Rejected access from ' + req.ip + ' as auth key is not known.'));
         return res.status(404).json('Unknown Auth token').end();
     }
@@ -37,14 +44,51 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
         }
     }
 
-    const newClient = new GsiClient(req.ip, req.body.auth, userId);
+    const newClient = new GsiClient(req.ip, req.body.auth, userData.id, userData.displayName);
     clients.push(newClient);
     //@ts-ignore
     req.client = newClient;
     //@ts-ignore
     req.client.gamestate = req.body;
 
-    console.log(grey('[Dota-GSI] Connected new user with id ' + userId + ' from ' + req.ip));
+    console.log(grey('[Dota-GSI] Connected user ' + userData.displayName + ' from ' + req.ip));
+
+    return next();
+}
+
+export async function gsiBodyParser(req: Request, res: Response, next: NextFunction) {
+    //@ts-ignore
+    const client = (req.client as Client);
+    const data = req.body;
+
+    //Evaluate changes
+
+    //Game state
+    const oldGameState = client.gamestate.map && client.gamestate.map.game_state;
+    const newGameState = data.map && data.map.game_state;
+
+    if(newGameState && newGameState !== oldGameState) {
+        console.log(grey('[Dota-GSI] User ' + client.displayName + ' map.game_state ' + oldGameState + ' > ' + newGameState));
+        const playerTeam = data.player && data.player.team_name;
+
+        if(data.map.game_state === GameState.postGame && playerTeam) {
+            if(data.map.win_team === data.player.team_name) {
+                console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected win'));
+            } else {
+                console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected loss'));
+            }
+        }
+    }
+
+    //Death
+    const oldDeaths = client.gamestate.player && client.gamestate.player.deaths || 0;
+    const newDeaths = data.player && data.player.deaths || 0;
+    if(newDeaths > 0 && newDeaths !== oldDeaths) {
+        console.log(grey('[Dota-GSI] User ' + client.displayName + ' died.'));
+    }
+
+    //Update client data
+    client.gamestate = data;
 
     return next();
 }

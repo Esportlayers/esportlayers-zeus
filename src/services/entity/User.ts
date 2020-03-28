@@ -70,12 +70,12 @@ export async function loadSteamConnections(userId: number): Promise<SteamConnect
     return steamRows;
 }
 
-export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<number | void> {
+export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<{id: number; displayName: string} | void> {
     const conn = await getConn();
-    const [authRows] = await conn.query<Array<RowDataPacket & {id: number}>>('SELECT id FROM user WHERE gsi_auth = ?;', [gsiAuthToken]);
+    const [authRows] = await conn.query<Array<RowDataPacket & {id: number; displayName: string}>>('SELECT id, display_name as displayName FROM user WHERE gsi_auth = ?;', [gsiAuthToken]);
     await conn.end();
 
     if(authRows.length > 0) {
-        return authRows[0].id;
+        return authRows[0];
     }
 }
