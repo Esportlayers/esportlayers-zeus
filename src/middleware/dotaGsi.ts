@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { gsiAuthTokenUnknown } from "../services/entity/User";
+import { gsiAuthTokenUnknown, loadUserById } from "../services/entity/User";
 import {grey} from 'chalk';
+import ws from 'ws';
+import { User } from "../@types/Entities/User";
+import expressWs from "express-ws";
 
 const clients: GsiClient[] = [];
 
@@ -60,6 +63,21 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     return next();
 }
 
+export async function checkLiveGSIAuth(ws: ws, req: Request, next: NextFunction) {
+    const userData = await gsiAuthTokenUnknown(req.params.gsiAuth);
+
+    let user: User | undefined = undefined;
+    if(userData) {
+        user = (await loadUserById(userData.id)) as User;
+    }
+    req.user = user;
+
+    //@ts-ignore
+    ws.user = user;
+
+    return next();
+}
+
 export async function gsiBodyParser(req: Request, res: Response, next: NextFunction) {
     //@ts-ignore
     const client = (req.client as Client);
@@ -74,6 +92,9 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     if(newGameState && newGameState !== oldGameState) {
         console.log(grey('[Dota-GSI] User ' + client.displayName + ' map.game_state ' + oldGameState + ' > ' + newGameState));
         const playerTeam = data.player && data.player.team_name;
+        //@ts-ignore
+        const wsClient = expressWs.getWss().clients.find((c) => c.user.id === req.user.id);
+        wsClient && wsClient.send(JSON.stringify({type: 'gamestate', value: newGameState }));
 
         if(data.map.game_state === GameState.postGame && playerTeam) {
             if(data.map.win_team === data.player.team_name) {
@@ -81,6 +102,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
             } else {
                 console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected loss'));
             }
+            wsClient && wsClient.send(JSON.stringify({type: 'winner', value: data.map.win_team === data.player.team_name}));
         }
     }
 
