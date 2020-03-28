@@ -20,6 +20,10 @@ class GsiClient {
 }
 
 enum GameState {
+    heroSelection = 'DOTA_GAMERULES_STATE_HERO_SELECTION',
+    strategyTime = 'DOTA_GAMERULES_STATE_STRATEGY_TIME',
+    teamShowcase = 'DOTA_GAMERULES_STATE_TEAM_SHOWCASE',
+    preGame = 'DOTA_GAMERULES_STATE_PRE_GAME',
     running = 'DOTA_GAMERULES_STATE_GAME_IN_PROGRESS',
     postGame = 'DOTA_GAMERULES_STATE_POST_GAME'
 }
