@@ -2,6 +2,7 @@ import { User, SteamConnection } from "../../@types/Entities/User";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
+import {v4} from 'uuid';
 
 type UserResponse = User & RowDataPacket & OkPacket;
 
@@ -68,6 +69,16 @@ export async function loadSteamConnections(userId: number): Promise<SteamConnect
     await conn.end();
 
     return steamRows;
+}
+
+export async function createGsiAuthToken(userId: number): Promise<string> {
+    const auth = v4();
+
+    const conn = await getConn();
+    await conn.execute('UPDATE user SET gsi_auth = ? WHERE id = ?;', [auth, userId]);
+    await conn.end();
+
+    return auth;
 }
 
 export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<{id: number; displayName: string} | void> {

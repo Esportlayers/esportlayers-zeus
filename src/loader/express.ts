@@ -6,7 +6,9 @@ import { PassportStatic } from 'passport';
 
 
 export default async ({ app, passport }: { app: express.Application; passport: PassportStatic}) => {
-    app.use(cors());
+    app.use(cors({
+        exposedHeaders: 'Content-Disposition'
+    }));
 
     app.use('/static', express.static('static', {
         maxAge: '31536000'
