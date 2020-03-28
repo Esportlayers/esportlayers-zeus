@@ -5,6 +5,7 @@ import https from 'https';
 import http from 'http';
 import {green} from 'chalk';
 import passport from 'passport';
+import expressWs from 'express-ws';
 
 let key: string;
 let cert: string;
@@ -18,9 +19,9 @@ if(config.server.secure) {
 
 async function startServer() {
     const app = express();
-    await require('./loader').default({app, passport});
-
     const server  = config.server.secure ? https.createServer({key, cert, ca}, app) : http.createServer(app);
+    expressWs(app, server);
+    await require('./loader').default({app, passport});
     server.listen(config.port, () => {
         console.log(green(`API started on: ${config.port}`));
     });

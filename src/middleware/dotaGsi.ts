@@ -5,14 +5,12 @@ import {grey} from 'chalk';
 const clients: GsiClient[] = [];
 
 class GsiClient {
-    ip: string;
     auth: string;
     userId: number;
     displayName: string;
     gamestate: object = {};
 
-    constructor(ip: string, auth: string, userId: number, displayName: string) {
-        this.ip = ip;
+    constructor(auth: string, userId: number, displayName: string) {
         this.auth = auth;
         this.userId = userId;
         this.displayName = displayName;
@@ -20,9 +18,11 @@ class GsiClient {
 }
 
 enum GameState {
+    playersLoading = 'DOTA_GAMERULES_STATE_WAIT_FOR_PLAYERS_TO_LOAD',
     heroSelection = 'DOTA_GAMERULES_STATE_HERO_SELECTION',
     strategyTime = 'DOTA_GAMERULES_STATE_STRATEGY_TIME',
     teamShowcase = 'DOTA_GAMERULES_STATE_TEAM_SHOWCASE',
+    mapLoading = 'DOTA_GAMERULES_STATE_WAIT_FOR_MAP_TO_LOAD',
     preGame = 'DOTA_GAMERULES_STATE_PRE_GAME',
     running = 'DOTA_GAMERULES_STATE_GAME_IN_PROGRESS',
     postGame = 'DOTA_GAMERULES_STATE_POST_GAME'
@@ -30,32 +30,32 @@ enum GameState {
 
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
-        console.log(grey('[Dota-GSI] Rejected access from ' + req.ip + ' as no auth key was given.'));
+        console.log(grey('[Dota-GSI] Rejected access, no auth key was given.'));
         return res.status(403).json('Forbidden').end();
     }
 
     const userData = await gsiAuthTokenUnknown(req.body.auth.token);
     if(!userData) {
-        console.log(grey('[Dota-GSI] Rejected access from ' + req.ip + ' as auth key is not known.'));
+        console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as auth key is not known.'));
         return res.status(404).json('Unknown Auth token').end();
     }
     
     for (var i = 0; i < clients.length; i++) {
-        if (clients[i].ip === req.ip) {
+        if (clients[i].userId === userData.id) {
             //@ts-ignore
             req.client = clients[i];
             return next();
         }
     }
 
-    const newClient = new GsiClient(req.ip, req.body.auth, userData.id, userData.displayName);
+    const newClient = new GsiClient(req.body.auth, userData.id, userData.displayName);
     clients.push(newClient);
     //@ts-ignore
     req.client = newClient;
     //@ts-ignore
     req.client.gamestate = req.body;
 
-    console.log(grey('[Dota-GSI] Connected user ' + userData.displayName + ' from ' + req.ip));
+    console.log(grey('[Dota-GSI] Connected user ' + userData.displayName));
 
     return next();
 }

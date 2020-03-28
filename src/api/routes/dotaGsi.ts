@@ -5,6 +5,7 @@ import { createGsiAuthToken } from '../../services/entity/User';
 import { User } from '../../@types/Entities/User';
 import { generateConfig } from '../../services/gsiConfigGenerator';
 import path from 'path';
+import ws from 'ws';
 
 const route = Router();
 
@@ -21,4 +22,12 @@ export default (app: Router) => {
     res.set({"Content-Disposition":`attachment; filename=${filename}`});
     res.sendFile(path.resolve(configPath));
   });
+
+  route.ws('/live/:token', (ws: ws, req: Request) => {
+    ws.on('message', (msg: string) => {
+      console.log(msg, 'token', req.params.token);
+
+      ws.send(msg);
+    })
+  })
 };
