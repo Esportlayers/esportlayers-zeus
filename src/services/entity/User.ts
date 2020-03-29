@@ -93,6 +93,6 @@ export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<{id: nu
 
 export async function saveDotaGame(userId: number, win: boolean): Promise<void> {
     const conn = await getConn();
-    await conn.execute('INSERT INTO dota_games (id, user_id, finished, win) VALUES (NULL, ?, NOW(), ?);', [userId, win]);
+    await conn.execute('INSERT INTO dota_games (id, user_id, finished, won) VALUES (NULL, ?, NOW(), ?);', [userId, win]);
     await conn.end();
 }
