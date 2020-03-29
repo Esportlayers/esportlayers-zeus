@@ -6,7 +6,6 @@ function noop() {}
 export function heartbeat() {
   //@ts-ignore
   this.isAlive = true;
-  console.log('Recieved pong');
 }
 
 const interval = setInterval(() => {
