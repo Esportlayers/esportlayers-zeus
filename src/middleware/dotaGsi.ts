@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { gsiAuthTokenUnknown, loadUserById } from "../services/entity/User";
+import { gsiAuthTokenUnknown, loadUserById, saveDotaGame } from "../services/entity/User";
 import {grey} from 'chalk';
 import ws from 'ws';
 import { User } from "../@types/Entities/User";
@@ -102,6 +102,8 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
             } else {
                 console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected loss'));
             }
+            
+            await saveDotaGame(client.userId, data.map.win_team === data.player.team_name);
             wsClient && wsClient.send(JSON.stringify({type: 'winner', value: data.map.win_team === data.player.team_name}));
         }
     }
