@@ -1,9 +1,10 @@
-import { Request, Response, NextFunction, Router } from "express";
+import { Request, Response, NextFunction } from "express";
 import { gsiAuthTokenUnknown, loadUserById, saveDotaGame } from "../services/entity/User";
 import {grey} from 'chalk';
 import ws from 'ws';
 import { User } from "../@types/Entities/User";
 import expressWs from "express-ws";
+import { WebsocketInstance } from "..";
 
 const clients: GsiClient[] = [];
 
@@ -39,7 +40,7 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
 
     const userData = await gsiAuthTokenUnknown(req.body.auth.token);
     if(!userData) {
-        //console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as auth key is not known.'));
+        console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as auth key is not known.'));
         return res.status(404).json('Unknown Auth token').end();
     }
     
@@ -78,7 +79,7 @@ export async function checkLiveGSIAuth(ws: ws, req: Request, next: NextFunction)
     return next();
 }
 
-export const gsiBodyParser = (app: Router) => async (req: Request, res: Response, next: NextFunction) => {
+export async function gsiBodyParser(req: Request, res: Response, next: NextFunction) {
     //@ts-ignore
     const client = (req.client as Client);
     const data = req.body;
@@ -93,7 +94,7 @@ export const gsiBodyParser = (app: Router) => async (req: Request, res: Response
         console.log(grey('[Dota-GSI] User ' + client.displayName + ' map.game_state ' + oldGameState + ' > ' + newGameState));
         const playerTeam = data.player && data.player.team_name;
         //@ts-ignore
-        const wsClient = app.getWss().clients.find((c) => c.user.id === req.user.id);
+        const wsClient = WebsocketInstance.getWss().clients.find((c) => c.user.id === req.user.id);
         wsClient && wsClient.send(JSON.stringify({type: 'gamestate', value: newGameState }));
 
         if(data.map.game_state === GameState.postGame && playerTeam) {

@@ -17,10 +17,12 @@ if(config.server.secure) {
     ca = fs.readFileSync(config.server.certs.basePath + config.server.certs.chain, 'utf8');
 }
 
+export let WebsocketInstance: expressWs.Instance;
+
 async function startServer() {
     const app = express();
     const server  = config.server.secure ? https.createServer({key, cert, ca}, app) : http.createServer(app);
-    expressWs(app, server);
+    WebsocketInstance = expressWs(app, server);
     await require('./loader').default({app, passport});
     server.listen(config.port, () => {
         console.log(green(`API started on: ${config.port}`));
