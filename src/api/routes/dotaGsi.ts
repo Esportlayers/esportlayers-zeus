@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { checkGSIAuth, gsiBodyParser, checkLiveGSIAuth } from '../../middleware/dotaGsi';
+import { checkGSIAuth, gsiBodyParser } from '../../middleware/dotaGsi';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { createGsiAuthToken } from '../../services/entity/User';
 import { User } from '../../@types/Entities/User';
@@ -7,6 +7,7 @@ import { generateConfig } from '../../services/gsiConfigGenerator';
 import path from 'path';
 import ws from 'ws';
 import { heartbeat } from '../../tasks/websocketHeartbeat';
+import { checkUserFrameWebsocketApiKey } from '../../middleware/frameApi';
 
 const route = Router();
 
@@ -24,7 +25,7 @@ export default (app: Router) => {
     res.sendFile(path.resolve(configPath));
   });
 
-  route.ws('/live/:gsiAuth', checkLiveGSIAuth, (ws: ws, req: Request) => {
+  route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, (ws: ws, req: Request) => {
     //@ts-ignore
     ws.isAlive = true;
     ws.on('pong', heartbeat);

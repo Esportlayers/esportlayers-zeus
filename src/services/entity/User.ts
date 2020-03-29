@@ -15,11 +15,12 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
     let user = await loadUserByTwitchId(twitchId);
 
     if(! user) {
+        const frameKey = v4();
         const [original, webp, jp2] = await downloadUserAvatar(avatar, twitchId);
         const profileUrl = 'https://twitch.tv/' + displayName;
         conn.execute<OkPacket>(
-            "INSERT INTO user (id, twitch_id, display_name, avatar, avatar_webp, avatar_jp2, profile_url, gsi_auth) VALUES (NULL, ?, ?, ?, ?, ?, ?, '');",
-            [twitchId, displayName, original, webp, jp2, profileUrl]
+            "INSERT INTO user (id, twitch_id, display_name, avatar, avatar_webp, avatar_jp2, profile_url, gsi_auth, frame_api_key) VALUES (NULL, ?, ?, ?, ?, ?, ?, '', ?);",
+            [twitchId, displayName, original, webp, jp2, profileUrl, frameKey]
         );
         const [userRow] = await conn.query<UserResponse[]>('SELECT * FROM user WHERE twitch_id = ?;', [twitchId]);
         user = userRow[0];
@@ -33,7 +34,7 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth FROM user WHERE twitch_id = ?;', [twitchId]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey FROM user WHERE twitch_id = ?;', [twitchId]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -46,7 +47,7 @@ export async function loadUserByTwitchId(twitchId: number): Promise<User | null>
 
 export async function loadUserById(id: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth FROM user WHERE id = ?;', [id]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey FROM user WHERE id = ?;', [id]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -84,6 +85,16 @@ export async function createGsiAuthToken(userId: number): Promise<string> {
 export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<{id: number; displayName: string} | void> {
     const conn = await getConn();
     const [authRows] = await conn.query<Array<RowDataPacket & {id: number; displayName: string}>>('SELECT id, display_name as displayName FROM user WHERE gsi_auth = ?;', [gsiAuthToken]);
+    await conn.end();
+
+    if(authRows.length > 0) {
+        return authRows[0];
+    }
+}
+
+export async function getUserByFrameApiKey(key: string): Promise<{id: number; displayName: string} | void> {
+    const conn = await getConn();
+    const [authRows] = await conn.query<Array<RowDataPacket & {id: number; displayName: string}>>('SELECT id, display_name as displayName FROM user WHERE frame_api_key = ?;', [key]);
     await conn.end();
 
     if(authRows.length > 0) {

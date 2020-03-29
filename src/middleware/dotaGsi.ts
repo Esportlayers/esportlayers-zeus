@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { gsiAuthTokenUnknown, loadUserById, saveDotaGame } from "../services/entity/User";
+import { gsiAuthTokenUnknown, saveDotaGame } from "../services/entity/User";
 import {grey} from 'chalk';
-import ws from 'ws';
-import { User } from "../@types/Entities/User";
-import expressWs from "express-ws";
 import { WebsocketInstance } from "..";
 
 const clients: GsiClient[] = [];
@@ -60,21 +57,6 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     req.client.gamestate = req.body;
 
     console.log(grey('[Dota-GSI] Connected user ' + userData.displayName));
-
-    return next();
-}
-
-export async function checkLiveGSIAuth(ws: ws, req: Request, next: NextFunction) {
-    const userData = await gsiAuthTokenUnknown(req.params.gsiAuth);
-
-    let user: User | undefined = undefined;
-    if(userData) {
-        user = (await loadUserById(userData.id)) as User;
-    }
-    req.user = user;
-
-    //@ts-ignore
-    ws.user = user;
 
     return next();
 }
