@@ -12,7 +12,7 @@ const route = Router();
 export default (app: Router) => {
   app.use('/dota-gsi', route);
 
-  route.post('/', checkGSIAuth, gsiBodyParser, (req: Request, res: Response) => res.end());
+  route.post('/', checkGSIAuth, gsiBodyParser(app), (req: Request, res: Response) => res.end());
 
   route.get('/generateConfig', reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
