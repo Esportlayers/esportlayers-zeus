@@ -97,7 +97,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
         const wsClient = [...WebsocketInstance.getWss().clients.values()].find((c) => c.user.id === client.userId);
         wsClient && wsClient.send(JSON.stringify({type: 'gamestate', value: newGameState }));
 
-        if(data.map.game_state === GameState.postGame && playerTeam) {
+        if(data.map.game_state === GameState.postGame && playerTeam && (playerTeam === 'radiant' || playerTeam === 'dire')) {
             if(data.map.win_team === data.player.team_name) {
                 console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected win'));
             } else {
