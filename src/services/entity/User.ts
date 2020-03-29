@@ -107,3 +107,16 @@ export async function saveDotaGame(userId: number, win: boolean): Promise<void> 
     await conn.execute('INSERT INTO dota_games (id, user_id, finished, won) VALUES (NULL, ?, NOW(), ?);', [userId, win]);
     await conn.end();
 }
+
+interface StatsRow extends RowDataPacket {
+    date: number;
+    won: boolean;
+}
+
+export async function loadStats(userId: number): Promise<StatsRow[]> {
+    const conn = await getConn();
+    const [rows] = await conn.execute<StatsRow[]>('SELECT UNIX_TIMESTAMP(finished) as date, won FROM dota_games WHERE finished >= NOW() - INTERVAL 1 DAY AND user_id = ?;', [userId]);
+    await conn.end();
+
+    return rows;
+}
