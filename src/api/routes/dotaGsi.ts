@@ -6,6 +6,7 @@ import { User } from '../../@types/Entities/User';
 import { generateConfig } from '../../services/gsiConfigGenerator';
 import path from 'path';
 import ws from 'ws';
+import { heartbeat } from '../../tasks/websocketHeartbeat';
 
 const route = Router();
 
@@ -24,6 +25,10 @@ export default (app: Router) => {
   });
 
   route.ws('/live/:gsiAuth', checkLiveGSIAuth, (ws: ws, req: Request) => {
+    //@ts-ignore
+    ws.isAlive = true;
+    ws.on('pong', heartbeat);
+
     ws.on('message', (msg: string) => {
       //@ts-ignore
       console.log('got message from', ws.user.displayName, 'with content', msg);

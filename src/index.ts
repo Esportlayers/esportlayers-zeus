@@ -6,6 +6,7 @@ import http from 'http';
 import {green} from 'chalk';
 import passport from 'passport';
 import expressWs from 'express-ws';
+import './tasks';
 
 let key: string;
 let cert: string;

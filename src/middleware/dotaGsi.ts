@@ -95,7 +95,6 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
         const playerTeam = data.player && data.player.team_name;
         //@ts-ignore
         const wsClient = [...WebsocketInstance.getWss().clients.values()].find((c) => c.user.id === client.userId);
-        console.log(wsClient);
         wsClient && wsClient.send(JSON.stringify({type: 'gamestate', value: newGameState }));
 
         if(data.map.game_state === GameState.postGame && playerTeam) {
