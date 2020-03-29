@@ -94,7 +94,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
         console.log(grey('[Dota-GSI] User ' + client.displayName + ' map.game_state ' + oldGameState + ' > ' + newGameState));
         const playerTeam = data.player && data.player.team_name;
         //@ts-ignore
-        const wsClient = WebsocketInstance.getWss().clients.find((c) => c.user.id === req.user.id);
+        const wsClient = [...WebsocketInstance.getWss().clients.values()].find((c) => c.user.id === req.user.id);
         wsClient && wsClient.send(JSON.stringify({type: 'gamestate', value: newGameState }));
 
         if(data.map.game_state === GameState.postGame && playerTeam) {
