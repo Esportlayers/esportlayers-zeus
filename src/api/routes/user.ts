@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import {PassportStatic} from 'passport';
 import { loadSteamConnections, loadStats } from '../../services/entity/User';
 import { User } from '../../@types/Entities/User';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
@@ -23,5 +22,4 @@ export default (app: Router) => {
         const stats = await loadStats((req.user as User).id);
         return res.json(stats).status(200);
     });
-
 };
