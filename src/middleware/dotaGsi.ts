@@ -44,7 +44,7 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     }
 
     if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
-        logFile.write(req.body + '\n');
+        logFile.write(JSON.stringify(req.body) + '\n');
     }
     
     for (var i = 0; i < clients.length; i++) {
