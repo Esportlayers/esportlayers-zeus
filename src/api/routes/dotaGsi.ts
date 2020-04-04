@@ -36,4 +36,14 @@ export default (app: Router) => {
       ws.send(msg);
     })
   })
+
+  route.ws('/logs/:frameApiKey', checkUserFrameWebsocketApiKey, (ws: ws, req: Request) => {
+    //@ts-ignore
+    ws.isAlive = true;
+    ws.on('pong', heartbeat);
+
+    ws.on('message', (msg: string) => {
+      ws.send(msg);
+    })
+  })
 };

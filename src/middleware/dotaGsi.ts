@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { gsiAuthTokenUnknown, saveDotaGame } from "../services/entity/User";
 import {grey} from 'chalk';
-import { WebsocketInstance } from "..";
+import { sendMessage } from "../services/websocket";
 
 const clients: GsiClient[] = [];
 
@@ -75,9 +75,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     if(newGameState && newGameState !== oldGameState) {
         console.log(grey('[Dota-GSI] User ' + client.displayName + ' map.game_state ' + oldGameState + ' > ' + newGameState));
         const playerTeam = data.player && data.player.team_name;
-        //@ts-ignore
-        const wsClient = [...WebsocketInstance.getWss().clients.values()].find((c) => c.user.id === client.userId);
-        wsClient && wsClient.send(JSON.stringify({type: 'gamestate', value: newGameState }));
+        sendMessage(client.userId, 'gamestate', newGameState);
 
         if(data.map.game_state === GameState.postGame && playerTeam && (playerTeam === 'radiant' || playerTeam === 'dire')) {
             if(data.map.win_team === data.player.team_name) {
@@ -87,7 +85,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
             }
             
             await saveDotaGame(client.userId, data.map.win_team === data.player.team_name);
-            wsClient && wsClient.send(JSON.stringify({type: 'winner', value: data.map.win_team === data.player.team_name}));
+            sendMessage(client.userId, 'winner', data.map.win_team === data.player.team_name);
         }
     }
 
@@ -96,6 +94,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     const newDeaths = data.player && data.player.deaths || 0;
     if(newDeaths > 0 && newDeaths !== oldDeaths) {
         console.log(grey('[Dota-GSI] User ' + client.displayName + ' died.'));
+        sendMessage(client.userId, 'death', newDeaths);
     }
 
     //Update client data
