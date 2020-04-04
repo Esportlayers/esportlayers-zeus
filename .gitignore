@@ -5,3 +5,5 @@ yarn-error.log
 static/userAvatar
 .DS_Store
 gsiConfigs/
+
+log.txt

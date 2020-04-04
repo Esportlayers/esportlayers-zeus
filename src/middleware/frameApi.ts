@@ -19,7 +19,11 @@ export async function checkUserFrameWebsocketApiKey(ws: ws, req: Request, next: 
 }
 
 export async function checkUserFrameAPIKey(req: Request, res: Response, next: NextFunction) {
-    const userData = await getUserByFrameApiKey(req.params.frameApiKey);
+    if(req.user) {
+        return next();
+    }
+
+    const userData = await getUserByFrameApiKey(req.params.frameApiKey || req.query.frameApiKey);
 
     let user: User | undefined = undefined;
     if(userData) {
