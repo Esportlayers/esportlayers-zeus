@@ -40,8 +40,8 @@ function processRoshanState(userData: {id: number; displayName: string}, data: a
     if(mapData && oldState) {
         const roshState = data && data.map.roshan_state;
         const roshEndSecond = data && data.map.roshan_state_end_seconds;
-        if(oldState.state !== roshState || oldState.respawn !== roshEndSecond) {
-            logFile.write(`New rosh state ${roshState}, respawn in ${roshEndSecond}s \n`);
+        if(oldState.state !== roshState || (oldState.respawn !== roshEndSecond && roshEndSecond % 10)) {
+            logFile.write(`[Dota-GSI :: ${userData.displayName}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
         }
     }
 
@@ -85,7 +85,7 @@ function processWardStats(userData: {id: number; displayName: string}, data: any
     if(oldState 
    && (oldState.radiantWardsPurchased !== radiantWardsPurchased || oldState.radiantWardsPlaced !== radiantWardsPlaced || oldState.radiantWardsDestroyed !== radiantWardsDestroyed
     || oldState.direWardsPurchased !== direWardsPurchased || oldState.direWardsPlaced !== direWardsPlaced || oldState.direWardsDestroyed !== direWardsDestroyed)) {
-        logFile.write(`Wards state | Radiant: 💰${radiantWardsPurchased}, 🎯${radiantWardsPlaced}, 🔫${radiantWardsDestroyed} | Dire: 💰${direWardsPurchased}, 🎯${direWardsPlaced}, 🔫${direWardsDestroyed}\n`);
+        logFile.write(`[Dota-GSI :: ${userData.displayName}] Ward state | Radiant: 💰${radiantWardsPurchased}, 🎯${radiantWardsPlaced}, 🔫${radiantWardsDestroyed} | Dire: 💰${direWardsPurchased}, 🎯${direWardsPlaced}, 🔫${direWardsDestroyed}\n`);
         
     }
     oldWardState[userData.id] = {
