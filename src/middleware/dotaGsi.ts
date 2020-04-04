@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { gsiAuthTokenUnknown, saveDotaGame } from "../services/entity/User";
 import {grey} from 'chalk';
 import { sendMessage } from "../services/websocket";
+var fs = require('fs');
+var logFile = fs.createWriteStream('log.txt', { flags: 'a' });
 
 const clients: GsiClient[] = [];
 
@@ -42,7 +44,7 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     }
 
     if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
-        console.info(grey(req.body));
+        logFile.write(req.body + '\n');
     }
     
     for (var i = 0; i < clients.length; i++) {
