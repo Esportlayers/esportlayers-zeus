@@ -40,6 +40,10 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
         console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as auth key is not known.'));
         return res.status(404).json('Unknown Auth token').end();
     }
+
+    if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
+        console.info(grey(req.body));
+    }
     
     for (var i = 0; i < clients.length; i++) {
         if (clients[i].userId === userData.id) {
