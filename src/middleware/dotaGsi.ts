@@ -31,6 +31,40 @@ enum GameState {
     postGame = 'DOTA_GAMERULES_STATE_POST_GAME'
 }
 
+function processRoshanState(data: any): void {
+    const mapData = data && data.map;
+
+    if(mapData) {
+        const roshState = data && data.map.roshan_state;
+        const roshEndSecond = data && data.map.roshan_state_end_seconds;
+        logFile.write(`New rosh state ${roshState}, respawn in ${roshEndSecond}s \n`);
+    }
+}
+
+function processWardStats(data: any): void {
+    const playerData = data && data.player;
+
+    let radiantWardsPurchased = 0, radiantWardsPlaced = 0, radiantWardsDestroyed = 0, direWardsPurchased = 0, direWardsPlaced = 0, direWardsDestroyed = 0;
+
+    if(playerData.team2) {
+        for(let i = 0; i < 5; ++i) {
+            const player = playerData.team2['player' + i];
+            radiantWardsPurchased += player.wards_purchased;
+            radiantWardsPlaced += player.wards_placed;
+            radiantWardsDestroyed += player.wards_destroyed;
+        }
+    }
+    if(playerData.team3) {
+        for(let i = 5; i < 10; ++i) {
+            const player = playerData.team3['player' + i];
+            direWardsPurchased += player.wards_purchased;
+            direWardsPlaced += player.wards_placed;
+            direWardsDestroyed += player.wards_destroyed;
+        }
+    }
+    logFile.write(`Wards state | Radiant: 💰${radiantWardsPurchased}, 🎯${radiantWardsPlaced}, 🔫${radiantWardsDestroyed} | Radiant: 💰${direWardsPurchased}, 🎯${direWardsPlaced}, 🔫${direWardsDestroyed}\n`);
+}
+
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
         console.log(grey('[Dota-GSI] Rejected access, no auth key was given.'));
@@ -44,7 +78,8 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     }
 
     if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
-        logFile.write(JSON.stringify(req.body) + '\n');
+        processRoshanState(req.body);
+        processWardStats(req.body);
     }
     
     for (var i = 0; i < clients.length; i++) {
