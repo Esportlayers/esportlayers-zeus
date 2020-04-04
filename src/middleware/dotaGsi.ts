@@ -86,15 +86,16 @@ function processWardStats(userData: {id: number; displayName: string}, data: any
    && (oldState.radiantWardsPurchased !== radiantWardsPurchased || oldState.radiantWardsPlaced !== radiantWardsPlaced || oldState.radiantWardsDestroyed !== radiantWardsDestroyed
     || oldState.direWardsPurchased !== direWardsPurchased || oldState.direWardsPlaced !== direWardsPlaced || oldState.direWardsDestroyed !== direWardsDestroyed)) {
         logFile.write(`Wards state | Radiant: 💰${radiantWardsPurchased}, 🎯${radiantWardsPlaced}, 🔫${radiantWardsDestroyed} | Dire: 💰${direWardsPurchased}, 🎯${direWardsPlaced}, 🔫${direWardsDestroyed}\n`);
-        oldWardState[userData.id] = {
-            radiantWardsPurchased,
-            radiantWardsPlaced,
-            radiantWardsDestroyed,
-            direWardsPurchased,
-            direWardsPlaced,
-            direWardsDestroyed
-        };
+        
     }
+    oldWardState[userData.id] = {
+        radiantWardsPurchased,
+        radiantWardsPlaced,
+        radiantWardsDestroyed,
+        direWardsPurchased,
+        direWardsPlaced,
+        direWardsDestroyed
+    };
 }
 
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
