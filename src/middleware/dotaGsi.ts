@@ -31,17 +31,37 @@ enum GameState {
     postGame = 'DOTA_GAMERULES_STATE_POST_GAME'
 }
 
-function processRoshanState(data: any): void {
+const oldRoshState: {[x: string]: null | {state: string; respawn: number;}} = {};
+
+function processRoshanState(userData: {id: number; displayName: string}, data: any): void {
+    const oldState = oldRoshState[userData.id];
     const mapData = data && data.map;
 
-    if(mapData) {
+    if(mapData && oldState) {
         const roshState = data && data.map.roshan_state;
         const roshEndSecond = data && data.map.roshan_state_end_seconds;
-        logFile.write(`New rosh state ${roshState}, respawn in ${roshEndSecond}s \n`);
+        if(oldState.state !== roshState || oldState.respawn !== roshEndSecond) {
+            logFile.write(`New rosh state ${roshState}, respawn in ${roshEndSecond}s \n`);
+        }
     }
+
+    oldRoshState[userData.id] = {
+        state: data && data.map.roshan_state,
+        respawn: data.map.roshan_state_end_seconds,
+    };
 }
 
-function processWardStats(data: any): void {
+const oldWardState: {[x: string]: null | {
+    radiantWardsPurchased: number,
+    radiantWardsPlaced: number,
+    radiantWardsDestroyed: number,
+    direWardsPurchased: number,
+    direWardsPlaced: number,
+    direWardsDestroyed: number,
+}} = {};
+
+function processWardStats(userData: {id: number; displayName: string}, data: any): void {
+    const oldState = oldWardState[userData.id];
     const playerData = data && data.player;
 
     let radiantWardsPurchased = 0, radiantWardsPlaced = 0, radiantWardsDestroyed = 0, direWardsPurchased = 0, direWardsPlaced = 0, direWardsDestroyed = 0;
@@ -62,7 +82,19 @@ function processWardStats(data: any): void {
             direWardsDestroyed += player.wards_destroyed;
         }
     }
-    logFile.write(`Wards state | Radiant: 💰${radiantWardsPurchased}, 🎯${radiantWardsPlaced}, 🔫${radiantWardsDestroyed} | Radiant: 💰${direWardsPurchased}, 🎯${direWardsPlaced}, 🔫${direWardsDestroyed}\n`);
+    if(oldState 
+   && (oldState.radiantWardsPurchased !== radiantWardsPurchased || oldState.radiantWardsPlaced !== radiantWardsPlaced || oldState.radiantWardsDestroyed !== radiantWardsDestroyed
+    || oldState.direWardsPurchased !== direWardsPurchased || oldState.direWardsPlaced !== direWardsPlaced || oldState.direWardsDestroyed !== direWardsDestroyed)) {
+        logFile.write(`Wards state | Radiant: 💰${radiantWardsPurchased}, 🎯${radiantWardsPlaced}, 🔫${radiantWardsDestroyed} | Radiant: 💰${direWardsPurchased}, 🎯${direWardsPlaced}, 🔫${direWardsDestroyed}\n`);
+        oldWardState[userData.id] = {
+            radiantWardsPurchased,
+            radiantWardsPlaced,
+            radiantWardsDestroyed,
+            direWardsPurchased,
+            direWardsPlaced,
+            direWardsDestroyed
+        };
+    }
 }
 
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
@@ -78,8 +110,8 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     }
 
     if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
-        processRoshanState(req.body);
-        processWardStats(req.body);
+        processRoshanState(userData, req.body);
+        processWardStats(userData, req.body);
     }
     
     for (var i = 0; i < clients.length; i++) {
