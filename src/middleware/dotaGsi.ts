@@ -40,7 +40,7 @@ function processRoshanState(userData: {id: number; displayName: string}, data: a
     if(mapData && oldState) {
         const roshState = data && data.map.roshan_state;
         const roshEndSecond = data && data.map.roshan_state_end_seconds;
-        if(oldState.state !== roshState || (oldState.respawn !== roshEndSecond && roshEndSecond % 10)) {
+        if(oldState.state !== roshState || (oldState.respawn !== roshEndSecond && roshEndSecond % 10 === 0)) {
             logFile.write(`[Dota-GSI :: ${userData.displayName}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
         }
     }
