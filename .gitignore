@@ -3,6 +3,7 @@ node_modules
 lib/
 yarn-error.log
 static/userAvatar
+static/streamPreview
 .DS_Store
 gsiConfigs/
 

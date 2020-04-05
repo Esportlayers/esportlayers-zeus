@@ -5,7 +5,7 @@ import sharp from 'sharp';
 import { UploadedFile } from 'express-fileupload';
 import imagemagick from 'imagemagick';
 
-type FileTypes = 'userAvatar';
+type FileTypes = 'userAvatar' | 'streamPreview';
 
 function buildPathWithType(type: FileTypes, identifier: string, name: string): string {
     return `${buildPath(type, identifier)}${getFileType(name)}`;

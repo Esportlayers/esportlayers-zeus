@@ -1,1 +1,2 @@
 import './websocketHeartbeat';
+import './streamerStateUpdater';
