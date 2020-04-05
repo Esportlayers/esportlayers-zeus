@@ -3,6 +3,7 @@ import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
+import user from "../../api/routes/user";
 
 type UserResponse = User & RowDataPacket & OkPacket;
 
@@ -115,7 +116,13 @@ interface StatsRow extends RowDataPacket {
 
 export async function loadStats(userId: number): Promise<StatsRow[]> {
     const conn = await getConn();
-    const [rows] = await conn.execute<StatsRow[]>('SELECT UNIX_TIMESTAMP(finished) as date, won FROM dota_games WHERE finished >= NOW() - INTERVAL 1 DAY AND user_id = ?;', [userId]);
+
+    const [streamStateRows] = await conn.execute<Array<{date: number | null} & RowDataPacket>>('SELECT UNIX_TIMESTAMP(uss.created) as date FROM user_stream_state uss INNER JOIN user u ON u.twitch_id = uss.twitch_id WHERE u.id = ?', [userId])
+
+    let rows: StatsRow[] = [];
+    if(streamStateRows.length > 0 && streamStateRows[0].date) {
+        [rows] = await conn.execute<StatsRow[]>('SELECT UNIX_TIMESTAMP(finished) as date, won FROM dota_games WHERE UNIX_TIMESTAMP(finished) >= ? AND user_id = ?;', [streamStateRows[0].date, userId]);
+    }
     await conn.end();
 
     return rows;
