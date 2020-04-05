@@ -7,6 +7,7 @@ import {green} from 'chalk';
 import passport from 'passport';
 import expressWs from 'express-ws';
 import './tasks';
+import './services/twitchChat';
 
 let key: string;
 let cert: string;

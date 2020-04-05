@@ -1,9 +1,10 @@
-import { User, SteamConnection } from "../../@types/Entities/User";
+import { User, SteamConnection, BotData } from "../../@types/Entities/User";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
 import user from "../../api/routes/user";
+import { joinChannel, partChannel } from "../twitchChat";
 
 type UserResponse = User & RowDataPacket & OkPacket;
 
@@ -126,4 +127,43 @@ export async function loadStats(userId: number): Promise<StatsRow[]> {
     await conn.end();
 
     return rows;
+}
+
+export async function getDeaultChannels(): Promise<string[]> {
+    const conn = await getConn();
+    const [channelRows] = await conn.execute<Array<{name: string} & RowDataPacket>>('SELECT display_name as name FROM user WHERE use_channel_bot = TRUE AND custom_channel_bot_name = ""');
+    await conn.end();
+
+    return channelRows.map(({name}) => name);
+}
+
+export async function loadBotData(userId: number): Promise <BotData> {
+    const conn = await getConn();
+    const [cfgRow] = await conn.execute<Array<BotData & RowDataPacket>>('SELECT use_channel_bot as useBot, custom_channel_bot_name as customBotName, custom_channel_bot_token as customBotToken FROM user WHERE id = ?', [userId]);
+    await conn.end();
+
+    return cfgRow.length > 0 ? cfgRow[0] : {
+        useBot: false,
+        customBotAuth: '',
+        customBotName: ''
+    };
+}
+
+export async function patchBotData(userId: number, data: Partial<BotData>, channelName: string): Promise <void> {
+    const conn = await getConn();
+    if(data.hasOwnProperty('useBot')) {
+        await conn.execute('UPDATE user SET use_channel_bot = ? WHERE id = ?', [data.useBot, userId]);
+        if(data.useBot) {
+            joinChannel(channelName);
+        } else {
+            partChannel(channelName);
+        }
+    }
+    if(data.customBotName) {
+        await conn.execute('UPDATE user SET custom_channel_bot_name = ? WHERE id = ?', [data.customBotName, userId]);
+    }
+    if(data.customBotAuth) {
+        await conn.execute('UPDATE user SET custom_channel_bot_token = ? WHERE id = ?', [data.customBotAuth, userId]);
+    }
+    await conn.end();
 }

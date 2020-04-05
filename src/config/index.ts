@@ -33,5 +33,8 @@ export default {
     clientId: process.env.TWITCH_CLIENT_ID || '',
     clientSecret: process.env.TWITCH_CLIENT_SECRET || '',
     callbackURL: process.env.TWITCH_CALLBACK_URL || '',
+
+    defaultBotIdentity: process.env.TWITCH_BOT_IDENTITY_NAME || '',
+    defaultBotToken: process.env.TWITCH_BOT_IDENTITY_TOKEN || '',
   },
 }

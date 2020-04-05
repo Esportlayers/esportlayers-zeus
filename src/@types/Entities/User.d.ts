@@ -15,3 +15,9 @@ export interface SteamConnection {
     userId: number;
     steamId: string;
 }
+
+export interface BotData {
+    useBot: boolean;
+    customBotName: string;
+    customBotAuth: string;
+}

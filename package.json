@@ -8,6 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/express-ws": "^3.0.0",
+    "@types/tmi.js": "^1.4.0",
     "body-parser": "^1.19.0",
     "chalk": "^3.0.0",
     "cors": "^2.8.5",
@@ -27,6 +28,7 @@
     "passport-jwt": "^4.0.0",
     "passport-twitch-new": "^0.0.1",
     "sharp": "^0.25.2",
+    "tmi.js": "^1.5.0",
     "twitch-api-v5": "^2.0.4",
     "uuid": "^7.0.2"
   },
