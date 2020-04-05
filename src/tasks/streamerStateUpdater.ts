@@ -1,6 +1,6 @@
 import {green} from 'chalk';
 import interval from 'interval-promise';
-import { fetchUserStream } from '../services/twitchapi';
+import { fetchUserStream } from '../services/twitchApi';
 import grey from 'chalk';
 import { updateStreamerStatus, getStreamerIds } from '../services/entity/StreamerState';
 
