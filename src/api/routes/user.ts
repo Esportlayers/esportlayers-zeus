@@ -30,7 +30,7 @@ export default (app: Router) => {
 
     route.patch('/bot', reuqireAuthorization, async(req: Request, res: Response) => {
         const user = req.user as User;
-        await patchBotData(user.id, req.body, user.displayName);
+        await patchBotData(user.id, req.body, '#' + user.displayName.toLowerCase());
         return res.json(undefined).status(200);
     });
 };
