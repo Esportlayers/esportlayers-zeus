@@ -38,7 +38,7 @@ function processRoshanState(userData: {id: number; displayName: string}, data: a
     const mapData = data && data.map;
 
     if(mapData && oldState) {
-        const roshState = data && data.map.roshan_state;
+        const roshState = data && data.map && data.map.roshan_state;
         const roshEndSecond = data && data.map.roshan_state_end_seconds;
         if(oldState.state !== roshState || (oldState.respawn !== roshEndSecond && roshEndSecond % 10 === 0)) {
             logFile.write(`[Dota-GSI :: ${userData.displayName}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
@@ -46,8 +46,8 @@ function processRoshanState(userData: {id: number; displayName: string}, data: a
     }
 
     oldRoshState[userData.id] = {
-        state: data && data.map.roshan_state,
-        respawn: data.map.roshan_state_end_seconds,
+        state: data && data.map && data.map.roshan_state,
+        respawn: data && data.map && data.map.roshan_state_end_seconds,
     };
 }
 
