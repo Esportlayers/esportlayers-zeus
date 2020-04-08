@@ -221,3 +221,27 @@ export async function deleteCommand(commandId: number, userId: number): Promise<
     await conn.execute('DELETE FROM bot_commands WHERE id=? AND user_id=?', [commandId, userId]);
     await conn.end();
 }
+
+export async function getUserByTrustedChannel(channel: string): Promise<{id: number, commandTrigger: string}> {
+    const conn = await getConn();
+    const [rows] = await conn.execute<Array<{id: number, commandTrigger: string} & RowDataPacket>>('SELECT id, command_trigger as commandTrigger FROM user WHERE LOWER(display_name) = ?', [channel.substr(1)]);
+    await conn.end();
+    return rows[0];
+}
+
+export async function getTrigger(channel: string): Promise<string> {
+    return (await getUserByTrustedChannel(channel)).commandTrigger;
+}
+
+export async function getChannelCommands(channel: string): Promise<{[x: string]: string}> {
+    const conn = await getConn();
+    const user = await getUserByTrustedChannel(channel);
+    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message FROM bot_commands WHERE user_id = ? AND isStatic = TRUE', [user.id]);
+    await conn.end();
+
+    return commandRows.reduce<{[x: string]: string}>((acc, {command, message}) => {
+        acc[user.commandTrigger + command] = message;
+
+        return acc;
+    }, {});
+}

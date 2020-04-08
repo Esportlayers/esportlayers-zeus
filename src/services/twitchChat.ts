@@ -1,6 +1,6 @@
 import {ChatUserstate} from 'tmi.js';
 import config from '../config';
-import { getDeaultChannels, getCustomBots } from './entity/User';
+import { getDeaultChannels, getCustomBots, getTrigger, getChannelCommands } from './entity/User';
 const tmi = require('tmi.js');
 
 const defaultConfig = {
@@ -38,10 +38,23 @@ async function connect(): Promise<void> {
 	}
 }
 
-function messageListener(channel: string, tags: ChatUserstate, message: string, self: boolean) {
+const triggerCache: {[x: string]: string} = {};
+const commandsCache = new Map();
+async function messageListener(channel: string, tags: ChatUserstate, message: string, self: boolean) {
 	if(self) return;
-	if(message.toLowerCase() === '!hello') {
-		publish(channel, `@${tags.username}, heya!`);
+	const channelTrigger = triggerCache[channel] ?? await getTrigger(channel);
+	if(message.startsWith(channelTrigger)) {
+		const cmd = message.indexOf(' ') !== -1 ? message.substring(1, message.indexOf(' ')) : message;
+
+		if(!commandsCache.has(channel)) {
+			const commands = await getChannelCommands(channel);
+			commandsCache.set(channel, commands);
+		}
+		
+		const channelCommands = commandsCache.get(channel);
+		if(channelCommands[cmd]) {
+			publish(channel, channelCommands[cmd]);
+		}
 	}
 }
 
