@@ -1,4 +1,4 @@
-import { User, SteamConnection, BotData } from "../../@types/Entities/User";
+import { User, SteamConnection, BotData, Command } from "../../@types/Entities/User";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
@@ -147,13 +147,14 @@ export async function getCustomBots(): Promise<Array<{channel: string; name: str
 
 export async function loadBotData(userId: number): Promise <BotData> {
     const conn = await getConn();
-    const [cfgRow] = await conn.execute<Array<BotData & RowDataPacket>>('SELECT use_channel_bot as useBot, custom_channel_bot_name as customBotName, custom_channel_bot_token as customBotToken FROM user WHERE id = ?', [userId]);
+    const [cfgRow] = await conn.execute<Array<BotData & RowDataPacket>>('SELECT use_channel_bot as useBot, custom_channel_bot_name as customBotName, custom_channel_bot_token as customBotToken, command_trigger as commandTrigger FROM user WHERE id = ?', [userId]);
     await conn.end();
 
     return cfgRow.length > 0 ? cfgRow[0] : {
         useBot: false,
         customBotName: '',
-        customBotToken: ''
+        customBotToken: '',
+        commandTrigger: '!'
     };
 }
 
@@ -167,12 +168,19 @@ export async function patchBotData(userId: number, data: Partial<BotData>, chann
             partChannel(channelName);
         }
     }
+
     if(data.customBotName) {
         await conn.execute('UPDATE user SET custom_channel_bot_name = ? WHERE id = ?', [data.customBotName, userId]);
     }
+
     if(data.customBotToken) {
         await conn.execute('UPDATE user SET custom_channel_bot_token = ? WHERE id = ?', [data.customBotToken, userId]);
     }
+
+    if(data.commandTrigger) {
+        await conn.execute('UPDATE user SET command_trigger = ? WHERE id = ?', [data.commandTrigger, userId]);
+    }
+
     if(data.customBotName || data.customBotToken) {
         await checkChannelBotInstanceComplete(userId, channelName);
     }
@@ -186,4 +194,30 @@ export async function checkChannelBotInstanceComplete(userId: number, channel: s
     } else {
         await deleteInstance(channel);
     }
+}
+
+export async function getUserCommands(userId: number): Promise<Command[]> {
+    const conn = await getConn();
+    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message FROM bot_commands WHERE user_id = ?', [userId]);
+    await conn.end();
+
+    return commandRows;
+}
+
+export async function createUserCommand(userId: number, command: string, message: string): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('INSERT INTO bot_commands (id, user_id, command, message, isStatic) VALUES (NULL, ?, ?, ?, TRUE)', [userId, command, message]);
+    await conn.end();
+}
+
+export async function patchCommand(commandId: number, userId: number, command: string, message: string): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('UPDATE bot_commands SET command=?, message=? WHERE id=? AND user_id=?', [command, message, commandId, userId]);
+    await conn.end();
+}
+
+export async function deleteCommand(commandId: number, userId: number): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('DELETE FROM bot_commands WHERE id=? AND user_id=?', [commandId, userId]);
+    await conn.end();
 }

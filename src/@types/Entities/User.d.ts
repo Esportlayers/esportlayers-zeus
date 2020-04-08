@@ -20,4 +20,10 @@ export interface BotData {
     useBot: boolean;
     customBotName: string;
     customBotToken: string;
+    commandTrigger: string;
+}
+
+export interface Command {
+    command: string;
+    message: string;
 }
