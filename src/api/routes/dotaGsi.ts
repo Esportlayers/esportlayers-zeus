@@ -35,7 +35,7 @@ export default (app: Router) => {
       console.log('got message from', ws.user.displayName, 'with content', msg);
       ws.send(msg);
     })
-  })
+  });
 
   route.ws('/logs/:frameApiKey', checkUserFrameWebsocketApiKey, (ws: ws, req: Request) => {
     //@ts-ignore
@@ -45,5 +45,5 @@ export default (app: Router) => {
     ws.on('message', (msg: string) => {
       ws.send(msg);
     })
-  })
+  });
 };

@@ -1,6 +1,7 @@
 import {ChatUserstate} from 'tmi.js';
 import config from '../config';
-import { getDeaultChannels, getCustomBots, getTrigger, getChannelCommands } from './entity/User';
+import { getDeaultChannels, getCustomBots, getTrigger, getChannelCommands, getUserByTrustedChannel } from './entity/User';
+import { sendMessage } from './websocket';
 const tmi = require('tmi.js');
 
 const defaultConfig = {
@@ -40,8 +41,10 @@ async function connect(): Promise<void> {
 
 const triggerCache: {[x: string]: string} = {};
 const commandsCache = new Map();
+const userCache: {[x: string]: number} = {};
 async function messageListener(channel: string, tags: ChatUserstate, message: string, self: boolean) {
 	if(self) return;
+
 	const channelTrigger = triggerCache[channel] ?? await getTrigger(channel);
 	if(message.startsWith(channelTrigger)) {
 		const cmd = message.indexOf(' ') !== -1 ? message.substring(1, message.indexOf(' ')) : message;
@@ -56,6 +59,13 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 			publish(channel, channelCommands[cmd]);
 		}
 	}
+
+	if(!userCache[channel]) {
+		const user = await getUserByTrustedChannel(channel);
+		userCache[channel] = user.id;
+	}
+
+	sendMessage(userCache[channel], 'chat', {user: tags["display-name"], message});
 }
 
 connect();

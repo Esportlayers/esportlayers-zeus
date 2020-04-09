@@ -2,7 +2,9 @@ import { Router, Request, Response } from 'express';
 import { loadSteamConnections, loadStats, loadBotData, patchBotData, getUserCommands, createUserCommand, patchCommand, deleteCommand } from '../../services/entity/User';
 import { User } from '../../@types/Entities/User';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
-import { checkUserFrameAPIKey } from '../../middleware/frameApi';
+import { checkUserFrameAPIKey, checkUserFrameWebsocketApiKey } from '../../middleware/frameApi';
+import ws from 'ws';
+import { heartbeat } from '../../tasks/websocketHeartbeat';
 
 const route = Router();
 
@@ -56,5 +58,11 @@ export default (app: Router) => {
         const user = req.user as User;
         const commands = await deleteCommand(+req.params.commandId, user.id);
         return res.json(commands).status(200);
+    });
+
+    route.ws('/bot/live/:frameApiKey', checkUserFrameWebsocketApiKey, (ws: ws, req: Request) => {
+      //@ts-ignore
+      ws.isAlive = true;
+      ws.on('pong', heartbeat);
     });
 };
