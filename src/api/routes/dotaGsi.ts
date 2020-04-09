@@ -29,21 +29,11 @@ export default (app: Router) => {
     //@ts-ignore
     ws.isAlive = true;
     ws.on('pong', heartbeat);
-
-    ws.on('message', (msg: string) => {
-      //@ts-ignore
-      console.log('got message from', ws.user.displayName, 'with content', msg);
-      ws.send(msg);
-    })
   });
 
   route.ws('/logs/:frameApiKey', checkUserFrameWebsocketApiKey, (ws: ws, req: Request) => {
     //@ts-ignore
     ws.isAlive = true;
     ws.on('pong', heartbeat);
-
-    ws.on('message', (msg: string) => {
-      ws.send(msg);
-    })
   });
 };
