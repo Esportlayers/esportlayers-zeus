@@ -9,6 +9,7 @@ export interface User {
     profileUrl: string;
     gsiAuth: string;
     dotaStatsFrom: string;
+    seasonId: number | null;
 }
 
 export interface SteamConnection {
