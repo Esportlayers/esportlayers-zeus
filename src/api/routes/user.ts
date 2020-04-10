@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { loadSteamConnections, loadStats, loadBotData, patchBotData, getUserCommands, createUserCommand, patchCommand, deleteCommand } from '../../services/entity/User';
+import { loadSteamConnections, loadStats, loadBotData, patchBotData, getUserCommands, createUserCommand, patchCommand, deleteCommand, patchUser } from '../../services/entity/User';
 import { User } from '../../@types/Entities/User';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { checkUserFrameAPIKey, checkUserFrameWebsocketApiKey } from '../../middleware/frameApi';
@@ -12,6 +12,11 @@ export default (app: Router) => {
     app.use('/user', route);
 
     route.get('/baseData', reuqireAuthorization, (req: Request, res: Response) => {
+        return res.json(req.user).status(200);
+    });
+
+    route.patch('/baseData', reuqireAuthorization, async (req: Request, res: Response) => {
+        await patchUser((req.user as User).id, req.body);
         return res.json(req.user).status(200);
     });
 

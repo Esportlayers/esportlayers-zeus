@@ -3,7 +3,6 @@ import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
-import user from "../../api/routes/user";
 import { joinChannel, partChannel, createInstance, deleteInstance } from "../twitchChat";
 
 type UserResponse = User & RowDataPacket & OkPacket;
@@ -21,7 +20,7 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
         const [original, webp, jp2] = await downloadUserAvatar(avatar, twitchId);
         const profileUrl = 'https://twitch.tv/' + displayName;
         conn.execute<OkPacket>(
-            "INSERT INTO user (id, twitch_id, display_name, avatar, avatar_webp, avatar_jp2, profile_url, gsi_auth, frame_api_key) VALUES (NULL, ?, ?, ?, ?, ?, ?, '', ?);",
+            "INSERT INTO user (id, twitch_id, display_name, avatar, avatar_webp, avatar_jp2, profile_url, gsi_auth, frame_api_key, dota_stats_from) VALUES (NULL, ?, ?, ?, ?, ?, ?, '', ?, 'session');",
             [twitchId, displayName, original, webp, jp2, profileUrl, frameKey]
         );
         const [userRow] = await conn.query<UserResponse[]>('SELECT * FROM user WHERE twitch_id = ?;', [twitchId]);
@@ -36,7 +35,7 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey FROM user WHERE twitch_id = ?;', [twitchId]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey, dota_stats_from as dotaStatsFrom FROM user WHERE twitch_id = ?;', [twitchId]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -49,7 +48,7 @@ export async function loadUserByTwitchId(twitchId: number): Promise<User | null>
 
 export async function loadUserById(id: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey FROM user WHERE id = ?;', [id]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey, dota_stats_from as dotaStatsFrom FROM user WHERE id = ?;', [id]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -244,4 +243,14 @@ export async function getChannelCommands(channel: string): Promise<{[x: string]:
 
         return acc;
     }, {});
+}
+
+export async function patchUser(userId: number, data: Partial<User>): Promise<void> {
+    const conn = await getConn();
+
+    if(data.dotaStatsFrom) {
+        await conn.execute('UPDATE user SET dota_stats_from=? WHERE id=?', [data.dotaStatsFrom, userId]);
+    }
+
+    await conn.end();
 }

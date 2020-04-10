@@ -8,6 +8,7 @@ export interface User {
     avatarJP2: string;
     profileUrl: string;
     gsiAuth: string;
+    dotaStatsFrom: string;
 }
 
 export interface SteamConnection {
