@@ -4,6 +4,7 @@ import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
 import { joinChannel, partChannel, createInstance, deleteInstance } from "../twitchChat";
+import dayjs from 'dayjs';
 
 type UserResponse = User & RowDataPacket & OkPacket;
 
@@ -114,17 +115,21 @@ interface StatsRow extends RowDataPacket {
     won: boolean;
 }
 
-export async function loadStats(userId: number): Promise<StatsRow[]> {
+export async function loadStats(userId: number, statsFrom: User['dotaStatsFrom']): Promise<StatsRow[]> {
     const conn = await getConn();
 
-    const [streamStateRows] = await conn.execute<Array<{date: number | null} & RowDataPacket>>('SELECT UNIX_TIMESTAMP(uss.created) as date FROM user_stream_state uss INNER JOIN user u ON u.twitch_id = uss.twitch_id WHERE u.id = ?', [userId])
-
-    let rows: StatsRow[] = [];
-    if(streamStateRows.length > 0 && streamStateRows[0].date) {
-        [rows] = await conn.execute<StatsRow[]>('SELECT UNIX_TIMESTAMP(finished) as date, won FROM dota_games WHERE UNIX_TIMESTAMP(finished) >= ? AND user_id = ?;', [streamStateRows[0].date, userId]);
+    let startTs = dayjs().startOf('day').unix();
+    if(statsFrom === 'session') {
+        const [streamStateRows] = await conn.execute<Array<{date: number | null} & RowDataPacket>>('SELECT UNIX_TIMESTAMP(uss.created) as date FROM user_stream_state uss INNER JOIN user u ON u.twitch_id = uss.twitch_id WHERE u.id = ?', [userId])
+        if(streamStateRows.length > 0 && streamStateRows[0].date) {
+            startTs = streamStateRows[0].date;
+        } else {
+            startTs = dayjs().unix();
+        }
     }
-    await conn.end();
 
+    const [rows] = await conn.execute<StatsRow[]>('SELECT UNIX_TIMESTAMP(finished) as date, won FROM dota_games WHERE UNIX_TIMESTAMP(finished) >= ? AND user_id = ?;', [startTs, userId]);
+    await conn.end();
     return rows;
 }
 

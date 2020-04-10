@@ -26,7 +26,8 @@ export default (app: Router) => {
     });
 
     route.get('/dotaStats/:frameApiKey', checkUserFrameAPIKey, reuqireAuthorization, async (req: Request, res: Response) => {
-        const stats = await loadStats((req.user as User).id);
+        const user = (req.user as User);
+        const stats = await loadStats(user.id, user.dotaStatsFrom);
         return res.json(stats).status(200);
     });
 
