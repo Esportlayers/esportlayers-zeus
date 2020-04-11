@@ -3,6 +3,7 @@ import interval from 'interval-promise';
 import { fetchUserStream } from '../services/twitchApi';
 import grey from 'chalk';
 import { updateStreamerStatus, getStreamerIds } from '../services/entity/StreamerState';
+import config from '../config';
 
 console.log(green('📝 Registered streamer task'));
 
@@ -23,14 +24,16 @@ async function updateStreamer(channelID: string): Promise<void> {
 }
 
 async function startUpdate(): Promise<void> {
-    const users = await fetchWatchingStreamer();
-    if(users.length > 0) {
-        console.log(grey('- Updating stream state -'));
-        for(let channelID of users) {
-            await updateStreamer(channelID);
-        }
-        console.log(grey('- Finished stream state -'));
-    } 
+    if(config.updateStreamerState) {
+        const users = await fetchWatchingStreamer();
+        if(users.length > 0) {
+            console.log(grey('- Updating stream state -'));
+            for(let channelID of users) {
+                await updateStreamer(channelID);
+            }
+            console.log(grey('- Finished stream state -'));
+        } 
+    }
 }
 
 interval(async () => startUpdate(), 60000);

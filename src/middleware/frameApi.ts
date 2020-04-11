@@ -23,7 +23,7 @@ export async function checkUserFrameAPIKey(req: Request, res: Response, next: Ne
         return next();
     }
 
-    const userData = await getUserByFrameApiKey(req.params.frameApiKey || req.query.frameApiKey);
+    const userData = await getUserByFrameApiKey(req.params.frameApiKey as string || req.query.frameApiKey as string);
 
     let user: User | undefined = undefined;
     if(userData) {

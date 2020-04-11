@@ -1,6 +1,5 @@
 import { loadUserById } from "./User";
 import { getConn } from "../../loader/db";
-import { BetRoundStatus } from "../../@types/Entities/Bets";
 import { RowDataPacket } from "mysql2";
 import { requireWatcher } from "./Watcher";
 
@@ -24,14 +23,14 @@ export async function createBetRound(userId: number): Promise<void> {
         const round = (await getRound(userId)) + 1;
         await conn.execute(
             'INSERT INTO bet_rounds (id, bet_season_id, user_id, round, created, status, result) VALUES (NULL, ?, ?, ?, NOW(), ?, "")', 
-            [user.seasonId, userId, round, BetRoundStatus.betting]
+            [user.seasonId, userId, round, 'betting']
         );
         await conn.end();
     }
 }
 
 interface PatchableData {
-    status: BetRoundStatus;
+    status: 'betting' | 'running' | 'finished';
     result: string;
 }
 

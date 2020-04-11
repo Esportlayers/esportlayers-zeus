@@ -13,6 +13,7 @@ export default {
   gsiPort: process.env.DOTA_GSI_PORT || 8443,
   googleFontApiKey: process.env.GOOGLE_FONT_API_KEY || '',
   jwtSecret: process.env.JWT_VERIFY_SEED || '8372gjh2b3u23g8bf',
+  updateStreamerState: process.env.UPDATE_STREAM_STATE !== '0' || false,
   mysql: {
     host: process.env.MYSQL_HOST || 'localhost',
     user: process.env.MYSQL_USER ||  'root',

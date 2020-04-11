@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { User } from '../../@types/Entities/User';
-import { getUserBetSeasons, createUserBetSeason } from '../../services/entity/BetSeason';
+import { getUserBetSeasons, createUserBetSeason } from '../../services/entity/BetSeasons';
 const route = Router();
 
 export default (app: Router) => {

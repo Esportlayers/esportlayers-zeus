@@ -1,7 +1,7 @@
-import { BetSeason, UserRole, BetSeasonInviteStatus, BetInvite } from "../../@types/Entities/Bets";
 import { getConn } from "../../loader/db";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { v4 } from "uuid";
+import { BetInvite, BetSeason } from "../../@types/Entities/BetSeason";
 
 export async function getBetSeason(id: number): Promise<BetSeason | null> {
     const conn = await getConn();
@@ -25,7 +25,7 @@ export async function getUserBetSeasons(userId: number): Promise<BetSeason[]> {
 export async function createUserBetSeason(userId: number, data: BetSeason): Promise<void> {
     const conn = await getConn();
     const [{insertId}] = await conn.execute<OkPacket>('INSERT INTO bet_seasons (id, name, description, type) VALUES (NULL, ?, ?, ?)', [data.name, data.description, data.type]);
-    await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, insertId, UserRole.owner]);
+    await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, insertId, 'owner']);
     await conn.end();
 }
 
@@ -58,7 +58,7 @@ export async function createSeasonInvite(seasonId: number, userId: number): Prom
     const conn = await getConn();
     await conn.execute(
         'INSERT INTO bet_season_invites (bet_season_id, user_id, invite_key, created, status) VALUES (?, ?, ?, NOW(), ?)',
-        [seasonId, userId, inviteKey, BetSeasonInviteStatus.open],
+        [seasonId, userId, inviteKey, 'open'],
     );
     await conn.end();
     return inviteKey;
@@ -81,8 +81,8 @@ export async function acceptSeasonInvite(key: string, userId: number): Promise<v
     const invite = await getInviteByKey(key);
     if(invite) {
         const conn = await getConn();
-        await conn.execute('UPDATE bet_season_invites SET status=? WHERE bet_season_id=?', [BetSeasonInviteStatus.accepted, invite.betSeason.id]);
-        await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, invite.betSeason.id, UserRole.owner]);
+        await conn.execute('UPDATE bet_season_invites SET status=? WHERE bet_season_id=?', ['accepted', invite.betSeason.id]);
+        await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, invite.betSeason.id, 'user']);
         await conn.end();
     }
 }
@@ -91,7 +91,7 @@ export async function denySeasonInvite(key: string): Promise<void> {
     const invite = await getInviteByKey(key);
     if(invite) {
         const conn = await getConn();
-        await conn.execute('UPDATE bet_season_invites SET status=? WHERE bet_season_id=?', [BetSeasonInviteStatus.denied, invite.betSeason.id]);
+        await conn.execute('UPDATE bet_season_invites SET status=? WHERE bet_season_id=?', ['denied', invite.betSeason.id]);
         await conn.end();
     }
 }

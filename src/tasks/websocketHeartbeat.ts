@@ -8,7 +8,7 @@ export function heartbeat() {
   this.isAlive = true;
 }
 
-const interval = setInterval(() => {
+setInterval(() => {
     WebsocketInstance.getWss().clients.forEach((ws) => {
       //@ts-ignore
       if (ws.isAlive === false) {
