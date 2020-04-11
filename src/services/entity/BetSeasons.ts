@@ -65,6 +65,26 @@ export async function deleteBetSeason(seasonId: number): Promise<void> {
     await conn.end();
 }
 
+export async function listInvites(seasonId: number): Promise<BetInvite[]> {
+    const conn = await getConn();
+    const [rows] = await conn.execute<Array<BetInvite & RowDataPacket & {invitedBy: string}>>('SELECT bsi.invite_key as inviteKey, UNIX_TIMESTAMP(bsi.created) as created, bsi.status, u.display_name as invitedBy FROM bet_season_invites bsi INNER JOIN user u ON u.id = bsi.user_id WHERE bsi.bet_season_id = ?', [seasonId]);
+    await conn.end();
+    return rows;
+}
+
+interface BetSeasonUser {
+    id: number;
+    name: string;
+    userRole: 'owner' | 'editor' | 'user';
+}
+
+export async function listUsers(seasonId: number): Promise<BetSeasonUser[]> {
+    const conn = await getConn();
+    const [rows] = await conn.execute<Array<BetSeasonUser & RowDataPacket>>('SELECT u.id, u.display_name as displayName, bsu.userRole as userRole FROM bet_season_users bsu INNER JOIN user u ON u.id = bsu.user_id WHERE bsu.bet_season_id = ?', [seasonId]);
+    await conn.end();
+    return rows;
+}
+
 export async function createSeasonInvite(seasonId: number, userId: number): Promise<string> {
     const inviteKey = v4();
     const conn = await getConn();
@@ -80,7 +100,7 @@ type BetInvitePlainRow = Omit<BetInvite, 'betSeason'> & {betSeason: number} & Ro
 
 export async function getInviteByKey(key: string, userId: number): Promise<BetInvite | null> {
     const conn = await getConn();
-    const [rows] = await conn.execute<BetInvitePlainRow[]>('SELECT bet_season_id as betSeason, user_id as owner, invite_key as inviteKey, FROM_UNIXTIME(created) as created, status FROM bet_season_invites WHERE invite_key = ? AND user_id = ?', [key, userId]);
+    const [rows] = await conn.execute<BetInvitePlainRow[]>('SELECT bet_season_id as betSeason, user_id as owner, invite_key as inviteKey, UNIX_TIMESTAMP(created) as created, status FROM bet_season_invites WHERE invite_key = ? AND user_id = ?', [key, userId]);
     await conn.end();
 
     return rows.length > 0 ? {
