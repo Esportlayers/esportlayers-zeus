@@ -3,6 +3,7 @@ import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { User } from '../../@types/Entities/User';
 import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers } from '../../services/entity/BetSeasons';
 import { requireBetSeasonAccess } from '../../middleware/requireBetSeasonAccess';
+import { getBetSeasonRounds } from '../../services/entity/BetRound';
 const route = Router();
 
 export default (app: Router) => {
@@ -18,19 +19,24 @@ export default (app: Router) => {
     return res.json(undefined).status(201);
   });
 
+  route.get('/rounds/:seasonId', reuqireAuthorization, requireBetSeasonAccess('user'), async (req: Request, res: Response) => {
+    const rounds = await getBetSeasonRounds(+req.params.seasonId);
+    return res.json(rounds).status(200);
+  });
+
   route.get('/invites/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     const invites = await listInvites(+req.params.seasonId);
-    return res.json(invites).status(204);
+    return res.json(invites).status(200);
   });
 
   route.get('/users/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     const users = await listUsers(+req.params.seasonId);
-    return res.json(users).status(204);
+    return res.json(users).status(200);
   });
 
   route.post('/invite/create/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     const key = await createSeasonInvite(+req.params.seasonId, (req.user as User).id);
-    return res.json({key}).status(204);
+    return res.json({key}).status(200);
   });
 
   route.post('/invite/accept/:inviteKey', reuqireAuthorization, async (req: Request, res: Response) => {

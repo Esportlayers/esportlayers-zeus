@@ -16,14 +16,39 @@ async function getRound(userId: number): Promise<number> {
     return 0;
 }
 
-export async function createBetRound(userId: number): Promise<void> {
-    const user = await loadUserById(userId);
-    if(user && user.seasonId) {
+export interface BetRound {
+    id: number;
+    betSeason: number;
+    round: number;
+    status: string;
+    result: string;
+    userId: number;
+}
+
+export async function getRoundById(roundId: number): Promise<BetRound | null> {
+    const conn = await getConn();
+    const [rows] = await conn.execute<Array<BetRound & RowDataPacket>>('SELECT id, bet_season_id as betSeason, round, status, result FROM bet_rounds WHERE id = ?', [roundId]);
+    await conn.end();
+
+    return rows.length > 0 ? rows[0] : null;
+}
+
+
+export async function getBetSeasonRounds(seasonId: number): Promise<BetRound[]> {
+    const conn = await getConn();
+    const [rows] = await conn.execute<Array<BetRound & RowDataPacket>>('SELECT id, bet_season_id as betSeason, round, status, result, user_id as userId FROM bet_rounds WHERE bet_season_id = ?', [seasonId]);
+    await conn.end();
+
+    return rows;
+}
+
+export async function createBetRound(userId: number, seasonId: number | null): Promise<void> {
+    if(seasonId) {
         const conn = await getConn();
         const round = (await getRound(userId)) + 1;
         await conn.execute(
             'INSERT INTO bet_rounds (id, bet_season_id, user_id, round, created, status, result) VALUES (NULL, ?, ?, ?, NOW(), ?, "")', 
-            [user.seasonId, userId, round, 'betting']
+            [seasonId, userId, round, 'betting']
         );
         await conn.end();
     }
