@@ -1,7 +1,7 @@
 import { getConn } from "../../loader/db";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { v4 } from "uuid";
-import { BetInvite, BetSeason } from "../../@types/Entities/BetSeason";
+import { BetInvite, BetSeason, rolePrio } from "../../@types/Entities/BetSeason";
 
 export async function getBetSeason(id: number): Promise<BetSeason | null> {
     const conn = await getConn();
@@ -13,16 +13,27 @@ export async function getBetSeason(id: number): Promise<BetSeason | null> {
 export async function getUserBetSeasons(userId: number): Promise<BetSeason[]> {
     const conn = await getConn();
     const [rows] = await conn.execute<Array<BetSeason & RowDataPacket>>(`
-        SELECT bs.id as id, bs.name as name, bs.description as description, bs.type as type
+        SELECT bs.id as id, bs.name as name, bs.description as description, bs.type as type, bsu.userRole as userRole
           FROM bet_seasons bs 
     INNER JOIN bet_season_users bsu ON bsu.bet_season_id = bs.id AND bsu.user_id = ?`, 
         [userId]
     );
     await conn.end();
-    return rows;
+    return rows.reduce<BetSeason[]>((acc, season) => {
+        console.log(acc, season);
+        const addedSeason = acc.find(({id}) => id === season.id);
+        if(addedSeason) {
+            if(rolePrio[addedSeason.userRole] < rolePrio[season.userRole]) {
+                addedSeason.userRole = season.userRole;
+            }
+        } else {
+            acc.push(season);
+        }
+        return acc;
+    }, []);
 }
 
-export async function createUserBetSeason(userId: number, data: BetSeason): Promise<void> {
+export async function createUserBetSeason(userId: number, data: Omit<BetSeason, 'id'>): Promise<void> {
     const conn = await getConn();
     const [{insertId}] = await conn.execute<OkPacket>('INSERT INTO bet_seasons (id, name, description, type) VALUES (NULL, ?, ?, ?)', [data.name, data.description, data.type]);
     await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, insertId, 'owner']);
@@ -47,9 +58,10 @@ export async function patchUserBetSeason(seasonId: number, data: Partial<BetSeas
     await conn.end();
 }
 
-export async function deleteUserBetSeason(seasonId: number): Promise<void> {
+export async function deleteBetSeason(seasonId: number): Promise<void> {
     const conn = await getConn();
-    await conn.execute('DELETE FROM bet_season WHERE id = ?', [seasonId]);
+    await conn.execute('DELETE FROM bet_season_users WHERE bet_season_id = ?', [seasonId]);
+    await conn.execute('DELETE FROM bet_seasons WHERE id = ?', [seasonId]);
     await conn.end();
 }
 
@@ -66,9 +78,9 @@ export async function createSeasonInvite(seasonId: number, userId: number): Prom
 
 type BetInvitePlainRow = Omit<BetInvite, 'betSeason'> & {betSeason: number} & RowDataPacket;
 
-export async function getInviteByKey(key: string): Promise<BetInvite | null> {
+export async function getInviteByKey(key: string, userId: number): Promise<BetInvite | null> {
     const conn = await getConn();
-    const [rows] = await conn.execute<BetInvitePlainRow[]>('SELECT bet_season_id as betSeason, user_id as owner, invite_key as key, FROM_UNIXTIME(created) as created, status FROM bet_season_invites WHERE invite_key = ?', [key]);
+    const [rows] = await conn.execute<BetInvitePlainRow[]>('SELECT bet_season_id as betSeason, user_id as owner, invite_key as inviteKey, FROM_UNIXTIME(created) as created, status FROM bet_season_invites WHERE invite_key = ? AND user_id = ?', [key, userId]);
     await conn.end();
 
     return rows.length > 0 ? {
@@ -78,8 +90,8 @@ export async function getInviteByKey(key: string): Promise<BetInvite | null> {
 }
 
 export async function acceptSeasonInvite(key: string, userId: number): Promise<void> {
-    const invite = await getInviteByKey(key);
-    if(invite) {
+    const invite = await getInviteByKey(key, userId);
+    if(invite && invite.status === 'open') {
         const conn = await getConn();
         await conn.execute('UPDATE bet_season_invites SET status=? WHERE bet_season_id=?', ['accepted', invite.betSeason.id]);
         await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, invite.betSeason.id, 'user']);
@@ -87,17 +99,40 @@ export async function acceptSeasonInvite(key: string, userId: number): Promise<v
     }
 }
 
-export async function denySeasonInvite(key: string): Promise<void> {
-    const invite = await getInviteByKey(key);
-    if(invite) {
+export async function denySeasonInvite(key: string, userId: number): Promise<void> {
+    const invite = await getInviteByKey(key, userId);
+    if(invite && invite.status === 'open') {
         const conn = await getConn();
         await conn.execute('UPDATE bet_season_invites SET status=? WHERE bet_season_id=?', ['denied', invite.betSeason.id]);
         await conn.end();
     }
 }
 
-export async function deleteInviteByKey(key: string): Promise<void> {
+export async function deleteInviteByKey(key: string, betSeasonId: number, userId: number): Promise<void> {
+    const invite = await getInviteByKey(key, userId);
+    if(invite && invite.betSeason.id === betSeasonId) {
+        const conn = await getConn();
+        await conn.execute('DELETE FROM bet_season_invites WHERE invite_key = ?', [key]);
+        await conn.end();
+    }
+}
+
+export async function getUserBetSeasonRole(userId: number, betSeasonId: number): Promise<string | null> {
     const conn = await getConn();
-    await conn.execute('DELETE FROM bet_season_invites WHERE invite_key = ?', [key]);
+    const [rows] = await conn.execute<Array<{userRole: string} & RowDataPacket>>('SELECT userRole FROM bet_season_users WHERE bet_season_id=? AND user_id=?', [betSeasonId, userId]);
     await conn.end();
+    return rows.length > 0 ? rows[0].userRole : null;
+}
+
+export async function patchUserBetSeasonRole(betSeasonId: number, userId: number, userRole: 'owner' | 'editor' | 'user'): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('UPDATE bet_season_invites SET userRole=? WHERE user_id=? AND bet_season_id=?', [userRole, userId, betSeasonId]);
+    await conn.end();
+}
+
+export async function deleteUserBetSeason(betSeasonId: number, userId: number): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('DELETE FROM bet_season_invites WHERE user_id=? AND bet_season_id=?', [userId, betSeasonId]);
+    await conn.end();
+
 }

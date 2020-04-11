@@ -5,6 +5,7 @@ import dotaGsiRoutes from './routes/dotaGsi';
 import googleFontsRoute from './routes/googleFonts';
 import overlayRoute from './routes/overlay';
 import betsRoute from './routes/bets';
+import betSeasonRoute from './routes/betSeason';
 import { PassportStatic } from 'passport';
 
 export default ({passport}: {passport: PassportStatic}) => {
@@ -17,6 +18,7 @@ export default ({passport}: {passport: PassportStatic}) => {
 	googleFontsRoute(app);
 	overlayRoute(app);
 	betsRoute(app);
+	betSeasonRoute(app);
 	
 	return app;
 }

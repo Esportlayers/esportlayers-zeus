@@ -11,11 +11,6 @@ export default async ({passport}: {passport: PassportStatic}) => {
 
     passport.use(new Strategy(opts, async (jwt_payload, done) => {
         try {
-            if(config.env === 'development') {//Bypass rights for dev enviorements
-                const user = await loadUserById(1);
-                return done(null, user)
-            }
-            
             const user = await loadUserById(jwt_payload.sub);
             return done(null, user)
         } catch(error) {
