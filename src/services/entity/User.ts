@@ -3,7 +3,7 @@ import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
-import { joinChannel, partChannel, createInstance, deleteInstance } from "../twitchChat";
+import { createInstance, deleteInstance } from "../twitchChat";
 import dayjs from 'dayjs';
 
 type UserResponse = User & RowDataPacket & OkPacket;
@@ -135,7 +135,7 @@ export async function loadStats(userId: number, statsFrom: User['dotaStatsFrom']
 
 export async function getDeaultChannels(): Promise<string[]> {
     const conn = await getConn();
-    const [channelRows] = await conn.execute<Array<{name: string} & RowDataPacket>>('SELECT display_name as name FROM user WHERE use_channel_bot = TRUE AND custom_channel_bot_name = ""');
+    const [channelRows] = await conn.execute<Array<{name: string} & RowDataPacket>>('SELECT display_name as name FROM user WHERE custom_channel_bot_name = ""');
     await conn.end();
 
     return channelRows.map(({name}) => name);
@@ -143,7 +143,7 @@ export async function getDeaultChannels(): Promise<string[]> {
 
 export async function getCustomBots(): Promise<Array<{channel: string; name: string; password: string}>> {
     const conn = await getConn();
-    const [channelRows] = await conn.execute<Array<{channel: string; name: string; password: string} & RowDataPacket>>('SELECT display_name as channel, custom_channel_bot_name as name, custom_channel_bot_token as password FROM user WHERE use_channel_bot = TRUE AND custom_channel_bot_name != "" AND custom_channel_bot_token != ""');
+    const [channelRows] = await conn.execute<Array<{channel: string; name: string; password: string} & RowDataPacket>>('SELECT display_name as channel, custom_channel_bot_name as name, custom_channel_bot_token as password FROM user WHERE custom_channel_bot_name != "" AND custom_channel_bot_token != ""');
     await conn.end();
 
     return channelRows;
@@ -164,14 +164,6 @@ export async function loadBotData(userId: number): Promise <BotData> {
 
 export async function patchBotData(userId: number, data: Partial<BotData>, channelName: string): Promise <void> {
     const conn = await getConn();
-    if(data.hasOwnProperty('useBot')) {
-        await conn.execute('UPDATE user SET use_channel_bot = ? WHERE id = ?', [data.useBot, userId]);
-        if(data.useBot) {
-            joinChannel(channelName);
-        } else {
-            partChannel(channelName);
-        }
-    }
 
     if(data.customBotName) {
         await conn.execute('UPDATE user SET custom_channel_bot_name = ? WHERE id = ?', [data.customBotName, userId]);
@@ -179,10 +171,6 @@ export async function patchBotData(userId: number, data: Partial<BotData>, chann
 
     if(data.customBotToken) {
         await conn.execute('UPDATE user SET custom_channel_bot_token = ? WHERE id = ?', [data.customBotToken, userId]);
-    }
-
-    if(data.commandTrigger) {
-        await conn.execute('UPDATE user SET command_trigger = ? WHERE id = ?', [data.commandTrigger, userId]);
     }
 
     if(data.customBotName || data.customBotToken) {
