@@ -26,6 +26,11 @@ export interface BotData {
 }
 
 export interface Command {
+    active: boolean;
     command: string;
+    message: string;
+}
+export interface Timer {
+    period: number;
     message: string;
 }

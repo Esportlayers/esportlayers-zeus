@@ -6,6 +6,8 @@ import googleFontsRoute from './routes/googleFonts';
 import overlayRoute from './routes/overlay';
 import betsRoute from './routes/bets';
 import betSeasonRoute from './routes/betSeason';
+import botCommandRoute from './routes/botCommand';
+import botTimerRoute from './routes/botTimer';
 import { PassportStatic } from 'passport';
 
 export default ({passport}: {passport: PassportStatic}) => {
@@ -19,6 +21,8 @@ export default ({passport}: {passport: PassportStatic}) => {
 	overlayRoute(app);
 	betsRoute(app);
 	betSeasonRoute(app);
+	botCommandRoute(app);
+	botTimerRoute(app);
 	
 	return app;
 }
