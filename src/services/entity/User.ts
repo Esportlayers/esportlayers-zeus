@@ -115,14 +115,22 @@ interface StatsRow extends RowDataPacket {
     won: boolean;
 }
 
+export async function getOnlineSince(userId: number): Promise<number | null> {
+    const conn = await getConn();
+    const [streamStateRows] = await conn.execute<Array<{date: number | null} & RowDataPacket>>('SELECT UNIX_TIMESTAMP(uss.created) as date FROM user_stream_state uss INNER JOIN user u ON u.twitch_id = uss.twitch_id WHERE u.id = ?', [userId])
+    await conn.end();
+
+    return streamStateRows.length > 0 ? streamStateRows[0].date : null;
+}
+
 export async function loadStats(userId: number, statsFrom: User['dotaStatsFrom']): Promise<StatsRow[]> {
     const conn = await getConn();
 
     let startTs = dayjs().startOf('day').unix();
     if(statsFrom === 'session') {
-        const [streamStateRows] = await conn.execute<Array<{date: number | null} & RowDataPacket>>('SELECT UNIX_TIMESTAMP(uss.created) as date FROM user_stream_state uss INNER JOIN user u ON u.twitch_id = uss.twitch_id WHERE u.id = ?', [userId])
-        if(streamStateRows.length > 0 && streamStateRows[0].date) {
-            startTs = streamStateRows[0].date;
+        const onlineSince = await getOnlineSince(userId);
+        if(onlineSince) {
+            startTs = onlineSince;
         } else {
             startTs = dayjs().unix();
         }
@@ -188,26 +196,43 @@ export async function checkChannelBotInstanceComplete(userId: number, channel: s
     }
 }
 
-export async function getUserByTrustedChannel(channel: string): Promise<{id: number, commandTrigger: string}> {
+export async function getUserByTrustedChannel(channel: string): Promise<{id: number}> {
     const conn = await getConn();
-    const [rows] = await conn.execute<Array<{id: number, commandTrigger: string} & RowDataPacket>>('SELECT id, command_trigger as commandTrigger FROM user WHERE LOWER(display_name) = ?', [channel.substr(1)]);
+    const [rows] = await conn.execute<Array<{id: number, commandTrigger: string} & RowDataPacket>>('SELECT id FROM user WHERE LOWER(display_name) = ?', [channel.substr(1)]);
     await conn.end();
     return rows[0];
 }
 
-export async function getTrigger(channel: string): Promise<string> {
-    return (await getUserByTrustedChannel(channel)).commandTrigger;
+function replaceTrustedPlaceholder(msg: string, uptime: number | null): string {
+    let fullMsg = msg;
+
+    if(uptime) {
+        const min = uptime % 60;
+        const hrs = Math.floor(uptime / 60);
+        const h = hrs > 0 ? (hrs === 1 ? '1 Stunde' : `${hrs} Stunden`) : '';
+        const m = min > 0 ? (min === 1 ? '1 Minute' : `${min} Minuten`) : '';
+        
+        const uptimeStr = (h.length > 0 && m.length > 0) ? `${h} und ${m}` : (h.length > 0 ? h : m);
+
+        fullMsg = fullMsg.replace(/\{UPTIME\}/g, uptimeStr);
+    } else {
+        fullMsg = fullMsg.replace(/\{UPTIME\}/g, '0 Minuten');
+    }
+
+    return fullMsg;
 }
 
 export async function getChannelCommands(channel: string): Promise<{[x: string]: string}> {
     const conn = await getConn();
     const user = await getUserByTrustedChannel(channel);
-    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message FROM bot_commands WHERE user_id = ? AND isStatic = TRUE', [user.id]);
+    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message FROM bot_commands WHERE user_id = ? AND active = TRUE', [user.id]);
     await conn.end();
 
-    return commandRows.reduce<{[x: string]: string}>((acc, {command, message}) => {
-        acc[user.commandTrigger + command] = message;
+    const onlineSince = await getOnlineSince(user.id);
+    const uptime = onlineSince && dayjs().unix() - onlineSince;
 
+    return commandRows.reduce<{[x: string]: string}>((acc, {command, message}) => {
+        acc[command] = replaceTrustedPlaceholder(message, uptime);
         return acc;
     }, {});
 }

@@ -1,7 +1,6 @@
 import {ChatUserstate} from 'tmi.js';
 import config from '../config';
-import { getDeaultChannels, getCustomBots, getTrigger, getChannelCommands, getUserByTrustedChannel } from './entity/User';
-import { sendMessage } from './websocket';
+import { getDeaultChannels, getCustomBots, getChannelCommands, loadUserById } from './entity/User';
 const tmi = require('tmi.js');
 
 const defaultConfig = {
@@ -39,33 +38,29 @@ async function connect(): Promise<void> {
 	}
 }
 
-const triggerCache: {[x: string]: string} = {};
+function replacePlaceholder(message: string, tags: ChatUserstate): string {
+	let fullMessage = message;
+	if(tags["display-name"]) {
+		fullMessage = fullMessage.replace(/\{USER\}/g, tags["display-name"]);
+	}
+
+	return fullMessage;
+}
+
 const commandsCache = new Map();
-const userCache: {[x: string]: number} = {};
 async function messageListener(channel: string, tags: ChatUserstate, message: string, self: boolean) {
 	if(self) return;
 
-	const channelTrigger = triggerCache[channel] ?? await getTrigger(channel);
-	if(message.startsWith(channelTrigger)) {
-		const cmd = message.indexOf(' ') !== -1 ? message.substring(1, message.indexOf(' ')) : message;
-
-		if(!commandsCache.has(channel)) {
-			const commands = await getChannelCommands(channel);
-			commandsCache.set(channel, commands);
-		}
-		
-		const channelCommands = commandsCache.get(channel);
-		if(channelCommands[cmd]) {
-			publish(channel, channelCommands[cmd]);
-		}
+	if(!commandsCache.has(channel)) {
+		const commands = await getChannelCommands(channel);
+		commandsCache.set(channel, commands);
 	}
 
-	if(!userCache[channel]) {
-		const user = await getUserByTrustedChannel(channel);
-		userCache[channel] = user.id;
+	const channelCommands = commandsCache.get(channel);
+	if(Object.keys(channelCommands).includes(message.toLowerCase())) {
+		const msg = replacePlaceholder(channelCommands[message.toLowerCase()], tags)
+		publish(channel, msg);
 	}
-
-	sendMessage(userCache[channel], 'chat', {user: tags["display-name"], message});
 }
 
 connect();
@@ -107,5 +102,14 @@ export async function deleteInstance(channel: string): Promise<void> {
 	if(customInstances.has(channel)) {
 		await customInstances.get(channel).disconnect();
 		customInstances.delete(channel);
+	}
+}
+
+export async function clearUserCommandsChache(userId: number): Promise<void> {
+	const {displayName}  = (await loadUserById(userId))!;
+	const fullChannel = '#' + displayName.toLowerCase();
+
+	if(commandsCache.has(fullChannel)) {
+		commandsCache.delete(fullChannel);
 	}
 }
