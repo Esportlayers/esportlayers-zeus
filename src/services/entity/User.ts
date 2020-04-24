@@ -198,7 +198,7 @@ export async function checkChannelBotInstanceComplete(userId: number, channel: s
 
 export async function getUserByTrustedChannel(channel: string): Promise<{id: number}> {
     const conn = await getConn();
-    const [rows] = await conn.execute<Array<{id: number, commandTrigger: string} & RowDataPacket>>('SELECT id FROM user WHERE LOWER(display_name) = ?', [channel.substr(1)]);
+    const [rows] = await conn.execute<Array<{id: number} & RowDataPacket>>('SELECT id FROM user WHERE LOWER(display_name) = ?', [channel.substr(1)]);
     await conn.end();
     return rows[0];
 }

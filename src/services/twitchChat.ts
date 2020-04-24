@@ -113,3 +113,7 @@ export async function clearUserCommandsChache(userId: number): Promise<void> {
 		commandsCache.delete(fullChannel);
 	}
 }
+
+export function getChannels(): string[] {
+	return [...client.getChannels(), ...customInstances.keys()];
+}

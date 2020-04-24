@@ -33,4 +33,5 @@ export interface Command {
 export interface Timer {
     period: number;
     message: string;
+    active: boolean;
 }
