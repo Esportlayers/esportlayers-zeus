@@ -98,6 +98,7 @@ function processWardStats(userData: {id: number; displayName: string}, data: any
     };
 }
 
+const connectedIds = new Set();
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
         console.log(grey('[Dota-GSI] Rejected access, no auth key was given.'));
@@ -109,8 +110,6 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
         console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as auth key is not known.'));
         return res.status(404).json('Unknown Auth token').end();
     }
-
-    await userConnected(userData.id);
 
     if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
         processRoshanState(userData, req.body);
@@ -125,6 +124,13 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
         }
     }
 
+    await userConnected(userData.id);
+
+    if(!connectedIds.has(userData.id)) {
+        sendMessage(userData.id, 'connected', true);
+        connectedIds.add(userData.id);
+    }
+
     const newClient = new GsiClient(req.body.auth, userData.id, userData.displayName);
     clients.push(newClient);
     //@ts-ignore
@@ -137,16 +143,10 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     return next();
 }
 
-const connectedIds = new Set();
 export async function gsiBodyParser(req: Request, res: Response, next: NextFunction) {
     //@ts-ignore
     const client = (req.client as Client);
     const data = req.body;
-    
-    if(!connectedIds.has(client.userId)) {
-        sendMessage(client.userId, 'connected', true);
-        connectedIds.add(client.userId);
-    }
 
     //Game state
     const oldGameState = client.gamestate.map && client.gamestate.map.game_state;
