@@ -137,12 +137,16 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     return next();
 }
 
+const connectedIds = new Set();
 export async function gsiBodyParser(req: Request, res: Response, next: NextFunction) {
     //@ts-ignore
     const client = (req.client as Client);
     const data = req.body;
-
-    //Evaluate changes
+    
+    if(!connectedIds.has(client.userId)) {
+        sendMessage(client.userId, 'connected', true);
+        connectedIds.add(client.userId);
+    }
 
     //Game state
     const oldGameState = client.gamestate.map && client.gamestate.map.game_state;
