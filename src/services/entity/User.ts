@@ -94,6 +94,13 @@ export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<{id: nu
     }
 }
 
+export async function resetDotaGsi(userId: number): Promise<void> {
+    const conn = await getConn();
+    await conn.query('UPDATE user SET gsi_auth="", gsi_connected=FALSE WHERE id=?;', [userId]);
+    await conn.end();
+
+}
+
 export async function getUserByFrameApiKey(key: string): Promise<{id: number; displayName: string} | void> {
     const conn = await getConn();
     const [authRows] = await conn.query<Array<RowDataPacket & {id: number; displayName: string}>>('SELECT id, display_name as displayName FROM user WHERE frame_api_key = ?;', [key]);
