@@ -130,8 +130,13 @@ export async function getOnlineSince(userId: number): Promise<number | null> {
     return streamStateRows.length > 0 ? streamStateRows[0].date : null;
 }
 
-export async function loadStats(userId: number, statsFrom: User['dotaStatsFrom']): Promise<StatsRow[]> {
+export async function loadStats(userId: number, statsFrom?: User['dotaStatsFrom']): Promise<StatsRow[]> {
     const conn = await getConn();
+    let from = statsFrom;
+    if(!from) {
+        const {dotaStatsFrom} = (await loadUserById(userId))!;
+        from = dotaStatsFrom;
+    }
 
     let startTs = dayjs().startOf('day').unix();
     if(statsFrom === 'session') {

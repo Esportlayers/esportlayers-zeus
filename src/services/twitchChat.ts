@@ -1,6 +1,6 @@
 import {ChatUserstate} from 'tmi.js';
 import config from '../config';
-import { getDeaultChannels, getCustomBots, getChannelCommands, loadUserById } from './entity/User';
+import { getDeaultChannels, getCustomBots, getChannelCommands, loadUserById, getUserByTrustedChannel, loadStats } from './entity/User';
 const tmi = require('tmi.js');
 
 const defaultConfig = {
@@ -38,10 +38,20 @@ async function connect(): Promise<void> {
 	}
 }
 
-function replacePlaceholder(message: string, tags: ChatUserstate): string {
+async function replacePlaceholder(message: string, tags: ChatUserstate, channel: string): Promise<string> {
 	let fullMessage = message;
 	if(tags["display-name"]) {
 		fullMessage = fullMessage.replace(/\{USER\}/g, tags["display-name"]);
+	}
+
+	if(message.includes('{TOTAL_GAMES}') || message.includes('{GAMES_WON}') || message.includes('{GAMES_LOST}')) {
+		const {id} = await getUserByTrustedChannel(channel);
+		const userStats = await loadStats(id);
+		const wins = userStats.filter(({won}) => won).length;
+
+		fullMessage = fullMessage.replace(/\{TOTAL_GAMES\}/g, '' + userStats.length);
+		fullMessage = fullMessage.replace(/\{GAMES_WON\}/g, '' + wins);
+		fullMessage = fullMessage.replace(/\{GAMES_LOST\}/g, '' + (userStats.length - wins));
 	}
 
 	return fullMessage;
@@ -58,7 +68,7 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 
 	const channelCommands = commandsCache.get(channel);
 	if(Object.keys(channelCommands).includes(message.toLowerCase())) {
-		const msg = replacePlaceholder(channelCommands[message.toLowerCase()], tags)
+		const msg = await replacePlaceholder(channelCommands[message.toLowerCase()], tags, channel)
 		publish(channel, msg);
 	}
 }
