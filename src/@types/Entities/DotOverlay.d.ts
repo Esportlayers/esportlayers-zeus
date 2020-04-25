@@ -8,7 +8,6 @@ export interface OverlayConfig {
     lossColor: string;
 
     showBackground: boolean;
-    backgroundAlign: 'left' | 'right' | 'center';
 
     winX: number;
     winY: number;
