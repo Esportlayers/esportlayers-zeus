@@ -16,7 +16,7 @@ export default (app: Router) => {
 
     route.post('/create', reuqireAuthorization, async(req: Request, res: Response) => {
         const user = req.user as User;
-        const commands = await createUserCommand(user.id, req.body.active, req.body.command, req.body.message);
+        const commands = await createUserCommand(user.id, req.body.active, req.body.command, req.body.message, req.body.type);
         return res.json(commands).status(200);
     });
 

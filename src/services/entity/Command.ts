@@ -12,9 +12,9 @@ export async function getUserCommands(userId: number): Promise<Command[]> {
     return commandRows;
 }
 
-export async function createUserCommand(userId: number, active: boolean, command: string, message: string): Promise<void> {
+export async function createUserCommand(userId: number, active: boolean, command: string, message: string, type: string): Promise<void> {
     const conn = await getConn();
-    await conn.execute('INSERT INTO bot_commands (id, user_id, command, message, active, type, access) VALUES (NULL, ?, ?, ?, ?, ?, ?)', [userId, command, message, active, 'default', 'user']);
+    await conn.execute('INSERT INTO bot_commands (id, user_id, command, message, active, type, access) VALUES (NULL, ?, ?, ?, ?, ?, ?)', [userId, command, message, active, type, 'user']);
     await conn.end();
 
     await clearUserCommandsChache(userId);
