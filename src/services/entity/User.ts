@@ -36,7 +36,7 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey, dota_stats_from as dotaStatsFrom, bet_season_id as seasonId FROM user WHERE twitch_id = ?;', [twitchId]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey, dota_stats_from as dotaStatsFrom, bet_season_id as seasonId, gsi_connected as gsiConnected FROM user WHERE twitch_id = ?;', [twitchId]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -49,7 +49,7 @@ export async function loadUserByTwitchId(twitchId: number): Promise<User | null>
 
 export async function loadUserById(id: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey, dota_stats_from as dotaStatsFrom, bet_season_id as seasonId FROM user WHERE id = ?;', [id]);
+    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey, dota_stats_from as dotaStatsFrom, bet_season_id as seasonId, gsi_connected as gsiConnected FROM user WHERE id = ?;', [id]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -78,7 +78,7 @@ export async function createGsiAuthToken(userId: number): Promise<string> {
     const auth = v4();
 
     const conn = await getConn();
-    await conn.execute('UPDATE user SET gsi_auth = ? WHERE id = ?;', [auth, userId]);
+    await conn.execute('UPDATE user SET gsi_auth = ?, gsi_connected = FALSE WHERE id = ?;', [auth, userId]);
     await conn.end();
 
     return auth;
@@ -159,7 +159,7 @@ export async function getCustomBots(): Promise<Array<{channel: string; name: str
 
 export async function loadBotData(userId: number): Promise <BotData> {
     const conn = await getConn();
-    const [cfgRow] = await conn.execute<Array<BotData & RowDataPacket>>('SELECT use_channel_bot as useBot, custom_channel_bot_name as customBotName, custom_channel_bot_token as customBotToken, command_trigger as commandTrigger FROM user WHERE id = ?', [userId]);
+    const [cfgRow] = await conn.execute<Array<BotData & RowDataPacket>>('SELECT custom_channel_bot_name as customBotName, custom_channel_bot_token as customBotToken FROM user WHERE id = ?', [userId]);
     await conn.end();
 
     return cfgRow.length > 0 ? cfgRow[0] : {
@@ -244,5 +244,11 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
         await conn.execute('UPDATE user SET dota_stats_from=? WHERE id=?', [data.dotaStatsFrom, userId]);
     }
 
+    await conn.end();
+}
+
+export async function userConnected(userId: number): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('UPDATE user SET gsi_connected=TRUE WHERE id=?', [userId]);
     await conn.end();
 }

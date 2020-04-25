@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { gsiAuthTokenUnknown, saveDotaGame } from "../services/entity/User";
+import { gsiAuthTokenUnknown, saveDotaGame, userConnected } from "../services/entity/User";
 import {grey} from 'chalk';
 import { sendMessage } from "../services/websocket";
 var fs = require('fs');
@@ -109,6 +109,8 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
         console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as auth key is not known.'));
         return res.status(404).json('Unknown Auth token').end();
     }
+
+    await userConnected(userData.id);
 
     if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
         processRoshanState(userData, req.body);
