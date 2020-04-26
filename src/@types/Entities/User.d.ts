@@ -9,6 +9,7 @@ export interface User {
     profileUrl: string;
     gsiAuth: string;
     dotaStatsFrom: string;
+    useBets: boolean;
     seasonId: number | null;
 }
 
