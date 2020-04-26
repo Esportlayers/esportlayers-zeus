@@ -20,7 +20,6 @@ export async function getUserBetSeasons(userId: number): Promise<BetSeason[]> {
     );
     await conn.end();
     return rows.reduce<BetSeason[]>((acc, season) => {
-        console.log(acc, season);
         const addedSeason = acc.find(({id}) => id === season.id);
         if(addedSeason) {
             if(rolePrio[addedSeason.userRole] < rolePrio[season.userRole]) {
