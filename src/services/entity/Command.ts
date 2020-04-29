@@ -6,15 +6,15 @@ import { clearUserCommandsChache } from "../twitchChat";
 
 export async function getUserCommands(userId: number): Promise<Command[]> {
     const conn = await getConn();
-    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message, active, type, access FROM bot_commands WHERE user_id = ?', [userId]);
+    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message, active, type, access, no_response as noResponse, delete_able as deleteAble FROM bot_commands WHERE user_id = ?', [userId]);
     await conn.end();
 
     return commandRows;
 }
 
-export async function createUserCommand(userId: number, active: boolean, command: string, message: string, type: string): Promise<void> {
+export async function createUserCommand(userId: number, active: boolean, command: string, message: string, type: string, readonly: boolean = false, deleteAble: boolean = true): Promise<void> {
     const conn = await getConn();
-    await conn.execute('INSERT INTO bot_commands (id, user_id, command, message, active, type, access) VALUES (NULL, ?, ?, ?, ?, ?, ?)', [userId, command, message, active, type, 'user']);
+    await conn.execute('INSERT INTO bot_commands (id, user_id, command, message, active, type, access, no_response, delete_able) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)', [userId, command, message, active, type, 'user', readonly, deleteAble]);
     await conn.end();
 
     await clearUserCommandsChache(userId);
@@ -34,4 +34,18 @@ export async function deleteCommand(commandId: number, userId: number): Promise<
     await conn.end();
 
     await clearUserCommandsChache(userId);
+}
+
+export async function createBetCommands(userId: number): Promise<void> {
+    const userCommands = await getUserCommands(userId);
+    const hasBetCommands = userCommands.filter(({type}) => type === 'betting_streamer' || type === 'betting_user').length > 0;
+
+    if(!hasBetCommands) {
+        await createUserCommand(userId, true, '!startbet', 'Die Wetten sind offen, es kann nun mit “{BET_COMMAND} a” oder “{BET_COMMAND} b” abgestimmt werden', 'betting_streamer');
+        await createUserCommand(userId, true, '!winner', 'Der Gewinner der Wetter wurde auf Team {WINNER} festgelegt.', 'betting_streamer');
+        await createUserCommand(userId, true, '!bet', '', 'betting_user', true, false);
+        await createUserCommand(userId, true, '!toplist', 'Die aktuelle Toplist ist: {TOPLIST_STATS}', 'betting_user');
+        await createUserCommand(userId, true, '!betstats', '{USER}, du hast aktuell {USER_BETS_CORRECT} von {USER_BETS_TOTAL} Wetten korrekt.', 'betting_user');
+    }
+
 }

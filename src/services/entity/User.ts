@@ -5,6 +5,8 @@ import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
 import { createInstance, deleteInstance } from "../twitchChat";
 import dayjs from 'dayjs';
+import { getUserBetSeasons } from "./BetSeasons";
+import { createBetCommands } from "./Command";
 
 type UserResponse = User & RowDataPacket & OkPacket;
 
@@ -258,6 +260,12 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
 
     if(data.hasOwnProperty('useBets')) {
         await conn.execute('UPDATE user SET use_bets=? WHERE id=?', [data.useBets, userId]);
+        if(data.useBets) {
+            const userSeasons = await getUserBetSeasons(userId);
+            if(! userSeasons.length) {
+                await createBetCommands(userId);
+            }
+        }
     }
 
     await conn.end();
