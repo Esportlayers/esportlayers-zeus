@@ -10,7 +10,7 @@ export interface User {
     gsiAuth: string;
     dotaStatsFrom: string;
     useBets: boolean;
-    seasonId: number | null;
+    betSeasonId: number | null;
 }
 
 export interface SteamConnection {

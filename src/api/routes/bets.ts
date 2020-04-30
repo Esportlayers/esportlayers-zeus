@@ -10,7 +10,7 @@ export default (app: Router) => {
 
   route.post('/', reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
-    await createBetRound(user.id, user.seasonId);
+    await createBetRound(user.id, user.betSeasonId);
     return res.json(undefined).status(201);
   });
 

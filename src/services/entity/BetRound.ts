@@ -5,9 +5,9 @@ import { requireWatcher } from "./Watcher";
 
 async function getRound(userId: number): Promise<number> {
     const user = await loadUserById(userId);
-    if(user && user.seasonId) {
+    if(user && user.betSeasonId) {
         const conn = await getConn();
-        const [roundRows] = await conn.execute<Array<{round: number} & RowDataPacket>>('SELECT round FROM bet_rounds WHERE bet_season_id = ? ORDER BY round DESC LIMIT 1', [user.seasonId]);
+        const [roundRows] = await conn.execute<Array<{round: number} & RowDataPacket>>('SELECT round FROM bet_rounds WHERE bet_season_id = ? ORDER BY round DESC LIMIT 1', [user.betSeasonId]);
         await conn.end();
 
         return roundRows.length > 0 ? roundRows[0].round : 0;
