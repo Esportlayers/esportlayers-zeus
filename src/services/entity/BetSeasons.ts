@@ -1,7 +1,7 @@
 import { getConn } from "../../loader/db";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { v4 } from "uuid";
-import { BetInvite, BetSeason, rolePrio } from "../../@types/Entities/BetSeason";
+import { BetInvite, BetSeason, rolePrio, ToplistEntry } from "../../@types/Entities/BetSeason";
 
 export async function getBetSeason(id: number): Promise<BetSeason | null> {
     const conn = await getConn();
@@ -155,4 +155,23 @@ export async function deleteUserBetSeason(betSeasonId: number, userId: number): 
     await conn.execute('DELETE FROM bet_season_invites WHERE user_id=? AND bet_season_id=?', [userId, betSeasonId]);
     await conn.end();
 
+}
+
+export async function seasonTopList(betSeasonId: number): Promise<ToplistEntry[]> {
+    const conn = await getConn();
+    const [toplist] = await conn.execute<Array<ToplistEntry & RowDataPacket>>(`
+        SELECT 
+            w.display_name as name,
+            w.username as username,
+            SUM(IF(b.bet = br.result, 1, 0)) as won,
+            COUNT(b.id) as total
+       FROM bets b
+ INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? AND br.status = 'finished'
+ INNER JOIN watchers w on b.watcher_id = w.id
+   GROUP BY b.watcher_id
+   ORDER BY won DESC, total
+`, [betSeasonId]);
+    await conn.end();
+
+    return toplist;
 }

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { User } from '../../@types/Entities/User';
-import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers } from '../../services/entity/BetSeasons';
+import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers, seasonTopList } from '../../services/entity/BetSeasons';
 import { requireBetSeasonAccess } from '../../middleware/requireBetSeasonAccess';
 import { getBetSeasonRounds } from '../../services/entity/BetRound';
 const route = Router();
@@ -29,9 +29,14 @@ export default (app: Router) => {
     return res.json(invites).status(200);
   });
 
-  route.get('/users/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
+  route.get('/users/:seasonId', reuqireAuthorization, requireBetSeasonAccess('user'), async (req: Request, res: Response) => {
     const users = await listUsers(+req.params.seasonId);
     return res.json(users).status(200);
+  });
+
+  route.get('/toplist/:seasonId', reuqireAuthorization, requireBetSeasonAccess('user'), async (req: Request, res: Response) => {
+    const toplist = await seasonTopList(+req.params.seasonId);
+    return res.json(toplist).status(200);
   });
 
   route.post('/invite/create/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
@@ -54,7 +59,7 @@ export default (app: Router) => {
     return res.json(undefined).status(204);
   });
 
-  route.patch('/:seasonId', reuqireAuthorization, requireBetSeasonAccess('editor'), async (req: Request, res: Response) => {
+  route.patch('/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     await patchUserBetSeason(+req.params.seasonId, req.body);
     return res.json(undefined).status(204);
   });

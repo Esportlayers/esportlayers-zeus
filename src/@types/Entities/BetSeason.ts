@@ -19,3 +19,10 @@ export interface BetInvite {
     created: number;
     status: 'open' | 'accepted' | 'denied';
 }
+
+export interface ToplistEntry {
+    name: string;
+    username: string;
+    won: number;
+    total: number;
+}
