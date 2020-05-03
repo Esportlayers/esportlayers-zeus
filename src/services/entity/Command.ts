@@ -41,8 +41,8 @@ export async function createBetCommands(userId: number): Promise<void> {
     const hasBetCommands = userCommands.filter(({type}) => type === 'betting_streamer' || type === 'betting_user').length > 0;
 
     if(!hasBetCommands) {
-        await createUserCommand(userId, true, '!startbet', 'Die Wetten sind offen, es kann nun mit “{BET_COMMAND} a” oder “{BET_COMMAND} b” abgestimmt werden', 'betting_streamer');
-        await createUserCommand(userId, true, '!winner', 'Der Gewinner der Wetter wurde auf Team {WINNER} festgelegt.', 'betting_streamer');
+        await createUserCommand(userId, true, '!startbet', 'Die Wetten sind offen, es kann nun mit “{BET_COMMAND} a” oder “{BET_COMMAND} b” abgestimmt werden', 'betting_streamer', false, false);
+        await createUserCommand(userId, true, '!winner', 'Der Gewinner der Wetter wurde auf Team {WINNER} festgelegt.', 'betting_streamer', false, false);
         await createUserCommand(userId, true, '!bet', '', 'betting_user', true, false);
         await createUserCommand(userId, true, '!toplist', 'Die aktuelle Toplist ist: {TOPLIST_STATS}', 'betting_user');
         await createUserCommand(userId, true, '!betstats', '{USER}, du hast aktuell {USER_BETS_CORRECT} von {USER_BETS_TOTAL} Wetten korrekt.', 'betting_user');

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
-import { createBetRound, patchBetRound } from '../../services/entity/BetRound';
+import { createBetRound, patchBetRound, deleteBetRound } from '../../services/entity/BetRound';
 import { User } from '../../@types/Entities/User';
 import { requireBetRoundAccess } from '../../middleware/requireBetSeasonAccess';
 const route = Router();
@@ -16,6 +16,11 @@ export default (app: Router) => {
 
   route.patch('/:roundId', reuqireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
     await patchBetRound(+req.params.roundId, req.body);
+    return res.json(undefined).status(204);
+  });
+
+  route.delete('/:roundId', reuqireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
+    await deleteBetRound(+req.params.roundId);
     return res.json(undefined).status(204);
   });
 };
