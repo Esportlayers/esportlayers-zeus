@@ -38,7 +38,7 @@ export async function streamFile(type: FileTypes = 'userAvatar', url: string, id
     }
     if(!relativePath.endsWith('.jp2')) {
         await new Promise((resolve) => {
-            imagemagick.convert([path, '-quality', '0', __dirname + '/../..' + fileHash + '.jp2'], () => resolve());
+            imagemagick.convert([path, '-quality', '0', __dirname + '/../..' + fileHash + '.jp2'], resolve);
         });
     }
 

@@ -36,9 +36,26 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
     return user!;
 }
 
+const userQry = `
+SELECT 
+    id, 
+    twitch_id as twitchId,
+    display_name as displayName, 
+    avatar, 
+    avatar_webp as avatarWEBP, 
+    avatar_jp2 as avatarJP2, 
+    profile_url as profileUrl, 
+    gsi_auth as gsiAuth, 
+    frame_api_key as frameApiKey, 
+    dota_stats_from as dotaStatsFrom, 
+    bet_season_id as betSeasonId, 
+    gsi_connected as gsiConnected, 
+    use_bets as useBets 
+FROM user`;
+
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey, dota_stats_from as dotaStatsFrom, bet_season_id as betSeasonId, gsi_connected as gsiConnected, use_bets as useBets FROM user WHERE twitch_id = ?;', [twitchId]);
+    const [userRows] = await conn.query<UserResponse[]>(`${userQry} WHERE twitch_id = ?;`, [twitchId]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -51,7 +68,7 @@ export async function loadUserByTwitchId(twitchId: number): Promise<User | null>
 
 export async function loadUserById(id: number): Promise<User | null> {
     const conn = await getConn();
-    const [userRows] = await conn.query<UserResponse[]>('SELECT id, twitch_id as twitchId, display_name as displayName, avatar, avatar_webp as avatarWEBP, avatar_jp2 as avatarJP2, profile_url as profileUrl, gsi_auth as gsiAuth, frame_api_key as frameApiKey, dota_stats_from as dotaStatsFrom, bet_season_id as betSeasonId, gsi_connected as gsiConnected, use_bets as useBets FROM user WHERE id = ?;', [id]);
+    const [userRows] = await conn.query<UserResponse[]>(`${userQry} WHERE id = ?;`, [id]);
     let user = null;
     
     if(userRows.length === 1) {
@@ -100,7 +117,6 @@ export async function resetDotaGsi(userId: number): Promise<void> {
     const conn = await getConn();
     await conn.query('UPDATE user SET gsi_auth="", gsi_connected=FALSE WHERE id=?;', [userId]);
     await conn.end();
-
 }
 
 export async function getUserByFrameApiKey(key: string): Promise<{id: number; displayName: string} | void> {

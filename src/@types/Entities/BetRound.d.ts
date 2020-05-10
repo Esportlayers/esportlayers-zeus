@@ -2,9 +2,10 @@ export interface BetRound {
     id: number;
     betSeason: number;
     round: number;
-    status: string;
+    status: 'betting' | 'running' | 'finished';
     result: string;
     userId: number;
+    created: number;
 }
 
 

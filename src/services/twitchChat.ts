@@ -1,12 +1,11 @@
 import {ChatUserstate} from 'tmi.js';
 import config from '../config';
 import { getDeaultChannels, getCustomBots, getChannelCommands, loadUserById, getUserByTrustedChannel, loadStats } from './entity/User';
-import { createBetRound, createBet } from './entity/BetRound';
-import { cyan, red, green, grey } from 'chalk';
+import { processCommands } from './betting/chatCommands';
 const tmi = require('tmi.js');
 
 const defaultConfig = {
-	options: { debug: true },
+	options: { debug: false },
 	connection: {
 		reconnect: true,
 		secure: true
@@ -74,25 +73,7 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 		publish(channel, msg);
 	}
 
-	if(message === '!startbet' && tags.badges?.broadcaster) {
-		const {id} = await getUserByTrustedChannel(channel);
-		const {betSeasonId} = (await loadUserById(id))!;
-		await createBetRound(id, betSeasonId);
-		console.log(cyan(`-- Bets started --`))
-	}
-
-	if(message.startsWith('!bet') &&  message.length === 6) {
-		const bet = message.substr(5, 1).toLowerCase();
-		const {id} = await getUserByTrustedChannel(channel);
-		await createBet(id, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
-		if(bet === 'a') {
-			console.log(red(tags["display-name"]! + ' bets on A'));
-		} else if(bet === 'b') {
-			console.log(green(tags["display-name"]! + ' bets on B'));
-		} else {
-			console.log(grey(tags["display-name"]! + ' invalid bet on ' + bet));
-		}
-	}
+	processCommands(channel, tags, message);
 }
 
 connect();

@@ -3,6 +3,7 @@ import { getConn } from "../../loader/db";
 import { RowDataPacket } from "mysql2";
 import { requireWatcher } from "./Watcher";
 import { BetRound, BetRoundStats } from "../../@types/Entities/BetRound";
+import { updateBetState } from "../betting/chatCommands";
 
 async function getRound(userId: number): Promise<number> {
     const user = await loadUserById(userId);
@@ -17,11 +18,11 @@ async function getRound(userId: number): Promise<number> {
     return 0;
 }
 
-async function getRoundId(userId: number): Promise<number> {
+export async function getRoundId(userId: number): Promise<number> {
     const user = await loadUserById(userId);
     if(user && user.betSeasonId) {
         const conn = await getConn();
-        const [roundRows] = await conn.execute<Array<{id: number} & RowDataPacket>>('SELECT id FROM bet_rounds WHERE bet_season_id = ? ORDER BY round DESC LIMIT 1', [user.betSeasonId]);
+        const [roundRows] = await conn.execute<Array<{id: number} & RowDataPacket>>('SELECT id FROM bet_rounds WHERE bet_season_id = ? AND user_id = ? ORDER BY round DESC LIMIT 1', [user.betSeasonId, userId]);
         await conn.end();
 
         return roundRows.length > 0 ? roundRows[0].id : 0;
@@ -30,9 +31,29 @@ async function getRoundId(userId: number): Promise<number> {
     return 0;
 }
 
-export async function getRoundById(roundId: number): Promise<BetRound | null> {
+interface DecoratedBetRound extends BetRound {
+    created: number;
+    bets: number;
+    aBets: string;
+    bBets: string;
+}
+
+export async function getRoundById(roundId: number): Promise<DecoratedBetRound | null> {
     const conn = await getConn();
-    const [rows] = await conn.execute<Array<BetRound & RowDataPacket>>('SELECT id, bet_season_id as betSeason, round, status, result FROM bet_rounds WHERE id = ?', [roundId]);
+    const [rows] = await conn.execute<Array<DecoratedBetRound & RowDataPacket>>(`
+        SELECT br.id, 
+               br.bet_season_id as betSeason, 
+               br.round, 
+               br.status, 
+               br.result,
+               UNIX_TIMESTAMP(br.created) as created,
+               COUNT(b.id) as bets,
+               SUM(IF(b.bet = 'a', 1, 0)) as aBets,
+               SUM(IF(b.bet = 'b', 1, 0)) as bBets
+        FROM bet_rounds br
+   LEFT JOIN bets b ON b.bet_round_id = br.id
+       WHERE br.id = ? 
+    GROUP BY br.id`, [roundId]);
     await conn.end();
 
     return rows.length > 0 ? rows[0] : null;
@@ -67,7 +88,7 @@ export async function getBetSeasonRounds(seasonId: number): Promise<BetRoundStat
     return rows;
 }
 
-export async function createBetRound(userId: number, seasonId: number | null): Promise<void> {
+export async function createBetRound(userId: number, seasonId: number | null, notify: boolean = false): Promise<void> {
     if(seasonId) {
         const conn = await getConn();
         const round = (await getRound(userId)) + 1;
@@ -75,7 +96,11 @@ export async function createBetRound(userId: number, seasonId: number | null): P
             'INSERT INTO bet_rounds (id, bet_season_id, user_id, round, created, status, result) VALUES (NULL, ?, ?, ?, NOW(), ?, "")', 
             [seasonId, userId, round, 'betting']
         );
-        await conn.end();
+        await conn.end();    
+    }
+    
+    if(notify) {
+        await updateBetState(userId, true);
     }
 }
 
@@ -84,8 +109,8 @@ interface PatchableData {
     result: string;
 }
 
-export async function patchBetRound(roundId: number, data: Partial<PatchableData>): Promise<void> {
-    const conn = await getConn();
+export async function patchBetRound(roundId: number, data: Partial<PatchableData>, notify: boolean = false, userId: number | null = null): Promise<void> {
+const conn = await getConn();
 
     if(data.result) {
         await conn.execute('UPDATE bet_rounds SET result=? WHERE id=?', [data.result, roundId]);
@@ -96,6 +121,10 @@ export async function patchBetRound(roundId: number, data: Partial<PatchableData
     }
 
     await conn.end();
+
+    if(notify) {
+        await updateBetState(userId!);
+    }
 }
 
 export async function deleteBetRound(roundId: number): Promise<void> {
