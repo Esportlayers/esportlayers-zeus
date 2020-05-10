@@ -1,5 +1,6 @@
 import api from 'twitch-api-v5';
 import config from '../config';
+import fetch from 'node-fetch';
 
 api.clientID = config.twitch.clientId;
 
@@ -65,3 +66,9 @@ export async function fetchUserStream(channelID: string): Promise<Stream> {
     });
 }
 
+export async function fetchChatterCount(channel: string): Promise<number> {
+    const data = await fetch(`https://tmi.twitch.tv/group/user/${channel}/chatters`);
+    const {chatter_count} = await data.json();
+
+    return chatter_count ?? 0;
+}

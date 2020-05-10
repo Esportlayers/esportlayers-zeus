@@ -4,6 +4,7 @@ import { RowDataPacket } from "mysql2";
 import { requireWatcher } from "./Watcher";
 import { BetRound, BetRoundStats } from "../../@types/Entities/BetRound";
 import { updateBetState } from "../betting/chatCommands";
+import { fetchChatterCount } from "../twitchApi";
 
 async function getRound(userId: number): Promise<number> {
     const user = await loadUserById(userId);
@@ -46,6 +47,7 @@ export async function getRoundById(roundId: number): Promise<DecoratedBetRound |
                br.round, 
                br.status, 
                br.result,
+               br.chatters as chatters,
                UNIX_TIMESTAMP(br.created) as created,
                COUNT(b.id) as bets,
                SUM(IF(b.bet = 'a', 1, 0)) as aBets,
@@ -69,6 +71,7 @@ export async function getBetSeasonRounds(seasonId: number): Promise<BetRoundStat
             br.status, 
             br.result, 
             br.user_id as userId,
+            br.chatters as chatters,
             u.display_name as displayName,
             UNIX_TIMESTAMP(br.created) as created,
             COUNT(b.id) as total,
@@ -92,9 +95,12 @@ export async function createBetRound(userId: number, seasonId: number | null, no
     if(seasonId) {
         const conn = await getConn();
         const round = (await getRound(userId)) + 1;
+        const {displayName} = (await loadUserById(userId))!;
+        const chatters = await fetchChatterCount(displayName);
+
         await conn.execute(
-            'INSERT INTO bet_rounds (id, bet_season_id, user_id, round, created, status, result) VALUES (NULL, ?, ?, ?, NOW(), ?, "")', 
-            [seasonId, userId, round, 'betting']
+            'INSERT INTO bet_rounds (id, bet_season_id, user_id, round, created, status, result, chatters) VALUES (NULL, ?, ?, ?, NOW(), ?, "", ?)', 
+            [seasonId, userId, round, 'betting', chatters]
         );
         await conn.end();    
     }

@@ -6,6 +6,7 @@ export interface BetRound {
     result: string;
     userId: number;
     created: number;
+    chatters: number;
 }
 
 

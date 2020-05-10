@@ -5,6 +5,7 @@ import { cyan, red, green, grey } from "chalk";
 import { User } from "../../@types/Entities/User";
 import dayjs from "dayjs";
 import { sendMessage } from "../websocket";
+import { fetchChatterCount } from "../twitchApi";
 
 
 function isBetCommand(_channel: string, message: string): boolean {
@@ -20,6 +21,7 @@ interface CurrentBetRound {
     bets: number;
     aBets: number;
     bBets: number;
+    chatters: number;
 }
 
 const userBetting = new Map<string, CurrentBetRound>();
@@ -44,10 +46,10 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
     if(! userBetting.has(channel)) {
         const roundId = await getRoundId(user.id);
         if(roundId !== 0) {
-            const {status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
-            userBetting.set(channel, {status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)})
+            const {chatters, status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
+            userBetting.set(channel, {chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)})
         } else {
-            userBetting.set(channel, {status: 'finished', created: 0, result: '', bets: 0, aBets: 0, bBets: 0});
+            userBetting.set(channel, {chatters: 0, status: 'finished', created: 0, result: '', bets: 0, aBets: 0, bBets: 0});
         }
     }
 
@@ -87,8 +89,8 @@ export async function updateBetState(userId: number, started: boolean = false): 
     }
 
     const roundId = await getRoundId(user.id);
-    const {status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
-    userBetting.set(channel, {status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
+    const {chatters, status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
+    userBetting.set(channel, {chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
     if(started) {
         startBet(channel, userId, false);
     }
@@ -97,13 +99,15 @@ export async function updateBetState(userId: number, started: boolean = false): 
 
 export async function startBet(channel: string, userId: number, reset: boolean = true): Promise<void> {
     const currentRound = userBetting.get(channel)!;
-    if(true) {
+    if(reset) {
+        const chatters = await fetchChatterCount(channel.substring(1));
         currentRound.status = 'betting';
         currentRound.created = dayjs().unix();
         currentRound.result = '';
         currentRound.bets = 0;
         currentRound.aBets = 0;
         currentRound.bBets = 0;
+        currentRound.chatters = chatters;
     }
     console.log(cyan(`-- Bets started --`))
 
@@ -113,5 +117,5 @@ export async function startBet(channel: string, userId: number, reset: boolean =
         await patchBetRound(roundId, {status: 'running'});
         sendMessage(userId, 'betting', currentRound);
         console.log(cyan(`-- Bets finished, game runnning --`));
-    }, 90000);
+    }, 100000);
 }
