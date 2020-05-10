@@ -56,7 +56,7 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
     const currentRound = userBetting.get(channel)!;
 
     if(message === '!startbet' && tags.badges?.broadcaster && currentRound.status === 'finished') {
-        startBet(channel, user.id);
+        await startBet(channel, user.id);
         await createBetRound(user.id, user.betSeasonId);
         sendMessage(user.id, 'betting', currentRound);
 	}
@@ -92,7 +92,7 @@ export async function updateBetState(userId: number, started: boolean = false): 
     const {chatters, status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
     userBetting.set(channel, {chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
     if(started) {
-        startBet(channel, userId, false);
+        await startBet(channel, userId, false);
     }
     sendMessage(user.id, 'betting', userBetting.get(channel)!);
 }
