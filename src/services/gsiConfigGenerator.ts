@@ -1,8 +1,8 @@
 import fs from 'fs';
 
-const configTemplate = `"streamdota.de dota-gsi Configuration"
+const configTemplate = `"streamdota.com dota-gsi Configuration"
 {
-    "uri"               "https://api.streamdota.de/dota-gsi"
+    "uri"               "https://api.streamdota.com/dota-gsi"
     "timeout"           "5.0"
     "buffer"            "0.1"
     "throttle"          "0.1"

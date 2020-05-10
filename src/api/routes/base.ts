@@ -5,6 +5,6 @@ export default (app: Router) => {
   app.use('/', route);
 
   route.get('/', (req: Request, res: Response) => {
-    return res.json({ msg: 'Welcome to streamdota.de api' }).status(200);
+    return res.json({ msg: 'Welcome to streamdota.com api' }).status(200);
   });
 };
