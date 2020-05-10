@@ -147,5 +147,9 @@ export async function clearUserCommandsChache(userId: number): Promise<void> {
 }
 
 export function getChannels(): string[] {
-	return [...client.getChannels(), ...customInstances.keys()];
+	if(client) {
+		return [...client.getChannels(), ...customInstances.keys()];
+	}
+
+	return [];
 }
