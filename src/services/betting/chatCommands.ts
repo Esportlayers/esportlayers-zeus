@@ -2,15 +2,12 @@ import { ChatUserstate } from "tmi.js";
 import { getUserByTrustedChannel, loadUserById } from "../entity/User";
 import { createBetRound, createBet, getRoundId, getRoundById, patchBetRound } from "../entity/BetRound";
 import { cyan, red, green, grey } from "chalk";
-import { User } from "../../@types/Entities/User";
+import { User, Command } from "../../@types/Entities/User";
 import dayjs from "dayjs";
 import { sendMessage } from "../websocket";
 import { fetchChatterCount } from "../twitchApi";
-
-
-function isBetCommand(_channel: string, message: string): boolean {
-    return message === '!startbet' || message.startsWith('!bet');
-}
+import { getUserCommands } from "../entity/Command";
+import { publish } from "../twitchChat";
 
 const channeUserCache = new Map<string, User>();
 
@@ -25,11 +22,22 @@ interface CurrentBetRound {
 }
 
 const userBetting = new Map<string, CurrentBetRound>();
+const userCommandCache = new Map<string, Command[]>();
+
+async function getBettingCommands(userId: number, channel: string): Promise<{startBet: Command, bet: Command}> {
+    if(!userCommandCache.has(channel)) {
+        const commands = await getUserCommands(userId);
+        userCommandCache.set(channel, commands.filter(({type}) => type === 'betting_user' || type === 'betting_streamer'));
+    }
+
+    const userCommands = userCommandCache.get(channel);
+    const startBet = userCommands?.find(({identifier}) => identifier === 'startbet')!;
+    const bet = userCommands?.find(({identifier}) => identifier === 'bet')!;
+
+    return {startBet, bet};
+}
 
 export async function processCommands(channel: string, tags: ChatUserstate, message: string): Promise<void> {
-    if(! isBetCommand(channel, message)) {
-        return;
-    }
 
     if(!channeUserCache.has(channel)) {
 		const {id} = await getUserByTrustedChannel(channel);
@@ -40,6 +48,16 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
     const user = channeUserCache.get(channel);
 
     if(! user?.useBets) {
+        return;
+    }
+
+    const {startBet: startBetCommand, bet: betCommand} = await getBettingCommands(user.id, channel);
+
+    if(!startBetCommand || !betCommand) {
+        return;
+    }
+
+    if(message !== startBetCommand?.command && !betCommand.command.startsWith(message)) {
         return;
     }
 
@@ -55,14 +73,14 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
 
     const currentRound = userBetting.get(channel)!;
 
-    if(message === '!startbet' && tags.badges?.broadcaster && currentRound.status === 'finished') {
+    if(message === startBetCommand.command && startBetCommand.active && (tags.badges?.broadcaster || tags.username === 'griefcode') && currentRound.status === 'finished' ) {
         await startBet(channel, user.id);
         await createBetRound(user.id, user.betSeasonId);
         sendMessage(user.id, 'betting', currentRound);
 	}
 
-	if(message.startsWith('!bet') &&  message.length === 6 && currentRound.status === 'betting') {
-		const bet = message.substr(5, 1).toLowerCase();
+	if(message.startsWith(betCommand.command || '') && betCommand.active &&  betCommand.command.length + 2 === message.length && currentRound.status === 'betting') {
+		const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
 		await createBet(user.id, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
 		if(bet === 'a') {
             currentRound.bets = currentRound.bets + 1;
@@ -109,7 +127,11 @@ export async function startBet(channel: string, userId: number, reset: boolean =
         currentRound.bBets = 0;
         currentRound.chatters = chatters;
     }
-    console.log(cyan(`-- Bets started --`))
+    console.log(cyan(`-- Bets started --`));
+
+    const {startBet: startBetCommand, bet: betCommand} = await getBettingCommands(userId, channel);
+    const message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
+    await publish(channel, message);
 
     setTimeout(async () => {
         currentRound.status = 'running';

@@ -252,16 +252,16 @@ function replaceTrustedPlaceholder(msg: string, uptime: number | null): string {
     return fullMsg;
 }
 
-export async function getChannelCommands(channel: string): Promise<{[x: string]: string}> {
+export async function getChannelCommands(channel: string, types: Command['type'][]): Promise<{[x: string]: string}> {
     const conn = await getConn();
     const user = await getUserByTrustedChannel(channel);
-    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message FROM bot_commands WHERE user_id = ? AND active = TRUE', [user.id]);
+    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message, type FROM bot_commands WHERE user_id = ? AND active = TRUE', [user.id]);
     await conn.end();
 
     const onlineSince = await getOnlineSince(user.id);
     const uptime = onlineSince && dayjs().unix() - onlineSince;
 
-    return commandRows.reduce<{[x: string]: string}>((acc, {command, message}) => {
+    return commandRows.filter(({type}) => types.includes(type)).reduce<{[x: string]: string}>((acc, {command, message}) => {
         acc[command] = replaceTrustedPlaceholder(message, uptime);
         return acc;
     }, {});

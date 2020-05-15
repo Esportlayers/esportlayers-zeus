@@ -63,7 +63,7 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 	if(self) return;
 
 	if(!commandsCache.has(channel)) {
-		const commands = await getChannelCommands(channel);
+		const commands = await getChannelCommands(channel, ['default', 'dotaWL']);
 		commandsCache.set(channel, commands);
 	}
 
