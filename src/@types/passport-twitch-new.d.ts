@@ -8,6 +8,7 @@ declare module 'passport-twitch-new' {
         scope: string;
         authorizationURL?: string;
         tokenURL?: string;
+        customHeaders: object;
     }
 
 

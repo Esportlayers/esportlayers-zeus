@@ -10,7 +10,10 @@ export default async ({ app, passport }: { app: express.Application, passport: P
         callbackURL: config.twitch.callbackURL,
         clientID: config.twitch.clientId,
         clientSecret: config.twitch.clientSecret,
-        scope: ""
+        scope: "",
+        customHeaders: {
+            'client-id': config.twitch.clientId,
+        },
     },
     async (accessToken, refreshToken, profile, done) => {
         let error = null;
