@@ -24,7 +24,7 @@ interface CurrentBetRound {
 const userBetting = new Map<string, CurrentBetRound>();
 const userCommandCache = new Map<string, Command[]>();
 
-async function getBettingCommands(userId: number, channel: string): Promise<{startBet: Command, bet: Command}> {
+async function getBettingCommands(userId: number, channel: string): Promise<{startBet: Command, bet: Command, winner: Command}> {
     if(!userCommandCache.has(channel)) {
         const commands = await getUserCommands(userId);
         userCommandCache.set(channel, commands.filter(({type}) => type === 'betting_user' || type === 'betting_streamer'));
@@ -33,8 +33,9 @@ async function getBettingCommands(userId: number, channel: string): Promise<{sta
     const userCommands = userCommandCache.get(channel);
     const startBet = userCommands?.find(({identifier}) => identifier === 'startbet')!;
     const bet = userCommands?.find(({identifier}) => identifier === 'bet')!;
+    const winner = userCommands?.find(({identifier}) => identifier === 'betwinner')!;
 
-    return {startBet, bet};
+    return {startBet, bet, winner};
 }
 
 export async function processCommands(channel: string, tags: ChatUserstate, message: string): Promise<void> {
@@ -51,13 +52,13 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         return;
     }
 
-    const {startBet: startBetCommand, bet: betCommand} = await getBettingCommands(user.id, channel);
+    const {startBet: startBetCommand, bet: betCommand, winner: winnerCommand} = await getBettingCommands(user.id, channel);
 
-    if(!startBetCommand || !betCommand) {
+    if(!startBetCommand || !betCommand || !winnerCommand) {
         return;
     }
 
-    if(message !== startBetCommand?.command && !betCommand.command.startsWith(message)) {
+    if(message !== startBetCommand.command && !message.startsWith(betCommand.command) && !message.startsWith(winnerCommand.command)) {
         return;
     }
 
@@ -77,9 +78,11 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         await startBet(channel, user.id);
         await createBetRound(user.id, user.betSeasonId);
         sendMessage(user.id, 'betting', currentRound);
-	}
-
-	if(message.startsWith(betCommand.command || '') && betCommand.active &&  betCommand.command.length + 2 === message.length && currentRound.status === 'betting') {
+    } else if(message.startsWith(winnerCommand.command || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && (tags.badges?.broadcaster || tags.username === 'griefcode') && currentRound.status === 'running' ) {
+        const result = message.substr(betCommand.command.length + 1, 1).toLowerCase();
+        const betRoundId = await getRoundId(user.id);
+        await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
+	} else if(message.startsWith(betCommand.command || '') && betCommand.active &&  betCommand.command.length + 2 === message.length && currentRound.status === 'betting') {
 		const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
 		await createBet(user.id, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
 		if(bet === 'a') {
@@ -98,7 +101,7 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
 	}
 }
 
-export async function updateBetState(userId: number, started: boolean = false): Promise<void> {
+export async function updateBetState(userId: number, started: boolean = false, finished: boolean = false): Promise<void> {
     const user = (await loadUserById(userId))!;
     const channel = '#' + user.displayName;
 
@@ -113,6 +116,12 @@ export async function updateBetState(userId: number, started: boolean = false): 
         await startBet(channel, userId, false);
     }
     sendMessage(user.id, 'betting', userBetting.get(channel)!);
+
+    if(finished) {
+        const {winner: winnerCommand} = await getBettingCommands(user.id, channel);
+        const msg = winnerCommand.message.replace(/\{WINNER\}/g, result.toUpperCase());
+        await publish(channel, msg);
+    }
 }
 
 export async function startBet(channel: string, userId: number, reset: boolean = true): Promise<void> {

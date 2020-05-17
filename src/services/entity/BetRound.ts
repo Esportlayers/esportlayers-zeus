@@ -129,7 +129,7 @@ const conn = await getConn();
     await conn.end();
 
     if(notify) {
-        await updateBetState(userId!);
+        await updateBetState(userId!, false, data?.status === 'finished');
     }
 }
 
