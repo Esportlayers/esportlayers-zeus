@@ -24,7 +24,8 @@ export let WebsocketInstance: expressWs.Instance;
 
 async function startServer() {
     const app = express();
-    if(config.sentryDSN.length > 0) {
+    const useSentryDsn = config.sentryDSN.length > 0;
+    if(useSentryDsn) {
         Sentry.init({ dsn: config.sentryDSN });
         console.log(green(`🐞 Registered sentry`));
         app.use(Sentry.Handlers.requestHandler({request: true, user: ['id', 'twitchId', 'displayName']}));
@@ -32,10 +33,8 @@ async function startServer() {
     const server  = config.server.secure ? https.createServer({key, cert, ca}, app) : http.createServer(app);
     WebsocketInstance = expressWs(app, server);
     await require('./loader').default({app, passport});
-    if(config.sentryDSN.length > 0) {
-        app.use(Sentry.Handlers.errorHandler({
-            shouldHandleError: (error) => error.status === 500,
-        }));
+    if(useSentryDsn) {
+        app.use(Sentry.Handlers.errorHandler());
     }
     server.listen(config.port, () => {
         console.log(green(`API started on: ${config.port}`));
