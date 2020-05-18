@@ -38,4 +38,5 @@ export default {
     defaultBotIdentity: process.env.TWITCH_BOT_IDENTITY_NAME || '',
     defaultBotToken: process.env.TWITCH_BOT_IDENTITY_TOKEN || '',
   },
+  sentryDSN: process.env.SENTRY_DSN || '',
 }

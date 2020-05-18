@@ -8,6 +8,7 @@ import passport from 'passport';
 import expressWs from 'express-ws';
 import './tasks';
 import './services/twitchChat';
+import * as Sentry from '@sentry/node';
 
 let key: string;
 let cert: string;
@@ -23,9 +24,19 @@ export let WebsocketInstance: expressWs.Instance;
 
 async function startServer() {
     const app = express();
+    if(config.sentryDSN.length > 0) {
+        Sentry.init({ dsn: config.sentryDSN });
+        console.log(green(`🐞 Registered sentry`));
+        app.use(Sentry.Handlers.requestHandler({request: true, user: ['id', 'twitchId', 'displayName']}));
+    }
     const server  = config.server.secure ? https.createServer({key, cert, ca}, app) : http.createServer(app);
     WebsocketInstance = expressWs(app, server);
     await require('./loader').default({app, passport});
+    if(config.sentryDSN.length > 0) {
+        app.use(Sentry.Handlers.errorHandler({
+            shouldHandleError: (error) => error.status === 500,
+        }));
+    }
     server.listen(config.port, () => {
         console.log(green(`API started on: ${config.port}`));
     });
