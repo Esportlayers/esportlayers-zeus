@@ -175,3 +175,19 @@ export async function seasonTopList(betSeasonId: number): Promise<ToplistEntry[]
 
     return toplist;
 }
+
+export async function getUserSeasonStats(username: string, betSeasonId: number): Promise<{won: number; total: number;}> {
+    const conn = await getConn();
+    const [toplist] = await conn.execute<Array<ToplistEntry & RowDataPacket>>(`
+        SELECT 
+            SUM(IF(b.bet = br.result, 1, 0)) as won,
+            COUNT(b.id) as total
+       FROM bets b
+ INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? AND br.status = 'finished'
+ INNER JOIN watchers w on b.watcher_id = w.id AND w.username = ?
+`, [betSeasonId, username]);
+    await conn.end();
+
+    return toplist.length > 0 ? {won: toplist[0].won ?? 0, total: toplist[0].total} : {won: 0, total: 0};
+
+}

@@ -1,7 +1,7 @@
 import {ChatUserstate} from 'tmi.js';
 import config from '../config';
 import { getDeaultChannels, getCustomBots, getChannelCommands, loadUserById, getUserByTrustedChannel, loadStats } from './entity/User';
-import { processCommands } from './betting/chatCommands';
+import { processCommands, clearBettingCommandsCache } from './betting/chatCommands';
 const tmi = require('tmi.js');
 
 const defaultConfig = {
@@ -62,12 +62,12 @@ const commandsCache = new Map();
 async function messageListener(channel: string, tags: ChatUserstate, message: string, self: boolean) {
 	if(self) return;
 
-	if(!commandsCache.has(channel)) {
+	if(!commandsCache.has(channel.toLowerCase())) {
 		const commands = await getChannelCommands(channel, ['default', 'dotaWL']);
-		commandsCache.set(channel, commands);
+		commandsCache.set(channel.toLowerCase(), commands);
 	}
 
-	const channelCommands = commandsCache.get(channel);
+	const channelCommands = commandsCache.get(channel.toLowerCase());
 	if(Object.keys(channelCommands).includes(message.toLowerCase())) {
 		const msg = await replacePlaceholder(channelCommands[message.toLowerCase()], tags, channel)
 		publish(channel, msg);
@@ -125,6 +125,8 @@ export async function clearUserCommandsChache(userId: number): Promise<void> {
 	if(commandsCache.has(fullChannel)) {
 		commandsCache.delete(fullChannel);
 	}
+
+	clearBettingCommandsCache(fullChannel);
 }
 
 export function getChannels(): string[] {
