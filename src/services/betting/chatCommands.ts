@@ -20,6 +20,7 @@ interface CurrentBetRound {
     aBets: number;
     bBets: number;
     chatters: number;
+    betters: string[];
 }
 
 const userBetting = new Map<string, CurrentBetRound>();
@@ -104,9 +105,9 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         const roundId = await getRoundId(user.id);
         if(roundId !== 0) {
             const {chatters, status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
-            userBetting.set(channel.toLowerCase(), {chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)})
+            userBetting.set(channel.toLowerCase(), {betters: [], chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)})
         } else {
-            userBetting.set(channel.toLowerCase(), {chatters: 0, status: 'finished', created: 0, result: '', bets: 0, aBets: 0, bBets: 0});
+            userBetting.set(channel.toLowerCase(), {betters: [], chatters: 0, status: 'finished', created: 0, result: '', bets: 0, aBets: 0, bBets: 0});
         }
     }
 
@@ -120,17 +121,19 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         const result = message.substr(winnerCommand.command.length + 1, 1).toLowerCase();
         const betRoundId = await getRoundId(user.id);
         await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
-	} else if(message.startsWith(betCommand.command || '') && betCommand.active &&  betCommand.command.length + 2 === message.length && currentRound.status === 'betting') {
+    } else if(message.startsWith(betCommand.command || '') && betCommand.active &&  betCommand.command.length + 2 === message.length && currentRound.status === 'betting' &&! currentRound.betters.includes(tags.username!)) {
 		const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
 		await createBet(user.id, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
 		if(bet === 'a') {
             currentRound.bets = currentRound.bets + 1;
             currentRound.aBets = currentRound.aBets + 1;
+            currentRound.betters.push(tags.username!);
             console.log(red(tags["display-name"]! + ' bets on A'));
             sendMessage(user.id, 'betting', currentRound);
 		} else if(bet === 'b') {
             currentRound.bets = currentRound.bets + 1;
             currentRound.bBets = currentRound.bBets + 1;
+            currentRound.betters.push(tags.username!);
 			console.log(green(tags["display-name"]! + ' bets on B'));
             sendMessage(user.id, 'betting', currentRound);
 		} else {
@@ -149,7 +152,7 @@ export async function updateBetState(userId: number, started: boolean = false, f
 
     const roundId = await getRoundId(user.id);
     const {chatters, status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
-    userBetting.set(channel.toLowerCase(), {chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
+    userBetting.set(channel.toLowerCase(), {betters: [], chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
     if(started) {
         await startBet(channel, userId, false);
     }
