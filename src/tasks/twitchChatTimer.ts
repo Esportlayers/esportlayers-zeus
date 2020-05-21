@@ -42,7 +42,9 @@ async function checkTimerUpdates(): Promise<void> {
     }
 }
 
-setInterval(checkTimerUpdates, 20000);
+if(process.env.NODE_ENV !== 'test') {
+    setInterval(checkTimerUpdates, 20000);
+} 
 
 export async function clearChannelCache(userId: number): Promise<void> {
 	const {displayName}  = (await loadUserById(userId))!;

@@ -3,8 +3,8 @@ import { getConn } from "../../loader/db";
 import { RowDataPacket } from "mysql2";
 import { requireWatcher } from "./Watcher";
 import { BetRound, BetRoundStats } from "../../@types/Entities/BetRound";
-import { updateBetState } from "../betting/chatCommands";
 import { fetchChatterCount } from "../twitchApi";
+import { updateBetState } from "../betting/state";
 
 async function getRound(userId: number): Promise<number> {
     const user = await loadUserById(userId);

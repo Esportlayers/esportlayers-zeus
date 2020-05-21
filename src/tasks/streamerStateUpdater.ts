@@ -5,8 +5,6 @@ import grey from 'chalk';
 import { updateStreamerStatus, getStreamerIds } from '../services/entity/StreamerState';
 import config from '../config';
 
-console.log(green('📝 Registered streamer task'));
-
 async function fetchWatchingStreamer(): Promise<string[]> {
     return await getStreamerIds();
 }
@@ -36,6 +34,11 @@ async function startUpdate(): Promise<void> {
     }
 }
 
-interval(async () => startUpdate(), 60000);
 
-startUpdate();
+if(process.env.NODE_ENV !== 'test') {
+    console.log(green('📝 Registered streamer task'));
+    
+    interval(async () => startUpdate(), 60000);
+    
+    startUpdate();
+}
