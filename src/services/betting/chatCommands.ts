@@ -24,7 +24,7 @@ export function clearBettingCommandsCache(channel: string): void {
 	}
 }
 
-async function replaceBetPlaceholder(msg: string, userName: string, seasonId: number): Promise<string> {
+export async function replaceBetPlaceholder(msg: string, userName: string, seasonId: number): Promise<string> {
     let replacedMsg =  msg;
     const toplist = await seasonTopList(seasonId);
     const topListStats = toplist.slice(0, 5).map(({name, won, total}, idx) => `${idx + 1}. ${name} (${won}/${total})`).join('  ');
@@ -41,7 +41,7 @@ async function replaceBetPlaceholder(msg: string, userName: string, seasonId: nu
     return replacedMsg;
 }
 
-async function handleStaticCommands(channel: string, message: string, user: User, userName: string): Promise<boolean> {
+export async function handleStaticCommands(channel: string, message: string, user: User, userName: string): Promise<boolean> {
     const userCommands = await requireUserCommands(channel, user.id);
     const nonFixed = userCommands.filter(({active, identifier}) => !identifier && active)
     .reduce<{[x: string]: string}>((acc, {command, message}) => ({...acc, [command.toLowerCase()]: message}), {});
@@ -62,7 +62,7 @@ export async function getBettingCommands(userId: number, channel: string): Promi
     return {startBet, bet, winner};
 }
 
-async function handleUserBet(message: string, betCommand: Command, tags: ChatUserstate, currentRound: CurrentBetRound, userId: number): Promise<void> {
+export async function handleUserBet(message: string, betCommand: Command, tags: ChatUserstate, currentRound: CurrentBetRound, userId: number): Promise<void> {
     const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
     await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
     if(bet === 'a') {

@@ -7,3 +7,4 @@ static/streamPreview
 .DS_Store
 gsiConfigs/
 log.txt
+coverage/

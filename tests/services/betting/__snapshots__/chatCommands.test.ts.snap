@@ -1,0 +1,159 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getBettingCommands recv 1`] = `
+Object {
+  "bet": Object {
+    "active": true,
+    "command": "!f",
+    "identifier": "bet",
+    "message": "f response",
+    "type": "betting_streamer",
+  },
+  "startBet": Object {
+    "active": true,
+    "command": "!e",
+    "identifier": "startbet",
+    "message": "e response",
+    "type": "betting_streamer",
+  },
+  "winner": Object {
+    "active": true,
+    "command": "!g",
+    "identifier": "betwinner",
+    "message": "g response",
+    "type": "betting_streamer",
+  },
+}
+`;
+
+exports[`requireUserCommands clear of store 1`] = `
+Array [
+  Object {
+    "active": true,
+    "command": "!a",
+    "message": "a response",
+    "type": "betting_user",
+  },
+  Object {
+    "active": false,
+    "command": "!b",
+    "message": "b response",
+    "type": "betting_user",
+  },
+  Object {
+    "active": true,
+    "command": "!c",
+    "message": "c response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!e",
+    "identifier": "startbet",
+    "message": "e response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!f",
+    "identifier": "bet",
+    "message": "f response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!g",
+    "identifier": "betwinner",
+    "message": "g response",
+    "type": "betting_streamer",
+  },
+]
+`;
+
+exports[`requireUserCommands test first call without store 1`] = `
+Array [
+  Object {
+    "active": true,
+    "command": "!a",
+    "message": "a response",
+    "type": "betting_user",
+  },
+  Object {
+    "active": false,
+    "command": "!b",
+    "message": "b response",
+    "type": "betting_user",
+  },
+  Object {
+    "active": true,
+    "command": "!c",
+    "message": "c response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!e",
+    "identifier": "startbet",
+    "message": "e response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!f",
+    "identifier": "bet",
+    "message": "f response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!g",
+    "identifier": "betwinner",
+    "message": "g response",
+    "type": "betting_streamer",
+  },
+]
+`;
+
+exports[`requireUserCommands test second call with store 1`] = `
+Array [
+  Object {
+    "active": true,
+    "command": "!a",
+    "message": "a response",
+    "type": "betting_user",
+  },
+  Object {
+    "active": false,
+    "command": "!b",
+    "message": "b response",
+    "type": "betting_user",
+  },
+  Object {
+    "active": true,
+    "command": "!c",
+    "message": "c response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!e",
+    "identifier": "startbet",
+    "message": "e response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!f",
+    "identifier": "bet",
+    "message": "f response",
+    "type": "betting_streamer",
+  },
+  Object {
+    "active": true,
+    "command": "!g",
+    "identifier": "betwinner",
+    "message": "g response",
+    "type": "betting_streamer",
+  },
+]
+`;
