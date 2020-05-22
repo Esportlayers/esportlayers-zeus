@@ -301,13 +301,6 @@ describe('processCommands', () => {
         expect(createBet).toHaveBeenCalledTimes(1);
     })
     
-    test('betting on a', async () => {
-        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
-        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting', betters: [], bets: 0, aBets: 0, bBets: 0});
-        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f a');
-        expect(createBet).toHaveBeenCalledTimes(1);
-    })
-    
     test('betting on b', async () => {
         (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
         (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting', betters: [], bets: 0, aBets: 0, bBets: 0});
