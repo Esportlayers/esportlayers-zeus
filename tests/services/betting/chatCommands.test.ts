@@ -3,7 +3,7 @@ const fakeCommands = [
     {active: false, type: 'betting_user', command: '!b', message: 'b response'},
     {active: true, type: 'betting_streamer', command: '!c', message: 'c response'},
     {active: true, type: 'betting_streamer', command: '!e', message: 'e response', identifier: 'startbet'},
-    {active: true, type: 'betting_streamer', command: '!f', message: 'f response', identifier: 'bet'},
+    {active: true, type: 'betting_user', command: '!f', message: 'f response', identifier: 'bet'},
     {active: true, type: 'betting_streamer', command: '!g', message: 'g response', identifier: 'betwinner'},
     {active: true, type: 'default', command: '!d', message: 'd response'},
 ];
@@ -34,6 +34,12 @@ jest.mock('../../../src/services/websocket', () => ({
     sendMessage: jest.fn(),
 }));
 
+jest.mock('../../../src/services/betting/state', () => ({
+    requireBettingRound: jest.fn(),
+    requireUser: jest.fn(),
+    startBet: jest.fn(),
+}));
+
 process.env.SENTRY_DSN = '';
 
 import {
@@ -42,12 +48,17 @@ import {
     replaceBetPlaceholder, 
     handleStaticCommands, 
     getBettingCommands,
-    handleUserBet
+    handleUserBet,
+    processCommands
 } from '../../../src/services/betting/chatCommands';
 import {getUserCommands} from '../../../src/services/entity/Command';
 import { User } from '../../../src/@types/Entities/User';
 import { ChatUserstate } from 'tmi.js';
-import { CurrentBetRound } from '../../../src/services/betting/state';
+import { CurrentBetRound, startBet } from '../../../src/services/betting/state';
+import { requireBettingRound, requireUser } from '../../../src/services/betting/state';
+import { sendMessage } from '../../../src/services/websocket';
+import { patchBetRound, createBet } from '../../../src/services/entity/BetRound';
+
 const fakeChannel = '#test';
 
 describe('requireUserCommands', () => {
@@ -165,5 +176,158 @@ describe('handleUserBet', () => {
         expect(fakeRound.bBets).toEqual(2);
         expect(fakeRound.bets).toEqual(4);
         expect(fakeRound.betters.includes('griefcode')).toBeFalsy();
+    })
+})
+
+describe('processCommands', () => {
+    beforeEach(() => {
+        (requireUser as jest.Mock).mockClear();
+        (requireBettingRound as jest.Mock).mockClear();
+        (sendMessage as jest.Mock).mockClear();
+        (startBet as jest.Mock).mockClear();
+        (patchBetRound as jest.Mock).mockClear();
+        (createBet as jest.Mock).mockClear();
+    })
+
+    test('unknown user', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce(null);
+        await processCommands(fakeChannel, fakeTags, '!e');
+        expect(requireBettingRound).not.toHaveBeenCalled();
+    })
+    test('no bets used', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: false});
+        await processCommands(fakeChannel, fakeTags, '!e');
+        expect(requireBettingRound).not.toHaveBeenCalled();
+    })
+    test('static command', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        await processCommands(fakeChannel, fakeTags, '!a');
+        expect(requireBettingRound).not.toHaveBeenCalled();
+    })
+    test('unknown command', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        await processCommands(fakeChannel, fakeTags, '!X');
+        expect(requireBettingRound).not.toHaveBeenCalled();
+    })
+    test('startbet from non broadcaster', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        await processCommands(fakeChannel, fakeTags, '!e');
+        expect(requireBettingRound).toHaveBeenCalledTimes(1);
+        expect(sendMessage).not.toHaveBeenCalled();
+        expect(startBet).not.toHaveBeenCalled();
+    })
+
+    test('startbet from broadcaster with finished round', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'finished'});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!e');
+        expect(requireBettingRound).toHaveBeenCalledTimes(1);
+        expect(sendMessage).toHaveBeenCalledTimes(1);
+        expect(startBet).toHaveBeenCalledTimes(1);
+    })
+
+    test('startbet from broadcaster with running status', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'running'});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!e');
+        expect(requireBettingRound).toHaveBeenCalledTimes(1);
+        expect(sendMessage).not.toHaveBeenCalled();
+        expect(startBet).not.toHaveBeenCalled();
+    })
+
+    test('winner with invalid payload', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'running'});
+        await processCommands(fakeChannel, fakeTags, '!g asdf');
+        expect(requireBettingRound).toHaveBeenCalledTimes(1);
+        expect(sendMessage).not.toHaveBeenCalled();
+        expect(startBet).not.toHaveBeenCalled();
+    })
+
+    test('winner from non broadcaster', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'running'});
+        await processCommands(fakeChannel, fakeTags, '!g a');
+        expect(requireBettingRound).toHaveBeenCalledTimes(1);
+        expect(sendMessage).not.toHaveBeenCalled();
+        expect(startBet).not.toHaveBeenCalled();
+    })
+
+    test('winner with invalid status', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting'});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!g a');
+        expect(requireBettingRound).toHaveBeenCalledTimes(1);
+        expect(sendMessage).not.toHaveBeenCalled();
+        expect(startBet).not.toHaveBeenCalled();
+    })
+
+    test('winner a', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'running'});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!g a');
+        expect(requireBettingRound).toHaveBeenCalledTimes(1);
+        expect(patchBetRound).toHaveBeenCalledTimes(1);
+        expect(patchBetRound).toHaveBeenLastCalledWith(1, {result: 'a', status: 'finished'}, true, undefined);
+    })
+
+    test('winner b', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'running'});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!g b');
+        expect(requireBettingRound).toHaveBeenCalledTimes(1);
+        expect(patchBetRound).toHaveBeenCalledTimes(1);
+        expect(patchBetRound).toHaveBeenLastCalledWith(1, {result: 'b', status: 'finished'}, true, undefined);
+    })
+
+    test('betting with invalid payload', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting'});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f asdf');
+        expect(createBet).not.toHaveBeenCalled();
+    })
+
+    test('betting with wrong status', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'running'});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f a');
+        expect(createBet).not.toHaveBeenCalled();
+    })
+
+    test('betting on a', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting', betters: [], bets: 0, aBets: 0, bBets: 0});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f a');
+        expect(createBet).toHaveBeenCalledTimes(1);
+    })
+    
+    test('betting on a', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting', betters: [], bets: 0, aBets: 0, bBets: 0});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f a');
+        expect(createBet).toHaveBeenCalledTimes(1);
+    })
+    
+    test('betting on b', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting', betters: [], bets: 0, aBets: 0, bBets: 0});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f a');
+        expect(createBet).toHaveBeenCalledTimes(1);
+    })
+    
+    test('betting twice creates only one call', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting', betters: [], bets: 0, aBets: 0, bBets: 0});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f a');
+        expect(createBet).toHaveBeenCalledTimes(1);
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f a');
+        expect(createBet).toHaveBeenCalledTimes(1);
+    })
+    
+    test('betting on x', async () => {
+        (requireUser as jest.Mock).mockReturnValueOnce({useBets: true});
+        (requireBettingRound as jest.Mock).mockReturnValueOnce({status: 'betting', betters: [], bets: 0, aBets: 0, bBets: 0});
+        await processCommands(fakeChannel, {...fakeTags, badges: {broadcaster: 'true'}}, '!f x');
+        expect(createBet).not.toHaveBeenCalled();
     })
 })

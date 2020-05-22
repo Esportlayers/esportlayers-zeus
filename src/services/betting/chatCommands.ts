@@ -64,13 +64,14 @@ export async function getBettingCommands(userId: number, channel: string): Promi
 
 export async function handleUserBet(message: string, betCommand: Command, tags: ChatUserstate, currentRound: CurrentBetRound, userId: number): Promise<void> {
     const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
-    await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
     if(bet === 'a') {
+        await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
         currentRound.bets = currentRound.bets + 1;
         currentRound.aBets = currentRound.aBets + 1;
         currentRound.betters.push(tags.username!);
         sendMessage(userId, 'betting', currentRound);
     } else if(bet === 'b') {
+        await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
         currentRound.bets = currentRound.bets + 1;
         currentRound.bBets = currentRound.bBets + 1;
         currentRound.betters.push(tags.username!);
@@ -102,11 +103,11 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
 
     const currentRound = await requireBettingRound(channel, user.id);
 
-    if(message === startBetCommand.command && startBetCommand.active && (tags.badges?.broadcaster || tags.username === 'griefcode') && currentRound.status === 'finished' ) {
+    if(message === startBetCommand.command && startBetCommand.active && tags.badges?.broadcaster && currentRound.status === 'finished' ) {
         await startBet(channel, user.id);
         await createBetRound(user.id, user.betSeasonId);
         sendMessage(user.id, 'betting', currentRound);
-    } else if(message.startsWith(winnerCommand.command || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && (tags.badges?.broadcaster || tags.username === 'griefcode') && currentRound.status === 'running' ) {
+    } else if(message.startsWith(winnerCommand.command || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && tags.badges?.broadcaster && currentRound.status === 'running' ) {
         const result = message.substr(winnerCommand.command.length + 1, 1).toLowerCase();
         const betRoundId = await getRoundId(user.id);
         await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
