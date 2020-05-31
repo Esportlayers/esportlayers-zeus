@@ -1,4 +1,4 @@
-import {requireBettingRound, clearBettingCache, requireUser, clearUserCache, startBet} from '../../../src/services/betting/state';
+import {requireBettingRound, clearBettingCache, requireUser, clearUserCache, startBet, updateBetState} from '../../../src/services/betting/state';
 
 jest.mock('../../../src/services/entity/BetRound', () => ({
     getRoundId: jest.fn(),
@@ -27,6 +27,7 @@ jest.mock('../../../src/services/betting/chatCommands', () => ({
     getBettingCommands: jest.fn(async () => ({
         startBet: {message: 'test {BET_COMMAND}'},
         bet: {command: '!bet'},
+        winner: {message: 'new winner {WINNER}'},
     })),
 }));
 
@@ -153,4 +154,55 @@ describe('startBet',() => {
         expect(patchBetRound).toHaveBeenCalledTimes(1);
         expect(sendMessage).toHaveBeenCalledTimes(1);
     });
+})
+
+
+describe('updateBetState', () => {
+    beforeEach(() => {
+        (sendMessage as jest.Mock).mockReset();
+        (loadUserById as jest.Mock).mockReset();
+
+        (fetchChatterCount as jest.Mock).mockReset();
+        (publish as jest.Mock).mockReset();
+        (patchBetRound as jest.Mock).mockReset();
+        (sendMessage as jest.Mock).mockReset();
+
+        (getRoundId as jest.Mock).mockReturnValueOnce(1);
+        (getRoundById as jest.Mock).mockReturnValueOnce(({chatters: 8, status: 'betting', created: 123, result: 'a', bets: 3, bBets: 1}));
+
+        clearUserCache(testChannel);
+    });
+
+    test('independent update', async () => {
+        (loadUserById as jest.Mock).mockReturnValue({displayName: 'testChannel'});
+        await updateBetState(1);
+        expect(sendMessage).toHaveBeenCalledTimes(1);
+        await updateBetState(1);
+        expect(sendMessage).toHaveBeenCalledTimes(2);
+    });
+
+    test('bet start', async () => {
+        (loadUserById as jest.Mock).mockReturnValue({displayName: 'testChannel'});
+        (fetchChatterCount as jest.Mock).mockRejectedValueOnce(54);
+        await updateBetState(1, true);
+        expect(sendMessage).toHaveBeenCalledTimes(1);
+
+        expect(fetchChatterCount).toHaveBeenCalledTimes(0);
+        expect(publish).toHaveBeenCalledWith('#testChannel', 'test !bet');
+
+        await jest.runAllTimers();
+        await jest.runAllImmediates();
+
+        expect(patchBetRound).toHaveBeenCalledTimes(1);
+        expect(sendMessage).toHaveBeenCalledTimes(2);
+    })
+
+    test('bet finish', async () => {
+        (loadUserById as jest.Mock).mockReturnValue({displayName: 'testChannel'});
+        await updateBetState(1, false, true);
+        expect(sendMessage).toHaveBeenCalledTimes(1);
+
+        expect(fetchChatterCount).toHaveBeenCalledTimes(0);
+        expect(publish).toHaveBeenCalledWith('#testChannel', 'new winner A');
+    })
 })
