@@ -95,3 +95,15 @@ export async function updateBetState(userId: number, started: boolean = false, f
         await publish(channel, msg);
     }
 }
+
+export function clearBettingCache(channel: string): void {
+    if(userBetting.has(channel)) {
+        userBetting.delete(channel);
+    }
+}
+
+export function clearUserCache(channel: string): void {
+    if(channeUserCache.has(channel)) {
+        channeUserCache.delete(channel);
+    }
+}

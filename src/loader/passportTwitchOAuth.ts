@@ -14,16 +14,15 @@ export default async ({ app, passport }: { app: express.Application, passport: P
         customHeaders: {
             'client-id': config.twitch.clientId,
         },
+        
     },
     async (accessToken, refreshToken, profile, done) => {
-        let error = null;
-        let user = null;
         try {
-            user = await findOrCreateUser(+profile.id, profile.display_name, profile.profile_image_url);
+            const user = await findOrCreateUser(+profile.id, profile.display_name, profile.profile_image_url);
+            done(null, user);
         } catch(err) {
-            error = err;
+            done(err);
         }
-        done(error, user);
     }
     ));
 
