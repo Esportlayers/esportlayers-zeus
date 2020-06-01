@@ -31,6 +31,8 @@ jest.mock('../../../src/services/betting/chatCommands', () => ({
     })),
 }));
 
+process.env.SENTRY_DSN = '';
+
 import {getRoundId, getRoundById, patchBetRound} from '../../../src/services/entity/BetRound';
 import {getUserByTrustedChannel, loadUserById} from '../../../src/services/entity/User';
 import {publish} from '../../../src/services/twitchChat';

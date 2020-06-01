@@ -1,7 +1,7 @@
 import { getConn } from "../../loader/db";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { v4 } from "uuid";
-import { BetInvite, BetSeason, rolePrio, ToplistEntry } from "../../@types/Entities/BetSeason";
+import {BetInvite, BetSeason, rolePrio, ToplistEntry} from '@streamdota/shared-types/Entities/BetSeason';
 
 export async function getBetSeason(id: number): Promise<BetSeason | null> {
     const conn = await getConn();

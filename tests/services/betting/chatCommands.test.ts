@@ -52,7 +52,7 @@ import {
     processCommands
 } from '../../../src/services/betting/chatCommands';
 import {getUserCommands} from '../../../src/services/entity/Command';
-import { User } from '../../../src/@types/Entities/User';
+import { User } from "@streamdota/shared-types/Entities/User";
 import { ChatUserstate } from 'tmi.js';
 import { CurrentBetRound, startBet } from '../../../src/services/betting/state';
 import { requireBettingRound, requireUser } from '../../../src/services/betting/state';

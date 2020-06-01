@@ -1,11 +1,11 @@
 import { ChatUserstate } from "tmi.js";
 import { createBetRound, createBet, getRoundId, patchBetRound } from "../entity/BetRound";
-import { User, Command } from "../../@types/Entities/User";
 import { sendMessage } from "../websocket";
 import { getUserCommands } from "../entity/Command";
 import { publish } from "../twitchChat";
 import { seasonTopList, getUserSeasonStats } from "../entity/BetSeasons";
 import { CurrentBetRound, requireUser, requireBettingRound, startBet } from "./state";
+import {Command, User} from '@streamdota/shared-types/Entities/User';
 
 const userCommandCache = new Map<string, Command[]>();
 

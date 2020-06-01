@@ -2,7 +2,7 @@ import { loadUserById } from "./User";
 import { getConn } from "../../loader/db";
 import { RowDataPacket } from "mysql2";
 import { requireWatcher } from "./Watcher";
-import { BetRound, BetRoundStats } from "../../@types/Entities/BetRound";
+import {BetRound, BetRoundStats} from '@streamdota/shared-types/Entities/BetRound';
 import { fetchChatterCount } from "../twitchApi";
 import { updateBetState } from "../betting/state";
 

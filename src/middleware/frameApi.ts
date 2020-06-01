@@ -1,6 +1,6 @@
 import { Request, NextFunction, Response } from "express";
 import ws from 'ws';
-import { User } from "../@types/Entities/User";
+import {User} from '@streamdota/shared-types/Entities/User';
 import { loadUserById, getUserByFrameApiKey } from "../services/entity/User";
 
 export async function checkUserFrameWebsocketApiKey(ws: ws, req: Request, next: NextFunction) {

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import {PassportStatic} from 'passport';
 import jsonwebtoken from 'jsonwebtoken';
 import config from '../../config';
-import { User } from '../../@types/Entities/User';
+import {User} from '@streamdota/shared-types/Entities/User';
 
 const route = Router();
 

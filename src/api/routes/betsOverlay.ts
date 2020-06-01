@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
-import { User } from '../../@types/Entities/User';
+import {User} from '@streamdota/shared-types/Entities/User';
 import { requireBetOverlay, patchBetOverlay } from '../../services/entity/BetOverlay';
 
 const route = Router();

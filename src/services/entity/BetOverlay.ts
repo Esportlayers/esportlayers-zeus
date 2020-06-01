@@ -1,4 +1,4 @@
-import { BetOverlay } from "../../@types/Entities/BetOverlay";
+import {BetOverlay} from '@streamdota/shared-types/Entities/BetOverlay';
 import { getConn } from "../../loader/db";
 import { RowDataPacket } from "mysql2";
 

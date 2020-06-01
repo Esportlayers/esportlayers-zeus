@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { checkGSIAuth, gsiBodyParser } from '../../middleware/dotaGsi';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { createGsiAuthToken, resetDotaGsi } from '../../services/entity/User';
-import { User } from '../../@types/Entities/User';
+import {User} from '@streamdota/shared-types/Entities/User';
 import { generateConfig } from '../../services/gsiConfigGenerator';
 import path from 'path';
 import ws from 'ws';

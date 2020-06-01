@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { getUserBetSeasonRole } from "../services/entity/BetSeasons";
-import { User } from "../@types/Entities/User";
-import { rolePrio } from "../@types/Entities/BetSeason";
+import {User} from '@streamdota/shared-types/Entities/User';
+import {rolePrio} from '@streamdota/shared-types/Entities/BetSeason';
 import { getRoundById } from "../services/entity/BetRound";
 
 export function requireBetSeasonAccess(requiredAccess: 'owner' | 'editor' | 'user'): (req: Request, res: Response, next: NextFunction) => void {

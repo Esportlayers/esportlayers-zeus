@@ -1,4 +1,4 @@
-import { Command } from "../../@types/Entities/User";
+import {Command} from '@streamdota/shared-types/Entities/User';
 import { RowDataPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { clearUserCommandsChache } from "../twitchChat";
