@@ -8,6 +8,7 @@ import betsRoute from './routes/bets';
 import betSeasonRoute from './routes/betSeason';
 import botCommandRoute from './routes/botCommand';
 import botTimerRoute from './routes/botTimer';
+import betOverlayRoute from './routes/betsOverlay';
 import { PassportStatic } from 'passport';
 
 export default ({passport}: {passport: PassportStatic}) => {
@@ -23,6 +24,7 @@ export default ({passport}: {passport: PassportStatic}) => {
 	betSeasonRoute(app);
 	botCommandRoute(app);
 	botTimerRoute(app);
+	betOverlayRoute(app);
 	
 	return app;
 }
