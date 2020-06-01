@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "API for streamer-tools",
   "main": "lib/index.js",
   "repository": "https://gitlab.com/griefco.de/streamer-tools/api",
