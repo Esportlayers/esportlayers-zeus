@@ -1,6 +1,6 @@
 import { RowDataPacket } from "mysql2";
 import { getConn } from "../../loader/db";
-import {Streamer} from '@streamdota/shared-types/Entities/Streamer';
+import {Streamer} from '@streamdota/shared-types';
 import { streamFile, removeFile } from "../staticFileHandler";
 
 interface StreamerIdResponse extends RowDataPacket {

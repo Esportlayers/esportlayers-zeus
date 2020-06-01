@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
-import {User} from '@streamdota/shared-types/Entities/User';
+import {User} from '@streamdota/shared-types';
 import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers, seasonTopList } from '../../services/entity/BetSeasons';
 import { requireBetSeasonAccess } from '../../middleware/requireBetSeasonAccess';
 import { getBetSeasonRounds } from '../../services/entity/BetRound';

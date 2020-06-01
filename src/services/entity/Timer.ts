@@ -1,4 +1,4 @@
-import {Timer} from '@streamdota/shared-types/Entities/User';
+import {Timer} from '@streamdota/shared-types';
 import { RowDataPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { clearChannelCache } from "../../tasks/twitchChatTimer";

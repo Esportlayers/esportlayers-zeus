@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { reuqireAuthorization } from "../../middleware/requireAuthorization";
-import {User} from '@streamdota/shared-types/Entities/User';
+import {User} from '@streamdota/shared-types';
 import { getUserTimer, createTimer, patchTimer, deleteTimer } from "../../services/entity/Timer";
 
 const route = Router();

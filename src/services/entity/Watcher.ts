@@ -1,4 +1,4 @@
-import { Watcher } from "@streamdota/shared-types/Entities/Watcher";
+import { Watcher } from '@streamdota/shared-types';
 import { getConn } from "../../loader/db";
 import { RowDataPacket, OkPacket } from "mysql2";
 

@@ -1,4 +1,4 @@
-import {User, SteamConnection, BotData, Command} from '@streamdota/shared-types/Entities/User';
+import {User, SteamConnection, BotData, Command} from '@streamdota/shared-types';
 import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';

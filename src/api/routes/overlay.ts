@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import {User} from '@streamdota/shared-types/Entities/User';
-import {OverlayConfig} from '@streamdota/shared-types/Entities/DotOverlay';
+import {User} from '@streamdota/shared-types';
+import {OverlayConfig} from '@streamdota/shared-types';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { getDotaOverlayByUser, updateOverlay } from '../../services/entity/DotaOverlay';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';

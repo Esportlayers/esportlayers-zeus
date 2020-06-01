@@ -1,6 +1,6 @@
 import { getRoundId, getRoundById, patchBetRound } from "../entity/BetRound";
 import { getUserByTrustedChannel, loadUserById } from "../entity/User";
-import {User} from '@streamdota/shared-types/Entities/User';
+import {User} from '@streamdota/shared-types';
 import { fetchChatterCount } from "../twitchApi";
 import dayjs from "dayjs";
 import { getBettingCommands } from "./chatCommands";

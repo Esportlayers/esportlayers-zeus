@@ -5,7 +5,7 @@ import { getUserCommands } from "../entity/Command";
 import { publish } from "../twitchChat";
 import { seasonTopList, getUserSeasonStats } from "../entity/BetSeasons";
 import { CurrentBetRound, requireUser, requireBettingRound, startBet } from "./state";
-import {Command, User} from '@streamdota/shared-types/Entities/User';
+import {Command, User} from '@streamdota/shared-types';
 
 const userCommandCache = new Map<string, Command[]>();
 

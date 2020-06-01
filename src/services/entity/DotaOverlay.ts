@@ -1,4 +1,4 @@
-import {OverlayConfig} from '@streamdota/shared-types/Entities/DotOverlay';
+import {OverlayConfig} from '@streamdota/shared-types';
 import { RowDataPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 

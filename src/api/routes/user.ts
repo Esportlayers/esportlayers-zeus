@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { loadSteamConnections, loadStats, patchUser } from '../../services/entity/User';
-import {User} from '@streamdota/shared-types/Entities/User';
+import {User} from '@streamdota/shared-types';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
 

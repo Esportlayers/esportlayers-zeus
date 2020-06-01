@@ -550,10 +550,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@streamdota/shared-types@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@streamdota/shared-types/-/shared-types-1.0.0.tgz#c092f1537da020784a2e5224a40bdecad1d6d9f3"
-  integrity sha512-fX4DM971p6KiSBNA5Dz9YhvPqpuDfY1ITic2scb25MhM6dgxxhixuNOhZXke9D36eWt8L6IHdKnJMPJXG6meJQ==
+"@streamdota/shared-types@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@streamdota/shared-types/-/shared-types-1.0.2.tgz#31283ffdc58471563066bb12a5823c1846bceb98"
+  integrity sha512-mjjr2lwbM1tA5IJ+BAt5lAFqOEy0kN81M7Ktt7Kk/ze+ta6V+ISvNQUH+GuloloTlhVFanY0ULuIXkwFY1S0yg==
 
 "@types/babel__core@^7.1.7":
   version "7.1.7"

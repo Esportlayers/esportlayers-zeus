@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { createBetRound, patchBetRound, deleteBetRound, getRoundId, getRoundById } from '../../services/entity/BetRound';
-import {User} from '@streamdota/shared-types/Entities/User';
+import {User} from '@streamdota/shared-types';
 import { requireBetRoundAccess } from '../../middleware/requireBetSeasonAccess';
 import { checkUserFrameWebsocketApiKey } from '../../middleware/frameApi';
 import { heartbeat } from '../../tasks/websocketHeartbeat';
