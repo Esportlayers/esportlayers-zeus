@@ -6,6 +6,7 @@ stages:
   - test
   - build
   - deploy
+  - notification
 
 include:
   stage: test
@@ -80,3 +81,14 @@ production:
     - ssh -p22 $PROD_USER@$PROD_HOST "cd $CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE && yarn install && yarn migrate"
     - ssh -p22 $PROD_USER@$PROD_HOST "sudo pm2 restart $CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE"
   when: manual
+
+success_notification:
+  stage: notification
+  only:
+    - master
+  script:
+    - echo "Success notification"
+    - wget https://raw.githubusercontent.com/DiscordHooks/gitlab-ci-discord-webhook/master/send.sh
+    - chmod +x send.sh
+    - ./send.sh success $DISCORD_WEBHOOK
+  when: on_success
