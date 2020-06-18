@@ -66,13 +66,13 @@ export async function handleUserBet(message: string, betCommand: Command, tags: 
     const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
     if(bet === 'a') {
         await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
-        currentRound.bets = currentRound.bets + 1;
+        currentRound.total = currentRound.total + 1;
         currentRound.aBets = currentRound.aBets + 1;
         currentRound.betters.push(tags.username!);
         sendMessage(userId, 'betting', currentRound);
     } else if(bet === 'b') {
         await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
-        currentRound.bets = currentRound.bets + 1;
+        currentRound.total = currentRound.total + 1;
         currentRound.bBets = currentRound.bBets + 1;
         currentRound.betters.push(tags.username!);
         sendMessage(userId, 'betting', currentRound);

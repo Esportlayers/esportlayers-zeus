@@ -8,10 +8,11 @@ import { publish } from "../twitchChat";
 import { sendMessage } from "../websocket";
 
 export interface CurrentBetRound {
+    id: number;
     status: 'betting' | 'running' | 'finished';
     created: number;
     result: string;
-    bets: number;
+    total: number;
     aBets: number;
     bBets: number;
     chatters: number;
@@ -25,10 +26,10 @@ export async function requireBettingRound(channel: string, userId: number): Prom
     if(! userBetting.has(channel.toLowerCase())) {
         const roundId = await getRoundId(userId);
         if(roundId !== 0) {
-            const {chatters, status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
-            userBetting.set(channel.toLowerCase(), {betters: [], chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)})
+            const {chatters, status, created, result, total, aBets, bBets} = (await getRoundById(roundId))!;
+            userBetting.set(channel.toLowerCase(), {id: roundId, betters: [], chatters, status, created, result, total, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)})
         } else {
-            userBetting.set(channel.toLowerCase(), {betters: [], chatters: 0, status: 'finished', created: 0, result: '', bets: 0, aBets: 0, bBets: 0});
+            userBetting.set(channel.toLowerCase(), {id: 0, betters: [], chatters: 0, status: 'finished', created: 0, result: '', total: 0, aBets: 0, bBets: 0});
         }
     }
 
@@ -53,7 +54,7 @@ export async function startBet(channel: string, userId: number, reset: boolean =
         currentRound.status = 'betting';
         currentRound.created = dayjs().unix();
         currentRound.result = '';
-        currentRound.bets = 0;
+        currentRound.total = 0;
         currentRound.aBets = 0;
         currentRound.bBets = 0;
         currentRound.chatters = chatters;
@@ -80,8 +81,8 @@ export async function updateBetState(userId: number, started: boolean = false, f
     }
 
     const roundId = await getRoundId(user.id);
-    const {chatters, status, created, result, bets, aBets, bBets} = (await getRoundById(roundId))!;
-    userBetting.set(channel.toLowerCase(), {betters: [], chatters, status, created, result,  bets, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
+    const {chatters, status, created, result, total, aBets, bBets} = (await getRoundById(roundId))!;
+    userBetting.set(channel.toLowerCase(), {id: roundId, betters: [], chatters, status, created, result,  total, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
     
     if(started) {
         await startBet(channel, userId, false);

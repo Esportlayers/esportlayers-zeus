@@ -34,7 +34,7 @@ export async function getRoundId(userId: number): Promise<number> {
 
 interface DecoratedBetRound extends BetRound {
     created: number;
-    bets: number;
+    total: number;
     aBets: string;
     bBets: string;
 }
@@ -49,7 +49,7 @@ export async function getRoundById(roundId: number): Promise<DecoratedBetRound |
                br.result,
                br.chatters as chatters,
                UNIX_TIMESTAMP(br.created) as created,
-               COUNT(b.id) as bets,
+               COUNT(b.id) as total,
                SUM(IF(b.bet = 'a', 1, 0)) as aBets,
                SUM(IF(b.bet = 'b', 1, 0)) as bBets
         FROM bet_rounds br
