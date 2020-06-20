@@ -63,7 +63,7 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 	if(self) return;
 
 	if(!commandsCache.has(channel.toLowerCase())) {
-		const commands = await getChannelCommands(channel, ['default', 'dotaWL']);
+		const commands = await getChannelCommands(channel, ['default', 'dotaWinLoss']);
 		commandsCache.set(channel.toLowerCase(), commands);
 	}
 

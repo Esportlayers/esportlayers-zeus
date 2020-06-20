@@ -1,4 +1,4 @@
-import {User, SteamConnection, BotData, Command} from '@streamdota/shared-types';
+import {User, SteamConnection, Command} from '@streamdota/shared-types';
 import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
@@ -187,6 +187,12 @@ export async function getCustomBots(): Promise<Array<{channel: string; name: str
     return channelRows;
 }
 
+interface BotData {
+    useBot: boolean;
+    customBotName: string;
+    customBotToken: string;
+    commandTrigger: string;
+}
 export async function loadBotData(userId: number): Promise <BotData> {
     const conn = await getConn();
     const [cfgRow] = await conn.execute<Array<BotData & RowDataPacket>>('SELECT custom_channel_bot_name as customBotName, custom_channel_bot_token as customBotToken FROM user WHERE id = ?', [userId]);

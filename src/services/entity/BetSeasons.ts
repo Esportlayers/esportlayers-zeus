@@ -1,7 +1,7 @@
 import { getConn } from "../../loader/db";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { v4 } from "uuid";
-import {BetInvite, BetSeason, ToplistEntry} from '@streamdota/shared-types';
+import {BetSeasonInvite, BetSeason, BetSeasonToplist} from '@streamdota/shared-types';
 
 export const rolePrio: {[x: string]: number} = {
     user: 0,
@@ -71,9 +71,9 @@ export async function deleteBetSeason(seasonId: number): Promise<void> {
     await conn.end();
 }
 
-export async function listInvites(seasonId: number): Promise<BetInvite[]> {
+export async function listInvites(seasonId: number): Promise<BetSeasonInvite[]> {
     const conn = await getConn();
-    const [rows] = await conn.execute<Array<BetInvite & RowDataPacket & {invitedBy: string}>>('SELECT bsi.invite_key as inviteKey, UNIX_TIMESTAMP(bsi.created) as created, bsi.status, u.display_name as invitedBy FROM bet_season_invites bsi INNER JOIN user u ON u.id = bsi.user_id WHERE bsi.bet_season_id = ?', [seasonId]);
+    const [rows] = await conn.execute<Array<BetSeasonInvite & RowDataPacket & {invitedBy: string}>>('SELECT bsi.invite_key as inviteKey, UNIX_TIMESTAMP(bsi.created) as created, bsi.status, u.display_name as invitedBy FROM bet_season_invites bsi INNER JOIN user u ON u.id = bsi.user_id WHERE bsi.bet_season_id = ?', [seasonId]);
     await conn.end();
     return rows;
 }
@@ -102,16 +102,16 @@ export async function createSeasonInvite(seasonId: number, userId: number): Prom
     return inviteKey;
 }
 
-type BetInvitePlainRow = Omit<BetInvite, 'betSeason'> & {betSeason: number} & RowDataPacket;
+type BetInvitePlainRow = Omit<BetSeasonInvite, 'betSeason'> & {betSeason: BetSeason} & RowDataPacket;
 
-export async function getInviteByKey(key: string, userId: number): Promise<BetInvite | null> {
+export async function getInviteByKey(key: string, userId: number): Promise<BetInvitePlainRow | null> {
     const conn = await getConn();
     const [rows] = await conn.execute<BetInvitePlainRow[]>('SELECT bet_season_id as betSeason, user_id as owner, invite_key as inviteKey, UNIX_TIMESTAMP(created) as created, status FROM bet_season_invites WHERE invite_key = ? AND user_id = ?', [key, userId]);
     await conn.end();
 
     return rows.length > 0 ? {
         ...rows[0],
-        betSeason: (await getBetSeason(rows[0].betSeason))!
+        betSeason: (await getBetSeason(rows[0].betSeason as unknown as number))!
     } : null;
 }
 
@@ -163,9 +163,9 @@ export async function deleteUserBetSeason(betSeasonId: number, userId: number): 
 
 }
 
-export async function seasonTopList(betSeasonId: number): Promise<ToplistEntry[]> {
+export async function seasonTopList(betSeasonId: number): Promise<BetSeasonToplist[]> {
     const conn = await getConn();
-    const [toplist] = await conn.execute<Array<ToplistEntry & RowDataPacket>>(`
+    const [toplist] = await conn.execute<Array<BetSeasonToplist & RowDataPacket>>(`
         SELECT 
             w.display_name as name,
             w.username as username,
@@ -184,7 +184,7 @@ export async function seasonTopList(betSeasonId: number): Promise<ToplistEntry[]
 
 export async function getUserSeasonStats(username: string, betSeasonId: number): Promise<{won: number; total: number;}> {
     const conn = await getConn();
-    const [toplist] = await conn.execute<Array<ToplistEntry & RowDataPacket>>(`
+    const [toplist] = await conn.execute<Array<BetSeasonToplist & RowDataPacket>>(`
         SELECT 
             SUM(IF(b.bet = br.result, 1, 0)) as won,
             COUNT(b.id) as total
