@@ -68,6 +68,7 @@ export async function startBet(channel: string, userId: number, reset: boolean =
         currentRound.status = 'running';
         const roundId = await getRoundId(userId);
         await patchBetRound(roundId, {status: 'running'});
+        await publish(channel, 'Die Wetten sind geschlossen.');
         sendMessage(userId, 'betting', currentRound);
     }, 90000);
 }
