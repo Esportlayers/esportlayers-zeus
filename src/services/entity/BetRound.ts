@@ -76,7 +76,8 @@ export async function getBetSeasonRounds(seasonId: number): Promise<BetRoundStat
             UNIX_TIMESTAMP(br.created) as created,
             COUNT(b.id) as total,
             SUM(IF(b.bet = 'a', 1, 0)) as aBets,
-            SUM(IF(b.bet = 'b', 1, 0)) as bBets
+            SUM(IF(b.bet = 'b', 1, 0)) as bBets,
+            br.bet_season_id as betSeason
        FROM bet_rounds br
   LEFT JOIN bets b ON b.bet_round_id = br.id
  INNER JOIN user u ON u.id = br.user_id

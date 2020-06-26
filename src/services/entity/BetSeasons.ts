@@ -170,7 +170,8 @@ export async function seasonTopList(betSeasonId: number): Promise<BetSeasonTopli
             w.display_name as name,
             w.username as username,
             SUM(IF(b.bet = br.result, 1, 0)) as won,
-            COUNT(b.id) as total
+            COUNT(b.id) as total,
+            br.bet_season_id as betSeason
        FROM bets b
  INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? AND br.status = 'finished'
  INNER JOIN watchers w on b.watcher_id = w.id
