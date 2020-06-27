@@ -21,7 +21,7 @@ async function selectBetOverlay(userId: number): Promise<BetOverlay | null> {
             toplist_background as toplistBackground,
             toplist_font as toplistFont,
             toplist_font_size as toplistFontSize,
-            toplist_show_rang as toplistShowRank,
+            toplist_show_rank as toplistShowRank,
             toplist_show_total_bets as toplistShowTotalBets,
             toplist_show_accuracy as toplistShowAccuracy
         FROM bet_overlays WHERE user_id = ?
