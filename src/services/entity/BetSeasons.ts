@@ -167,6 +167,7 @@ export async function seasonTopList(betSeasonId: number): Promise<BetSeasonTopli
     const conn = await getConn();
     const [toplist] = await conn.execute<Array<BetSeasonToplist & RowDataPacket>>(`
         SELECT 
+            w.id as id,
             w.display_name as name,
             w.username as username,
             SUM(IF(b.bet = br.result, 1, 0)) as won,
