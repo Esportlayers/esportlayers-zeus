@@ -12,6 +12,7 @@ export default (app: Router, passport: PassportStatic) => {
     route.get("/twitch/callback", passport.authenticate("twitch", { failureRedirect: "/auth/twitch" }), (req: Request, res: Response) => {
         const user = req.user as User;
         const jwtToken = jsonwebtoken.sign({sub: user.id, name: user.displayName}, config.jwtSecret);
+        res.setHeader('Content-Type', 'text/html');
         return res.send(jwtToken).status(200);
     });
 };
