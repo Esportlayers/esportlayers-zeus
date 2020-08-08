@@ -4,6 +4,7 @@ import {User} from '@streamdota/shared-types';
 import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers, seasonTopList } from '../../services/entity/BetSeasons';
 import { requireBetSeasonAccess } from '../../middleware/requireBetSeasonAccess';
 import { getBetSeasonRounds } from '../../services/entity/BetRound';
+import { checkUserFrameAPIKey } from '../../middleware/frameApi';
 const route = Router();
 
 export default (app: Router) => {
@@ -34,7 +35,7 @@ export default (app: Router) => {
     return res.json(users).status(200);
   });
 
-  route.get('/toplist/:seasonId', reuqireAuthorization, requireBetSeasonAccess('user'), async (req: Request, res: Response) => {
+  route.get('/toplist/:seasonId', checkUserFrameAPIKey, reuqireAuthorization, requireBetSeasonAccess('user'), async (req: Request, res: Response) => {
     const toplist = await seasonTopList(+req.params.seasonId);
     return res.json(toplist).status(200);
   });
