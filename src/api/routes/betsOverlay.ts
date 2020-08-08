@@ -2,13 +2,14 @@ import { Router, Request, Response } from 'express';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import {User} from '@streamdota/shared-types';
 import { requireBetOverlay, patchBetOverlay } from '../../services/entity/BetOverlay';
+import { checkUserFrameAPIKey } from '../../middleware/frameApi';
 
 const route = Router();
 
 export default (app: Router) => {
   app.use('/betsOverlay', route);
 
-  route.get('/', reuqireAuthorization, async (req: Request, res: Response) => {
+  route.get('/', checkUserFrameAPIKey, reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     const overlay = await requireBetOverlay(user.id);
 

@@ -3,7 +3,7 @@ import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { createBetRound, patchBetRound, deleteBetRound, getRoundId, getRoundById } from '../../services/entity/BetRound';
 import {User} from '@streamdota/shared-types';
 import { requireBetRoundAccess } from '../../middleware/requireBetSeasonAccess';
-import { checkUserFrameWebsocketApiKey } from '../../middleware/frameApi';
+import { checkUserFrameWebsocketApiKey, checkUserFrameAPIKey } from '../../middleware/frameApi';
 import { heartbeat } from '../../tasks/websocketHeartbeat';
 import ws from 'ws';
 
@@ -12,7 +12,7 @@ const route = Router();
 export default (app: Router) => {
   app.use('/bets', route);
 
-  route.get('/current', reuqireAuthorization, async (req: Request, res: Response) => {
+  route.get('/current', checkUserFrameAPIKey, reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     const roundId = await getRoundId(user.id);
     const round = await getRoundById(roundId);

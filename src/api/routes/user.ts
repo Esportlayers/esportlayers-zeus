@@ -9,7 +9,7 @@ const route = Router();
 export default (app: Router) => {
     app.use('/user', route);
 
-    route.get('/baseData', reuqireAuthorization, (req: Request, res: Response) => {
+    route.get('/baseData', checkUserFrameAPIKey, reuqireAuthorization, (req: Request, res: Response) => {
         return res.json(req.user).status(200);
     });
 
