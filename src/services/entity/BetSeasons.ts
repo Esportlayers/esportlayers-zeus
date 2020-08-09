@@ -2,6 +2,7 @@ import { getConn } from "../../loader/db";
 import { RowDataPacket, OkPacket } from "mysql2";
 import { v4 } from "uuid";
 import {BetSeasonInvite, BetSeason, BetSeasonToplist} from '@streamdota/shared-types';
+import { loadUserById, patchUser } from "./User";
 
 export const rolePrio: {[x: string]: number} = {
     user: 0,
@@ -42,6 +43,11 @@ export async function createUserBetSeason(userId: number, data: Omit<BetSeason, 
     const conn = await getConn();
     const [{insertId}] = await conn.execute<OkPacket>('INSERT INTO bet_seasons (id, name, description, type) VALUES (NULL, ?, ?, ?)', [data.name, data.description, data.type]);
     await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, insertId, 'owner']);
+
+    const user = await loadUserById(userId);
+    if(!user?.betSeasonId) {
+        await patchUser(userId, {betSeasonId: insertId});
+    }
     await conn.end();
 }
 
