@@ -1,4 +1,4 @@
-import {ChatUserstate} from 'tmi.js';
+import {ChatUserstate, Client} from 'tmi.js';
 import config from '../config';
 import { getDeaultChannels, getCustomBots, getChannelCommands, loadUserById, getUserByTrustedChannel, loadStats } from './entity/User';
 import { processCommands, clearBettingCommandsCache } from './betting/chatCommands';
@@ -13,25 +13,22 @@ const defaultConfig = {
 	channels: []
 };
 
-const client = config.twitch.defaultBotIdentity.length > 0 && config.twitch.defaultBotToken.length > 0 && new tmi.client({
-	...defaultConfig,
-	identity: {
-		username: config.twitch.defaultBotIdentity,
-		password: config.twitch.defaultBotToken
-	},
-});
-client.setMaxListeners(0);
+let client: Client | null = null;
 const customInstances = new Map();
 
-async function joinDefaultChannel(): Promise<void> {
-    const channels = await getDeaultChannels();
-    channels.forEach((c) => joinChannel(c));
-}
-
 async function connect(): Promise<void> {
-    if(client) {
-        await client.connect();
-		await joinDefaultChannel();
+    if(config.twitch.defaultBotIdentity.length > 0 && config.twitch.defaultBotToken.length > 0) {
+		const channels = await getDeaultChannels();
+		client = new tmi.client({
+			...defaultConfig,
+			identity: {
+				username: config.twitch.defaultBotIdentity,
+				password: config.twitch.defaultBotToken
+			},
+			channels,
+		});
+		client!.setMaxListeners(0);
+        await client!.connect();
 	}
 	
 	const customBots = await getCustomBots();
@@ -78,14 +75,15 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 }
 
 connect();
-client && client.on('message', messageListener);
+client && (client as Client).on('message', messageListener);
 
 export function joinChannel(channel: string): void {
     client && client.join(channel);
 }
 
 export function partChannel(channel: string): void {
-	if(client && client.channels.includes(channel)) {
+	//@ts-ignore
+	if(client && client.getChannels().includes(channel)) {
 		client.part(channel);
 	}
 }
