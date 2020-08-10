@@ -1,11 +1,30 @@
 import { Request, Response, NextFunction } from "express";
-import { gsiAuthTokenUnknown, saveDotaGame, userConnected } from "../services/entity/User";
+import { gsiAuthTokenUnknown, saveDotaGame, userConnected, patchUser } from "../services/entity/User";
 import {grey} from 'chalk';
 import { sendMessage } from "../services/websocket";
+import dayjs from "dayjs";
 var fs = require('fs');
 var logFile = fs.createWriteStream('log.txt', { flags: 'a' });
 
-const clients: GsiClient[] = [];
+let clients: GsiClient[] = [];
+const heartbeat: Map<number, number> = new Map();
+
+async function checkClientHeartbet(): Promise<void> {
+    const maxLastPing = dayjs().unix() - 15;
+    const heartbeatclients = [...heartbeat.entries()];
+    for(const [userId, lastInteraction] of heartbeatclients) {
+        if(lastInteraction < maxLastPing) {
+            console.log(grey('[Dota-GSI] User disconnected by heartbeat ' + userId));
+            heartbeat.delete(userId);
+            sendMessage(userId, 'connected', false);
+            await patchUser(userId, {gsiActive: false});
+            connectedIds.delete(userId);
+            clients = clients.filter(({userId: clientUserId}) => clientUserId !== userId);
+        }
+    }
+}
+
+setInterval(checkClientHeartbet, 5000);
 
 class GsiClient {
     auth: string;
@@ -128,6 +147,7 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
 
     if(!connectedIds.has(userData.id)) {
         sendMessage(userData.id, 'connected', true);
+        await patchUser(userData.id, {gsiActive: true});
         connectedIds.add(userData.id);
     }
 
@@ -147,6 +167,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     //@ts-ignore
     const client = (req.client as Client);
     const data = req.body;
+    heartbeat.set(client.userId, dayjs().unix());
 
     //Game state
     const oldGameState = client.gamestate.map && client.gamestate.map.game_state;

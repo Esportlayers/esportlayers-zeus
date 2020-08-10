@@ -6,7 +6,7 @@ const configTemplate = `"streamdota.com dota-gsi Configuration"
     "timeout"           "5.0"
     "buffer"            "0.1"
     "throttle"          "0.1"
-    "heartbeat"         "30.0"
+    "heartbeat"         "10.0"
     "data"
     {
         "buildings"     "0"
