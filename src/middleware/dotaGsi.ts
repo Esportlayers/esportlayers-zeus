@@ -10,7 +10,7 @@ let clients: GsiClient[] = [];
 const heartbeat: Map<number, number> = new Map();
 
 async function checkClientHeartbet(): Promise<void> {
-    const maxLastPing = dayjs().unix() - 15;
+    const maxLastPing = dayjs().unix() - 31;
     const heartbeatclients = [...heartbeat.entries()];
     for(const [userId, lastInteraction] of heartbeatclients) {
         if(lastInteraction < maxLastPing) {
