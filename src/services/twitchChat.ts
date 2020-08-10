@@ -20,6 +20,7 @@ const client = config.twitch.defaultBotIdentity.length > 0 && config.twitch.defa
 		password: config.twitch.defaultBotToken
 	},
 });
+client.EventEmitter.setMaxListeners(0);
 const customInstances = new Map();
 
 async function joinDefaultChannel(): Promise<void> {
@@ -106,6 +107,7 @@ export async function createInstance(channel: string, username: string, password
 		identity: {username, password},
 		channels:[channel]
 	});
+	instance.EventEmitter.setMaxListeners(0);
 	instance.connect();
 	instance.on('message', messageListener);
 	customInstances.set(channel, instance);
