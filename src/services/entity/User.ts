@@ -50,7 +50,8 @@ SELECT
     dota_stats_from as dotaStatsFrom, 
     bet_season_id as betSeasonId, 
     gsi_connected as gsiConnected, 
-    use_bets as useBets 
+    use_bets as useBets,
+    gsi_active as gsiActive
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
@@ -288,6 +289,10 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
                 await createBetCommands(userId);
             }
         }
+    }
+
+    if(data.hasOwnProperty('gsiActive')) {
+        await conn.execute('UPDATE user SET gsi_active=? WHERE id=?', [data.gsiActive, userId]);
     }
 
     if(data.betSeasonId) {
