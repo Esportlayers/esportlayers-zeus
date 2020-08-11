@@ -37,6 +37,7 @@ async function connect(): Promise<void> {
 		await createInstance('#' + channel.toLowerCase(), name, password);
 	}
 }
+connect();
 
 async function replacePlaceholder(message: string, tags: ChatUserstate, channel: string): Promise<string> {
 	let fullMessage = message;
