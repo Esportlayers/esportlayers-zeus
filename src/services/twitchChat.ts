@@ -29,6 +29,7 @@ async function connect(): Promise<void> {
 		});
 		client!.setMaxListeners(0);
         await client!.connect();
+		client!.on('message', messageListener);
 	}
 	
 	const customBots = await getCustomBots();
@@ -73,9 +74,6 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 
 	processCommands(channel, tags, message);
 }
-
-connect();
-client && (client as Client).on('message', messageListener);
 
 export function joinChannel(channel: string): void {
     client && client.join(channel);
