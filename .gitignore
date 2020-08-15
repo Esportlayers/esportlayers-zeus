@@ -8,3 +8,4 @@ static/streamPreview
 gsiConfigs/
 log.txt
 coverage/
+migrations/1597255419905_command_access.js
