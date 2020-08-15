@@ -52,19 +52,20 @@ enum GameState {
 
 const oldRoshState: {[x: string]: null | {state: string; respawn: number;}} = {};
 
-function processRoshanState(userData: {id: number; displayName: string}, data: any): void {
-    const oldState = oldRoshState[userData.id];
+function processRoshanState(userId: number, data: any): void {
+    const oldState = oldRoshState[userId];
     const mapData = data && data.map;
 
     if(mapData && oldState) {
         const roshState = data && data.map && data.map.roshan_state;
         const roshEndSecond = data && data.map.roshan_state_end_seconds;
         if(oldState.state !== roshState || (oldState.respawn !== roshEndSecond && roshEndSecond % 10 === 0)) {
-            logFile.write(`[Dota-GSI :: ${userData.displayName}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
+            sendMessage(userId, 'roshan', roshEndSecond);
+            logFile.write(`[Dota-GSI :: ${userId}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
         }
     }
 
-    oldRoshState[userData.id] = {
+    oldRoshState[userId] = {
         state: data && data.map && data.map.roshan_state,
         respawn: data && data.map && data.map.roshan_state_end_seconds,
     };
@@ -131,7 +132,6 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     }
 
     if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
-        processRoshanState(userData, req.body);
         processWardStats(userData, req.body);
     }
     
@@ -197,6 +197,9 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
         console.log(grey('[Dota-GSI] User ' + client.displayName + ' died.'));
         sendMessage(client.userId, 'death', newDeaths);
     }
+
+    //Roshan state
+    processRoshanState(client.userId, req.body);
 
     //Update client data
     client.gamestate = data;
