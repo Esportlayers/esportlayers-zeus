@@ -4,6 +4,7 @@ import {grey} from 'chalk';
 import { sendMessage } from "../services/websocket";
 import dayjs from "dayjs";
 import isEqual from 'lodash/isEqual';
+import differenceBy from 'lodash/differenceBy';
 
 var fs = require('fs');
 var logFile = fs.createWriteStream('log.txt', { flags: 'a' });
@@ -122,19 +123,94 @@ function processWardStats(userData: {id: number; displayName: string}, data: any
     };
 }
 
-const draftState: {[x: string]: object | null} = {
+interface Hero {
+    id: number;
+    class: string;
+}
 
+interface PickState {
+    bans: Hero[];
+    picks: Hero[];
+}
+
+interface TeamPickState {
+    dire: PickState;
+    radiant: PickState;
+}
+const draftState: {[x: string]: TeamPickState | null} = {}; 
+const rawDraftState: {[x: string]: object | null} = {};
+
+const defaultState: TeamPickState = {
+    dire: {
+        bans: [],
+        picks: []
+    },
+    radiant: {
+        bans: [],
+        picks: []
+    }
 };
 
-function processPicksAndBans(userId: number, data: any): void {
-    const oldState = draftState[userId];
-    const draftData = data && data.draft;
+function transformTeamPickState(data: {[x: string]: string}): PickState {
+    const bans = [];
+    const picks = [];
 
-    if(draftData && oldState && !isEqual(oldState, draftData)) {
-        logFile.write(`[Dota-GSI :: ${userId}] Draft updated: ${draftState} \n`);
+    for(let i = 0; i <= 6; ++i) {
+        const pickId = data[`pick${i}_id`];
+        const pickClass = data[`pick${i}_class`];
+        const banId = data[`ban${i}_id`];
+        const banClass = data[`ban${i}_class`];
+
+        if(pickId) {
+            picks.push({id: +pickId, class: pickClass});
+        }
+
+        if(banId) {
+            bans.push({id: +banId, class: banClass});
+        }
+
     }
 
-    draftState[userId] = draftData;
+    return {
+        bans,
+        picks,
+    }
+}
+
+function processPicksAndBans(userId: number, data: any): void {
+    const oldState = draftState[userId] || defaultState;
+    const oldRawState = rawDraftState[userId];
+    const draftData = data && data.draft;
+
+    if(draftData && oldState && !isEqual(oldRawState, draftData)) {
+        const radiant = transformTeamPickState(data.team2);
+        const dire = transformTeamPickState(data.team3);
+        const radiantPickChanges = differenceBy(radiant.picks, oldState.radiant.picks, 'id');
+        const radiantBanChanges = differenceBy(radiant.bans, oldState.radiant.bans, 'id');
+
+        if(radiantPickChanges.length) {
+            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant pick: ${JSON.stringify(radiantPickChanges)} \n`);
+        }
+        if(radiantBanChanges.length) {
+            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant ban: ${JSON.stringify(radiantBanChanges)} \n`);
+        }
+        const direPickChanges = differenceBy(dire.picks, oldState.dire.picks, 'id');
+        const direBanChanges = differenceBy(dire.bans, oldState.dire.bans, 'id');
+
+        if(direPickChanges.length) {
+            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant pick: ${JSON.stringify(direPickChanges)} \n`);
+        }
+        if(direBanChanges.length) {
+            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant ban: ${JSON.stringify(direBanChanges)} \n`);
+        }
+
+        draftState[userId] = {
+            radiant,
+            dire
+        };
+    }
+
+    rawDraftState[userId] = draftData;
 }
 
 const connectedIds = new Set();
