@@ -201,10 +201,10 @@ function processPicksAndBans(userId: number, data: any): void {
         const direBanChanges = differenceBy(dire.bans, oldState.dire.bans, 'id');
 
         if(direPickChanges.length) {
-            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant pick: ${JSON.stringify(direPickChanges)} \n`);
+            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new dire pick: ${JSON.stringify(direPickChanges)} \n`);
         }
         if(direBanChanges.length) {
-            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant ban: ${JSON.stringify(direBanChanges)} \n`);
+            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new dire ban: ${JSON.stringify(direBanChanges)} \n`);
         }
 
         draftState[userId] = {
