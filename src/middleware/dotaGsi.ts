@@ -57,7 +57,7 @@ function processRoshanState(userId: number, data: any): void {
     const oldState = oldRoshState[userId];
     const mapData = data && data.map;
 
-    if(data.map.roshan_state) {
+    if(data && data.map) {
         console.log(data && data.map && data.map.roshan_state, data && data.map.roshan_state_end_seconds);
     }
 
