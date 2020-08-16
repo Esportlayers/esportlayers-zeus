@@ -185,9 +185,9 @@ function processPicksAndBans(userId: number, data: any): void {
     const oldRawState = rawDraftState[userId];
     const draftData = data && data.draft;
 
-    if(draftData && oldState && !isEqual(oldRawState, draftData)) {
-        const radiant = transformTeamPickState(data.team2);
-        const dire = transformTeamPickState(data.team3);
+    if(draftData && Object.keys(draftData).length > 0 && oldState && !isEqual(oldRawState, draftData)) {
+        const radiant = transformTeamPickState(data.draft.team2);
+        const dire = transformTeamPickState(data.draft.team3);
         const radiantPickChanges = differenceBy(radiant.picks, oldState.radiant.picks, 'id');
         const radiantBanChanges = differenceBy(radiant.bans, oldState.radiant.bans, 'id');
 
