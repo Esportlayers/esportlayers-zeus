@@ -3,6 +3,8 @@ import { gsiAuthTokenUnknown, saveDotaGame, userConnected, patchUser, loadUserBy
 import {grey} from 'chalk';
 import { sendMessage } from "../services/websocket";
 import dayjs from "dayjs";
+import isEqual from 'lodash/isEqual';
+
 var fs = require('fs');
 var logFile = fs.createWriteStream('log.txt', { flags: 'a' });
 
@@ -123,6 +125,21 @@ function processWardStats(userData: {id: number; displayName: string}, data: any
     };
 }
 
+const draftState: {[x: string]: object | null} = {
+
+};
+
+function processPicksAndBans(userId: number, data: any): void {
+    const oldState = draftState[userId];
+    const draftData = data && data.draft;
+
+    if(draftData && oldState && !isEqual(oldState, draftData)) {
+        logFile.write(`[Dota-GSI :: ${userId}] Draft updated: ${draftState} \n`);
+    }
+
+    draftState[userId] = draftData;
+}
+
 const connectedIds = new Set();
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
@@ -205,6 +222,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
 
     //Roshan state
     processRoshanState(client.userId, data);
+    processPicksAndBans(client.userId, data);
 
     //Update client data
     client.gamestate = data;
