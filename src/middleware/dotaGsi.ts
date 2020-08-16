@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { gsiAuthTokenUnknown, saveDotaGame, userConnected, patchUser } from "../services/entity/User";
+import { gsiAuthTokenUnknown, saveDotaGame, userConnected, patchUser, loadUserById } from "../services/entity/User";
 import {grey} from 'chalk';
 import { sendMessage } from "../services/websocket";
 import dayjs from "dayjs";
@@ -14,11 +14,12 @@ async function checkClientHeartbet(): Promise<void> {
     const heartbeatclients = [...heartbeat.entries()];
     for(const [userId, lastInteraction] of heartbeatclients) {
         if(lastInteraction < maxLastPing) {
-            console.log(grey('[Dota-GSI] User disconnected by heartbeat ' + userId));
             heartbeat.delete(userId);
             sendMessage(userId, 'connected', false);
             await patchUser(userId, {gsiActive: false});
+            const user = await loadUserById(userId);
             connectedIds.delete(userId);
+            console.log(grey('[Dota-GSI] User disconnected by heartbeat ' + user?.displayName));
             clients = clients.filter(({userId: clientUserId}) => clientUserId !== userId);
         }
     }
@@ -55,6 +56,10 @@ const oldRoshState: {[x: string]: null | {state: string; respawn: number;}} = {}
 function processRoshanState(userId: number, data: any): void {
     const oldState = oldRoshState[userId];
     const mapData = data && data.map;
+
+    if(data.map.roshan_state) {
+        console.log(data && data.map && data.map.roshan_state, data && data.map.roshan_state_end_seconds);
+    }
 
     if(mapData && oldState) {
         const roshState = data && data.map && data.map.roshan_state;
@@ -199,7 +204,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     }
 
     //Roshan state
-    processRoshanState(client.userId, req.body);
+    processRoshanState(client.userId, data);
 
     //Update client data
     client.gamestate = data;
