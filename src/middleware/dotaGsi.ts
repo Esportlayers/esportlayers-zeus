@@ -193,18 +193,22 @@ function processPicksAndBans(userId: number, data: any): void {
 
         if(radiantPickChanges.length) {
             logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant pick: ${JSON.stringify(radiantPickChanges)} \n`);
+            sendMessage(userId, 'draft', {team: 'radiant', type: 'pick', change: radiantPickChanges});
         }
         if(radiantBanChanges.length) {
             logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant ban: ${JSON.stringify(radiantBanChanges)} \n`);
+            sendMessage(userId, 'draft', {team: 'radiant', type: 'ban', change: radiantBanChanges});
         }
         const direPickChanges = differenceBy(dire.picks, oldState.dire.picks, 'id');
         const direBanChanges = differenceBy(dire.bans, oldState.dire.bans, 'id');
 
         if(direPickChanges.length) {
             logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new dire pick: ${JSON.stringify(direPickChanges)} \n`);
+            sendMessage(userId, 'draft', {team: 'dire', type: 'pick', change: direPickChanges});
         }
         if(direBanChanges.length) {
             logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new dire ban: ${JSON.stringify(direBanChanges)} \n`);
+            sendMessage(userId, 'draft', {team: 'dire', type: 'ban', change: direBanChanges});
         }
 
         draftState[userId] = {

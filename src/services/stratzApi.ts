@@ -51,13 +51,18 @@ interface LeagueHeroTableResponse {
     }
 }
 
-export async function fetchHeroStats(leagueId: number, heroId: number): Promise<HeroOverview | null> {
+export async function fetchHeroStats(leagueId: number, heroId: number): Promise<HeroOverview & {totalGamesCount: number} | null> {
     const response = await fetch(BASE_URL + `/league/${leagueId}/tables?tableType=Hero`);
 
     if(response.ok) {
         const {leagueTableHero: {overview}} = (await response.json()) as LeagueHeroTableResponse;
+        const heroStats = overview.find(({heroId: responseHeroId}) => responseHeroId === heroId);
+        const totalGamesCount = overview.reduce((acc, {matchCount}) => {
+            return acc + matchCount;
+        }, 0) / 10;
 
-        return overview.find(({heroId: responseHeroId}) => responseHeroId === heroId) || {
+        return {
+            totalGamesCount,
             index: 0,
             heroId: 0,
             matchCount: 0,
@@ -69,6 +74,7 @@ export async function fetchHeroStats(leagueId: number, heroId: number): Promise<
             banPhaseOne: 0,
             banPhaseTwo: 0,
             banPhaseThree: 0,
+            ...heroStats,
         };
     }
 
