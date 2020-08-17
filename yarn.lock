@@ -561,10 +561,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@streamdota/shared-types@1.0.19":
-  version "1.0.19"
-  resolved "https://registry.yarnpkg.com/@streamdota/shared-types/-/shared-types-1.0.19.tgz#5e91a2cf82957cf062267ab3673828774763eafa"
-  integrity sha512-55tDa3g1bIa9+G96bTREFBVrDFqYdk4oOT5VJDy3VXk2LXGU2fHFrnfzC/8Y7HTaRAlyUSdC8qepTExiZBtY2w==
+"@streamdota/shared-types@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@streamdota/shared-types/-/shared-types-1.1.0.tgz#8c6107772e9dfa51428afd46725a240a02dd5284"
+  integrity sha512-+a75c8gFk3X7tl6X3/K9gXv/pJL1T8xeOAVOh1p6OHF/m/O+IHtIz+09f/4dtxoyoRBGB5p+pKKYQiKDEs19NQ==
 
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.7":
   version "7.1.9"
@@ -745,10 +745,10 @@
     "@types/node" "*"
     form-data "^3.0.0"
 
-"@types/node@*", "@types/node@^14.0.11":
-  version "14.0.27"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.0.27.tgz#a151873af5a5e851b51b3b065c9e63390a9e0eb1"
-  integrity sha512-kVrqXhbclHNHGu9ztnAwSncIgJv/FaxmzXJvGXNdcCpV1b8u1/Mi6z6m0vwy0LzKeXFTPLH0NzwmoJ3fNCIq0g==
+"@types/node@*", "@types/node@^14.6.0":
+  version "14.6.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.6.0.tgz#7d4411bf5157339337d7cff864d9ff45f177b499"
+  integrity sha512-mikldZQitV94akrc4sCcSjtJfsTKt4p+e/s0AGscVA6XArQ9kFclP+ZiYUMnq987rc6QlYxXv/EivqlfSLxpKA==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
