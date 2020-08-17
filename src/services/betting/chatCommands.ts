@@ -103,10 +103,14 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
 
     const currentRound = await requireBettingRound(channel, user.id);
 
-    if(message === startBetCommand.command && startBetCommand.active && tags.badges?.broadcaster && currentRound.status === 'finished' ) {
-        await startBet(channel, user.id);
-        await createBetRound(user.id, user.betSeasonId);
-        sendMessage(user.id, 'betting', currentRound);
+    if(message === startBetCommand.command && startBetCommand.active && tags.badges?.broadcaster ) {
+        if(currentRound.status === 'finished') {
+            await startBet(channel, user.id);
+            await createBetRound(user.id, user.betSeasonId);
+            sendMessage(user.id, 'betting', currentRound);
+        } else {
+            await publish(channel, '@' + tags.username + ' es läuft bereits eine Wette.');
+        }
     } else if(message.startsWith(winnerCommand.command || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && tags.badges?.broadcaster && currentRound.status === 'running' ) {
         const result = message.substr(winnerCommand.command.length + 1, 1).toLowerCase();
         const betRoundId = await getRoundId(user.id);
