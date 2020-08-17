@@ -9,7 +9,10 @@ import betSeasonRoute from './routes/betSeason';
 import botCommandRoute from './routes/botCommand';
 import botTimerRoute from './routes/botTimer';
 import betOverlayRoute from './routes/betsOverlay';
+import castingRoute from './routes/casting';
+import simulationRoutes from './routes/simulate';
 import { PassportStatic } from 'passport';
+import config from "../config";
 
 export default ({passport}: {passport: PassportStatic}) => {
 	const app = Router();
@@ -25,6 +28,11 @@ export default ({passport}: {passport: PassportStatic}) => {
 	botCommandRoute(app);
 	botTimerRoute(app);
 	betOverlayRoute(app);
+	castingRoute(app);
+	if(config.env === 'development') {
+		simulationRoutes(app);
+	}
+
 	
 	return app;
 }
