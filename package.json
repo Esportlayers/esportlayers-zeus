@@ -8,7 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@sentry/node": "5.21.1",
-    "@streamdota/shared-types": "1.0.19",
+    "@streamdota/shared-types": "1.1.0",
     "@types/express-ws": "^3.0.0",
     "@types/tmi.js": "^1.4.0",
     "body-parser": "^1.19.0",
@@ -47,7 +47,7 @@
     "@types/jest": "^26.0.0",
     "@types/lodash": "^4.14.159",
     "@types/mysql2": "types/mysql2",
-    "@types/node": "^14.0.11",
+    "@types/node": "^14.6.0",
     "@types/node-fetch": "^2.5.5",
     "@types/passport": "^1.0.3",
     "@types/passport-anonymous": "^1.0.3",
