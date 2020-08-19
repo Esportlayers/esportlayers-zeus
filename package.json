@@ -8,7 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@sentry/node": "5.21.1",
-    "@streamdota/shared-types": "1.1.0",
+    "@streamdota/shared-types": "1.1.2",
     "@types/express-ws": "^3.0.0",
     "@types/tmi.js": "^1.4.0",
     "body-parser": "^1.19.0",

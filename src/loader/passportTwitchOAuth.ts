@@ -19,7 +19,11 @@ export default async ({ app, passport }: { app: express.Application, passport: P
     async (accessToken, refreshToken, profile, done) => {
         try {
             const user = await findOrCreateUser(+profile.id, profile.display_name, profile.profile_image_url);
-            done(null, user);
+            if(user.status !== 'active') {
+                done('Account is disabled');
+            } else {
+                done(null, user);
+            }
         } catch(err) {
             done(err);
         }

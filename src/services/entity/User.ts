@@ -51,7 +51,9 @@ SELECT
     bet_season_id as betSeasonId, 
     gsi_connected as gsiConnected, 
     use_bets as useBets,
-    gsi_active as gsiActive
+    gsi_active as gsiActive,
+    status,
+    UNIX_TIMESTAMP(created) as created,
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
@@ -104,9 +106,9 @@ export async function createGsiAuthToken(userId: number): Promise<string> {
     return auth;
 }
 
-export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<{id: number; displayName: string} | void> {
+export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<{id: number; displayName: string; status: 'active' | 'disabled'} | void> {
     const conn = await getConn();
-    const [authRows] = await conn.query<Array<RowDataPacket & {id: number; displayName: string}>>('SELECT id, display_name as displayName FROM user WHERE gsi_auth = ?;', [gsiAuthToken]);
+    const [authRows] = await conn.query<Array<RowDataPacket & {id: number; displayName: string; status: 'active' | 'disabled'}>>('SELECT id, display_name as displayName, status FROM user WHERE gsi_auth = ?;', [gsiAuthToken]);
     await conn.end();
 
     if(authRows.length > 0) {
