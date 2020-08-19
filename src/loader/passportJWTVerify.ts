@@ -12,7 +12,11 @@ export default async ({passport}: {passport: PassportStatic}) => {
     passport.use(new Strategy(opts, async (jwt_payload, done) => {
         try {
             const user = await loadUserById(jwt_payload.sub);
-            return done(null, user)
+            if(user?.status !== 'active') {
+                return done('Account is disabled');
+            } else {
+                return done(null, user)
+            }
         } catch(error) {
             return done(error, false);
         }

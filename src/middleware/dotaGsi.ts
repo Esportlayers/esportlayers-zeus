@@ -76,6 +76,7 @@ function processRoshanState(userId: number, data: any): void {
     };
 }
 
+/*
 const oldWardState: {[x: string]: null | {
     radiantWardsPurchased: number,
     radiantWardsPlaced: number,
@@ -122,6 +123,7 @@ function processWardStats(userData: {id: number; displayName: string}, data: any
         direWardsDestroyed
     };
 }
+*/
 
 interface Hero {
     id: number;
@@ -229,9 +231,10 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
         console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as auth key is not known.'));
         return res.status(404).json('Unknown Auth token').end();
     }
-
-    if(req.body.auth.token === '726be318-a3b1-480e-8f17-58e66363d35c') {
-        processWardStats(userData, req.body);
+    
+    if(userData.status !== 'active') {
+        console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as account of ' + userData.displayName + ' is disabled'));
+        return res.status(403).json('Account locked').end();
     }
     
     for (var i = 0; i < clients.length; i++) {
