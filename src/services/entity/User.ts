@@ -53,7 +53,7 @@ SELECT
     use_bets as useBets,
     gsi_active as gsiActive,
     status,
-    UNIX_TIMESTAMP(created) as created,
+    UNIX_TIMESTAMP(created) as created
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
