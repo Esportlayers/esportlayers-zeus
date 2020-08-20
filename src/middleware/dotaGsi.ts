@@ -79,11 +79,21 @@ function processRoshanState(userId: number, data: any): void {
         }
     }
 
-    oldRoshState[userId] = {
-        aegis: Boolean(aegisState[userId]),
-        state: data && data.map && data.map.roshan_state,
-        respawn: data && data.map && data.map.roshan_state_end_seconds,
-    };
+    if(!mapData && oldState && oldState.state !== 'alive') {
+        sendMessage(userId, 'roshan', {state: 'alive', remaining: 0});
+        logFile.write(`[Dota-GSI :: ${userId}] Reset rosh state as game was left \n`);
+        oldRoshState[userId] = {
+            aegis: false,
+            state: 'alive',
+            respawn: 0,
+        };
+    } else {
+        oldRoshState[userId] = {
+            aegis: Boolean(aegisState[userId]),
+            state: data && data.map && data.map.roshan_state,
+            respawn: data && data.map && data.map.roshan_state_end_seconds,
+        };
+    }
 }
 //#endregion
 
