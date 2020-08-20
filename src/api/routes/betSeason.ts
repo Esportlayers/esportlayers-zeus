@@ -17,7 +17,7 @@ export default (app: Router) => {
 
   route.post('/', reuqireAuthorization, async (req: Request, res: Response) => {
     await createUserBetSeason((req.user as User).id, req.body);
-    return res.json(undefined).status(201);
+    return res.sendStatus(201);
   });
 
   route.get('/rounds/:seasonId', reuqireAuthorization, requireBetSeasonAccess('user'), async (req: Request, res: Response) => {
@@ -47,40 +47,40 @@ export default (app: Router) => {
 
   route.post('/invite/accept/:inviteKey', reuqireAuthorization, async (req: Request, res: Response) => {
     await acceptSeasonInvite(req.params.inviteKey, (req.user as User).id);
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.post('/invite/reject/:inviteKey', reuqireAuthorization, async (req: Request, res: Response) => {
     await denySeasonInvite(req.params.inviteKey, (req.user as User).id);
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.delete('/invite/:seasonId/:inviteKey', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     await deleteInviteByKey(req.params.inviteKey, +req.params.seasonId, (req.user as User).id);
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.patch('/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     await patchUserBetSeason(+req.params.seasonId, req.body);
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.patch('/:seasonId/:userId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     if((req.user as User).id !== +req.params.userId) {
       await patchUserBetSeasonRole(+req.params.seasonId, +req.params.userId, req.body.userRole);
     }
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.delete('/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     await deleteBetSeason(+req.params.seasonId);
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.delete('/:seasonId/:userId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     if((req.user as User).id !== +req.params.userId) {
       await deleteUserBetSeason(+req.params.seasonId, +req.params.userId);
     }
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 };

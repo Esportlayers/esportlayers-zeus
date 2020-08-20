@@ -17,18 +17,18 @@ export default (app: Router) => {
     route.post('/create', reuqireAuthorization, async(req: Request, res: Response) => {
         const user = req.user as User;
         await createTimer(user.id, req.body.active, +req.body.period, req.body.message);
-        return res.json(undefined).status(200);
+        return res.sendStatus(201);
     });
 
     route.patch('/:timerId', reuqireAuthorization, async(req: Request, res: Response) => {
         const user = req.user as User;
         await patchTimer(+req.params.timerId, user.id, req.body.active, +req.body.period, req.body.message);
-        return res.json(undefined).status(200);
+        return res.sendStatus(204);
     });
 
     route.delete('/:timerId', reuqireAuthorization, async(req: Request, res: Response) => {
         const user = req.user as User;
         await deleteTimer(+req.params.timerId, user.id);
-        return res.json(undefined).status(200);
+        return res.sendStatus(204);
     });
 }

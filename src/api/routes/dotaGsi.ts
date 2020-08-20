@@ -30,7 +30,7 @@ export default (app: Router) => {
     const user = req.user as User;
     await resetDotaGsi(user.id);
 
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, (ws: ws, req: Request) => {

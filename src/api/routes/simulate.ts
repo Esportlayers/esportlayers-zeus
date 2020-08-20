@@ -8,6 +8,6 @@ export default (app: Router) => {
 
     route.post('/wsEvent/:userId/:type', async (req: Request, res: Response) => {
         sendMessage(+req.params.userId, req.params.type, req.body);
-        return res.json(undefined).status(204);
+        return res.sendStatus(204);
     });
 };
