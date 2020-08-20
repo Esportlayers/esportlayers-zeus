@@ -219,6 +219,18 @@ function processPicksAndBans(userId: number, data: any): void {
     rawDraftState[userId] = draftData;
 }
 
+const rawItemSate: {[x: string]: object} = {};
+function processItems(userId: number, data: any): void {
+    const oldState = rawItemSate[userId] || {};
+    const itemState = data?.items || {};
+
+    if(!isEqual(oldState, itemState)) {
+        logFile.write(`[Dota-GSI :: ${userId}] Items updated: ${JSON.stringify(itemState)} \n`);
+    }
+
+    rawItemSate[userId] = itemState;
+}
+
 const connectedIds = new Set();
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
@@ -303,6 +315,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     //Roshan state
     processRoshanState(client.userId, data);
     processPicksAndBans(client.userId, data);
+    processItems(client.userId, data);
 
     //Update client data
     client.gamestate = data;
