@@ -9,7 +9,22 @@ import differenceBy from 'lodash/differenceBy';
 var fs = require('fs');
 var logFile = fs.createWriteStream('log.txt', { flags: 'a' });
 
+class GsiClient {
+    auth: string;
+    userId: number;
+    displayName: string;
+    gamestate: object = {};
+
+    constructor(auth: string, userId: number, displayName: string) {
+        this.auth = auth;
+        this.userId = userId;
+        this.displayName = displayName;
+    }
+}
+
 let clients: GsiClient[] = [];
+
+//#region <heartbeat>
 const heartbeat: Map<number, number> = new Map();
 
 async function checkClientHeartbet(): Promise<void> {
@@ -29,19 +44,7 @@ async function checkClientHeartbet(): Promise<void> {
 }
 
 setInterval(checkClientHeartbet, 5000);
-
-class GsiClient {
-    auth: string;
-    userId: number;
-    displayName: string;
-    gamestate: object = {};
-
-    constructor(auth: string, userId: number, displayName: string) {
-        this.auth = auth;
-        this.userId = userId;
-        this.displayName = displayName;
-    }
-}
+////#endregion
 
 enum GameState {
     playersLoading = 'DOTA_GAMERULES_STATE_WAIT_FOR_PLAYERS_TO_LOAD',
@@ -54,7 +57,10 @@ enum GameState {
     postGame = 'DOTA_GAMERULES_STATE_POST_GAME'
 }
 
-const oldRoshState: {[x: string]: null | {state: string; respawn: number;}} = {};
+
+//#region <roshan state>
+const oldRoshState: {[x: string]: null | {state: string; respawn: number; aegis: boolean}} = {};
+const aegisState: {[x: string]: boolean} = {};
 
 function processRoshanState(userId: number, data: any): void {
     const oldState = oldRoshState[userId];
@@ -62,69 +68,26 @@ function processRoshanState(userId: number, data: any): void {
 
     if(mapData && oldState) {
         const roshState = data && data.map && data.map.roshan_state;
-        const roshEndSecond = data && data.map.roshan_state_end_seconds;
+        const roshEndSecond = data && data.map.roshan_state_end_seconds || 0;
         //rosh states: 'alive' | 'respawn_base' | 'respawn_variable'
-        if(oldState.state !== roshState || (oldState.respawn !== roshEndSecond && roshEndSecond % 10 === 0)) {
-            sendMessage(userId, 'roshan', {state: roshState, remaining: roshEndSecond});
+        if(oldState.state !== roshState || oldState.aegis !== aegisState[userId] || (oldState.respawn !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
+            if(oldState.state === 'alive' && roshState === 'respawn_base') {
+                aegisState[userId] = true;
+            }
+            sendMessage(userId, 'roshan', {state: aegisState[userId] ? 'aegis' : roshState, remaining: roshEndSecond});
             logFile.write(`[Dota-GSI :: ${userId}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
         }
     }
 
     oldRoshState[userId] = {
+        aegis: Boolean(aegisState[userId]),
         state: data && data.map && data.map.roshan_state,
         respawn: data && data.map && data.map.roshan_state_end_seconds,
     };
 }
+//#endregion
 
-/*
-const oldWardState: {[x: string]: null | {
-    radiantWardsPurchased: number,
-    radiantWardsPlaced: number,
-    radiantWardsDestroyed: number,
-    direWardsPurchased: number,
-    direWardsPlaced: number,
-    direWardsDestroyed: number,
-}} = {};
-
-function processWardStats(userData: {id: number; displayName: string}, data: any): void {
-    const oldState = oldWardState[userData.id];
-    const playerData = data && data.player;
-
-    let radiantWardsPurchased = 0, radiantWardsPlaced = 0, radiantWardsDestroyed = 0, direWardsPurchased = 0, direWardsPlaced = 0, direWardsDestroyed = 0;
-
-    if(playerData.team2) {
-        for(let i = 0; i < 5; ++i) {
-            const player = playerData.team2['player' + i];
-            radiantWardsPurchased += player.wards_purchased;
-            radiantWardsPlaced += player.wards_placed;
-            radiantWardsDestroyed += player.wards_destroyed;
-        }
-    }
-    if(playerData.team3) {
-        for(let i = 5; i < 10; ++i) {
-            const player = playerData.team3['player' + i];
-            direWardsPurchased += player.wards_purchased;
-            direWardsPlaced += player.wards_placed;
-            direWardsDestroyed += player.wards_destroyed;
-        }
-    }
-    if(oldState 
-   && (oldState.radiantWardsPurchased !== radiantWardsPurchased || oldState.radiantWardsPlaced !== radiantWardsPlaced || oldState.radiantWardsDestroyed !== radiantWardsDestroyed
-    || oldState.direWardsPurchased !== direWardsPurchased || oldState.direWardsPlaced !== direWardsPlaced || oldState.direWardsDestroyed !== direWardsDestroyed)) {
-        logFile.write(`[Dota-GSI :: ${userData.displayName}] Ward state | Radiant: 💰${radiantWardsPurchased}, 🎯${radiantWardsPlaced}, 🔫${radiantWardsDestroyed} | Dire: 💰${direWardsPurchased}, 🎯${direWardsPlaced}, 🔫${direWardsDestroyed}\n`);
-        
-    }
-    oldWardState[userData.id] = {
-        radiantWardsPurchased,
-        radiantWardsPlaced,
-        radiantWardsDestroyed,
-        direWardsPurchased,
-        direWardsPlaced,
-        direWardsDestroyed
-    };
-}
-*/
-
+//#region <draft>
 interface Hero {
     id: number;
     class: string;
@@ -218,9 +181,11 @@ function processPicksAndBans(userId: number, data: any): void {
 
     rawDraftState[userId] = draftData;
 }
+//#endregion
 
 //const aegisName = 'item_aegis';
 
+//#region <items>
 interface BaseItem {
     can_cast?: boolean;
     charges?: number;
@@ -259,7 +224,7 @@ function parseUserItems(itemState: ItemState): PlayerItemStates {
         for(const [playerId, items] of players) {
             const id = playerId.substring(6);
             state['' + id] = Object.entries(items).reduce<ParsedItem[]>((acc, [name, item]) => {
-                if(item.name !== 'empty') {
+                if(item.name && item.name !== 'empty') {
                     acc.push({
                         location: name.startsWith('slot') ? 'slot' : 'stash',
                         selfPurchased: Boolean(item.purchaser && +item.purchaser === +id),
@@ -293,13 +258,19 @@ function processItems(userId: number, data: any): void {
 
             if(newItems.length > 0) {
                 for(const newItem of newItems) {
-                    logFile.write(`[Dota-GSI :: ${userId}] Player ${id} picked up/puchased a/n ${newItem.name} \n`);
+                    logFile.write(`[Dota-GSI :: ${userId}] Aegis was picked up\n`);
+                    if(newItem.name === 'item_aegis') {
+                        aegisState[userId] = true;
+                    }
                 }
             }
 
             if(droppedItems.length > 0) {
                 for(const droppedItem of droppedItems) {
-                    logFile.write(`[Dota-GSI :: ${userId}] Player ${id} dropped a/n ${droppedItem.name} \n`);
+                    if(droppedItem.name === 'item_aegis') {
+                        logFile.write(`[Dota-GSI :: ${userId}] Aegis was lost\n`);
+                        aegisState[userId] = false;
+                    }
                 }
             }
         }
@@ -308,6 +279,7 @@ function processItems(userId: number, data: any): void {
 
     rawItemState[userId] = strItemState;
 }
+//#endregion
 
 const connectedIds = new Set();
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
