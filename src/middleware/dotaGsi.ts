@@ -219,16 +219,94 @@ function processPicksAndBans(userId: number, data: any): void {
     rawDraftState[userId] = draftData;
 }
 
-const rawItemSate: {[x: string]: object} = {};
-function processItems(userId: number, data: any): void {
-    const oldState = rawItemSate[userId] || {};
-    const itemState = data?.items || {};
+//const aegisName = 'item_aegis';
 
-    if(!isEqual(oldState, itemState)) {
-        logFile.write(`[Dota-GSI :: ${userId}] Items updated: ${JSON.stringify(itemState)} \n`);
+interface BaseItem {
+    can_cast?: boolean;
+    charges?: number;
+    contains_rune?: boolean;
+    cooldown?: number;
+    name: string;
+    passive?: boolean;
+    purchaser?: number;
+}
+
+interface ParsedItem extends BaseItem {
+    selfPurchased: boolean;
+    location: 'slot' | 'stash';
+}
+
+interface PlayerItemStates {
+    [x: string]: ParsedItem[];
+}
+
+const parsedItemState: {[x: string]: PlayerItemStates} = {};
+const rawItemState: {[x: string]: string} = {};
+
+interface ItemState {
+    [x: string]: {
+        [x: string]: {
+            [x: string]: BaseItem;
+        }
+    }
+}
+function parseUserItems(itemState: ItemState): PlayerItemStates {
+    const teamItems = Object.values(itemState);
+    const state: PlayerItemStates = {};
+
+    for(const teamPlayers of teamItems) {
+        const players = Object.entries(teamPlayers);
+        for(const [playerId, items] of players) {
+            const id = playerId.substring(6);
+            state['' + id] = Object.entries(items).reduce<ParsedItem[]>((acc, [name, item]) => {
+                if(item.name !== 'empty') {
+                    acc.push({
+                        location: name.startsWith('slot') ? 'slot' : 'stash',
+                        selfPurchased: Boolean(item.purchaser && +item.purchaser === +id),
+                        ...item,
+                    });
+                }
+
+                return acc;
+            }, []);
+        }
     }
 
-    rawItemSate[userId] = itemState;
+    return state;
+}
+
+function processItems(userId: number, data: any): void {
+    const oldStrState = rawItemState[userId] || {};
+    const oldItemState = parsedItemState[userId] || {};
+    const itemState = data?.items || {};
+    const strItemState = JSON.stringify(itemState);
+
+    if(oldStrState !== strItemState) {
+        const newState = parseUserItems(itemState);
+        const arrayState = Object.entries(newState);
+
+        for(const [id, items] of arrayState) {
+            const oldItems = oldItemState[id];
+
+            const newItems = differenceBy(items, oldItems, 'name');
+            const droppedItems = differenceBy(oldItems, items, 'name');
+
+            if(newItems.length > 0) {
+                for(const newItem of newItems) {
+                    logFile.write(`[Dota-GSI :: ${userId}] Player ${id} picked up/puchased a/n ${newItem.name} \n`);
+                }
+            }
+
+            if(droppedItems.length > 0) {
+                for(const droppedItem of droppedItems) {
+                    logFile.write(`[Dota-GSI :: ${userId}] Player ${id} dropped a/n ${droppedItem.name} \n`);
+                }
+            }
+        }
+        parsedItemState[userId] = newState;
+    }
+
+    rawItemState[userId] = strItemState;
 }
 
 const connectedIds = new Set();
