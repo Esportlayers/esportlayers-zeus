@@ -70,7 +70,7 @@ function processRoshanState(userId: number, data: any): void {
         const roshState = data && data.map && data.map.roshan_state;
         const roshEndSecond = data && data.map.roshan_state_end_seconds || 0;
         //rosh states: 'alive' | 'respawn_base' | 'respawn_variable'
-        if(oldState.state !== roshState || oldState.aegis !== Boolean(aegisState[userId]) || (oldState.respawn !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
+        if(oldState.state !== roshState || oldState.aegis !== Boolean(aegisState[userId]) || ((oldState.respawn || 0 ) !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
             if(oldState.state === 'alive' && roshState === 'respawn_base') {
                 aegisState[userId] = true;
             }
