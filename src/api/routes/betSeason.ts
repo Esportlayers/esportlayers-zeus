@@ -73,7 +73,7 @@ export default (app: Router) => {
   });
 
   route.delete('/:seasonId', reuqireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
-    await deleteBetSeason(+req.params.seasonId);
+    await deleteBetSeason(+req.params.seasonId, +(req.user as User).id);
     return res.sendStatus(204);
   });
 
