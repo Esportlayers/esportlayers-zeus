@@ -22,18 +22,18 @@ export default (app: Router) => {
   route.post('/', reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     await createBetRound(user.id, user.betSeasonId, true);
-    return res.json(undefined).status(201);
+    return res.sendStatus(201);
   });
 
   route.patch('/:roundId', reuqireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
     const user = req.user as User;
     await patchBetRound(+req.params.roundId, req.body, true, user.id);
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.delete('/:roundId', reuqireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
     await deleteBetRound(+req.params.roundId);
-    return res.json(undefined).status(204);
+    return res.sendStatus(204);
   });
 
   route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, (ws: ws, req: Request) => {

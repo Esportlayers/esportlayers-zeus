@@ -11,7 +11,7 @@ export default (app: Router) => {
         const heroStats = await fetchHeroStats(+req.params.leagueId, +req.params.heroId);
 
         if(heroStats === null) {
-            return res.json(undefined).status(503);
+            return res.sendStatus(503);
         }
         
         return res.json(heroStats).status(200);
