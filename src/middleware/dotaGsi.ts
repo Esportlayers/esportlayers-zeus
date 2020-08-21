@@ -226,8 +226,6 @@ async function processWinner(client: GsiClient, data: any): Promise<void> {
                 state: 'alive',
                 respawn: 0,
             };
-            supportInvestment[client.userId] = null;
-            healingInvestment[client.userId] = null;
         }
     }
 }
@@ -455,6 +453,13 @@ function processItems(client: GsiClient, data: any): void {
     }
 
     rawItemState[client.userId] = strItemState;
+
+
+
+    if(!data?.map) {
+        supportInvestment[client.userId] = null;
+        healingInvestment[client.userId] = null;
+    }
 }
 //#endregion
 
