@@ -13,7 +13,7 @@ class GsiClient {
     auth: string;
     userId: number;
     displayName: string;
-    gamestate: object = {};
+    gamestate: any = {};
 
     constructor(auth: string, userId: number, displayName: string) {
         this.auth = auth;
@@ -82,11 +82,7 @@ function processRoshanState(userId: number, data: any): void {
     if(!mapData && oldState && oldState.state !== 'alive') {
         sendMessage(userId, 'roshan', {state: 'alive', remaining: 0});
         logFile.write(`[Dota-GSI :: ${userId}] Reset rosh state as game was left \n`);
-        oldRoshState[userId] = {
-            aegis: false,
-            state: 'alive',
-            respawn: 0,
-        };
+        oldRoshState[userId] = null;
     } else {
         oldRoshState[userId] = {
             aegis: Boolean(aegisState[userId]),
@@ -96,7 +92,6 @@ function processRoshanState(userId: number, data: any): void {
     }
 }
 //#endregion
-
 //#region <draft>
 interface Hero {
     id: number;
@@ -192,9 +187,45 @@ function processPicksAndBans(userId: number, data: any): void {
     rawDraftState[userId] = draftData;
 }
 //#endregion
+//#region <winner>
+async function processWinner(client: GsiClient, data: any): Promise<void> {
+    //Game state
+    const oldGameState = client.gamestate.map && client.gamestate.map.game_state;
+    const newGameState = data.map && data.map.game_state;
 
-//const aegisName = 'item_aegis';
+    if(newGameState && newGameState !== oldGameState) {
+        console.log(grey('[Dota-GSI] User ' + client.displayName + ' map.game_state ' + oldGameState + ' > ' + newGameState));
+        const playerTeam = data.player && data.player.team_name;
+        sendMessage(client.userId, 'gamestate', newGameState);
 
+        if(data.map.game_state === GameState.postGame && playerTeam && (playerTeam === 'radiant' || playerTeam === 'dire')) {
+            if(data.map.win_team === data.player.team_name) {
+                console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected win'));
+            } else {
+                console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected loss'));
+            }
+            
+            await saveDotaGame(client.userId, data.map.win_team === data.player.team_name);
+            sendMessage(client.userId, 'winner', data.map.win_team === data.player.team_name);
+
+            sendMessage(client.userId, 'roshan', {state: 'alive', remaining: 0});
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Reset roshan state by winner \n`);
+            oldRoshState[client.userId] = null;
+        }
+    }
+}
+//#endregion
+//#region <deaths>
+function processDeaths(client: GsiClient, data: any): void {
+    //Death
+    const oldDeaths = client.gamestate.player && client.gamestate.player.deaths || 0;
+    const newDeaths = data.player && data.player.deaths || 0;
+    if(newDeaths > 0 && newDeaths !== oldDeaths) {
+        console.log(grey('[Dota-GSI] User ' + client.displayName + ' died.'));
+        sendMessage(client.userId, 'death', newDeaths);
+    }
+}
+//#endregion
 //#region <items>
 interface BaseItem {
     can_cast?: boolean;
@@ -343,36 +374,9 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     const data = req.body;
     heartbeat.set(client.userId, dayjs().unix());
 
-    //Game state
-    const oldGameState = client.gamestate.map && client.gamestate.map.game_state;
-    const newGameState = data.map && data.map.game_state;
-
-    if(newGameState && newGameState !== oldGameState) {
-        console.log(grey('[Dota-GSI] User ' + client.displayName + ' map.game_state ' + oldGameState + ' > ' + newGameState));
-        const playerTeam = data.player && data.player.team_name;
-        sendMessage(client.userId, 'gamestate', newGameState);
-
-        if(data.map.game_state === GameState.postGame && playerTeam && (playerTeam === 'radiant' || playerTeam === 'dire')) {
-            if(data.map.win_team === data.player.team_name) {
-                console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected win'));
-            } else {
-                console.log(grey('[Dota-GSI] User ' + client.displayName + ' detected loss'));
-            }
-            
-            await saveDotaGame(client.userId, data.map.win_team === data.player.team_name);
-            sendMessage(client.userId, 'winner', data.map.win_team === data.player.team_name);
-        }
-    }
-
-    //Death
-    const oldDeaths = client.gamestate.player && client.gamestate.player.deaths || 0;
-    const newDeaths = data.player && data.player.deaths || 0;
-    if(newDeaths > 0 && newDeaths !== oldDeaths) {
-        console.log(grey('[Dota-GSI] User ' + client.displayName + ' died.'));
-        sendMessage(client.userId, 'death', newDeaths);
-    }
-
-    //Roshan state
+    //Game states
+    await processWinner(client, data);
+    processDeaths(client, data);
     processRoshanState(client.userId, data);
     processPicksAndBans(client.userId, data);
     processItems(client.userId, data);
