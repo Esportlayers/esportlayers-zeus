@@ -393,7 +393,7 @@ function processItems(client: GsiClient, data: any): void {
                             supportInvestment.direItems[newItem.name] = supportInvestment.direItems[newItem.name] + 1;
                         }
                         logFile.write(`[Dota-GSI :: ${client.displayName}] Changed support investment: ${supportInvestment.radiant} vs ${supportInvestment.dire}\n`);
-                        for(const [item, radiantCount] of Object.entries(supportInvestment.radiant)) {
+                        for(const [item, radiantCount] of Object.entries(supportInvestment.radiantItems)) {
                             //@ts-ignore
                             const direCount = supportInvestment.direItems[item];
                             logFile.write(`[Dota-GSI :: ${client.displayName}] ${item}, Radiant: ${radiantCount}, Dire: ${direCount}\n`);
