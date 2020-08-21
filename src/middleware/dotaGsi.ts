@@ -268,7 +268,24 @@ interface ItemState {
     }
 }
 
-const supportInvestment: {[x: string]: {dire: number; radiant: number}} = {}; 
+interface SupportItemStats {
+    dire: number;
+    direItems: {
+        item_ward_sentry: number;
+        item_ward_observer: number;
+        item_smoke_of_deceit: number;
+        item_dust: number;
+    };
+    radiant: number;
+    radiantItems: {
+        item_ward_sentry: number;
+        item_ward_observer: number;
+        item_smoke_of_deceit: number;
+        item_dust: number;
+    };
+}
+
+const supportInvestment: {[x: string]: SupportItemStats} = {}; 
 const healingInvestment: {[x: string]: {dire: number; radiant: number}} = {};
 
 const supportItems = new Set(['item_ward_sentry', 'item_ward_observer', 'item_smoke_of_deceit', 'item_dust']);
@@ -321,11 +338,23 @@ function requireHealingInvestment(userId: number): {dire: number; radiant: numbe
     return healingInvestment[userId];
 }
 
-function requireSupportInvestment(userId: number): {dire: number; radiant: number} {
+function requireSupportInvestment(userId: number): SupportItemStats {
     if(!supportInvestment[userId]) {
         supportInvestment[userId] = {
             dire: 0,
+            direItems: {
+                item_ward_sentry: 0,
+                item_ward_observer: 0,
+                item_smoke_of_deceit: 0,
+                item_dust: 0,
+            },
             radiant: 0,
+            radiantItems: {
+                item_ward_sentry: 0,
+                item_ward_observer: 0,
+                item_smoke_of_deceit: 0,
+                item_dust: 0,
+            },
         };
     }
     return supportInvestment[userId];
@@ -356,10 +385,19 @@ function processItems(client: GsiClient, data: any): void {
                         const supportInvestment = requireSupportInvestment(client.userId);
                         if(+id < 5) {
                             supportInvestment.radiant = supportInvestment.radiant + priceList[newItem.name];
+                            //@ts-ignore
+                            supportInvestment.radiantItems[newItem.name] = supportInvestment.radiantItems[newItem.name] + 1;
                         } else {
                             supportInvestment.dire = supportInvestment.dire + priceList[newItem.name];
+                            //@ts-ignore
+                            supportInvestment.direItems[newItem.name] = supportInvestment.direItems[newItem.name] + 1;
                         }
                         logFile.write(`[Dota-GSI :: ${client.displayName}] Changed support investment: ${supportInvestment.radiant} vs ${supportInvestment.dire}\n`);
+                        for(const [item, radiantCount] of Object.entries(supportInvestment.radiant)) {
+                            //@ts-ignore
+                            const direCount = supportInvestment.direItems[item];
+                            logFile.write(`[Dota-GSI :: ${client.displayName}] ${item}, Radiant: ${radiantCount}, Dire: ${direCount}\n`);
+                        }
                     } else if(healingItems.has(newItem.name) && newItem.selfPurchased) {
                         const healingInvestment = requireHealingInvestment(client.userId);
                         if(+id < 5) {
