@@ -300,8 +300,8 @@ function processItems(userId: number, data: any): void {
 
             if(newItems.length > 0) {
                 for(const newItem of newItems) {
-                    logFile.write(`[Dota-GSI :: ${userId}] Aegis was picked up\n`);
                     if(newItem.name === 'item_aegis') {
+                        logFile.write(`[Dota-GSI :: ${userId}] Aegis was picked up\n`);
                         aegisState[userId] = true;
                     }
                 }
