@@ -151,6 +151,7 @@ function processPicksAndBans(userId: number, data: any): void {
     const oldState = draftState[userId] || defaultState;
     const oldRawState = rawDraftState[userId];
     const draftData = data && data.draft;
+    const matchId = data && data.map && data.map.matchid; 
 
     if(draftData && Object.keys(draftData).length > 0 && oldState && !isEqual(oldRawState, draftData)) {
         const radiant = transformTeamPickState(data.draft.team2);
@@ -160,22 +161,22 @@ function processPicksAndBans(userId: number, data: any): void {
 
         if(radiantPickChanges.length) {
             logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant pick: ${JSON.stringify(radiantPickChanges)} \n`);
-            sendMessage(userId, 'draft', {team: 'radiant', type: 'pick', change: radiantPickChanges});
+            sendMessage(userId, 'draft', {matchId, team: 'radiant', type: 'pick', change: radiantPickChanges});
         }
         if(radiantBanChanges.length) {
             logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant ban: ${JSON.stringify(radiantBanChanges)} \n`);
-            sendMessage(userId, 'draft', {team: 'radiant', type: 'ban', change: radiantBanChanges});
+            sendMessage(userId, 'draft', {matchId, team: 'radiant', type: 'ban', change: radiantBanChanges});
         }
         const direPickChanges = differenceBy(dire.picks, oldState.dire.picks, 'id');
         const direBanChanges = differenceBy(dire.bans, oldState.dire.bans, 'id');
 
         if(direPickChanges.length) {
             logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new dire pick: ${JSON.stringify(direPickChanges)} \n`);
-            sendMessage(userId, 'draft', {team: 'dire', type: 'pick', change: direPickChanges});
+            sendMessage(userId, 'draft', {matchId, team: 'dire', type: 'pick', change: direPickChanges});
         }
         if(direBanChanges.length) {
             logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new dire ban: ${JSON.stringify(direBanChanges)} \n`);
-            sendMessage(userId, 'draft', {team: 'dire', type: 'ban', change: direBanChanges});
+            sendMessage(userId, 'draft', {matchId, team: 'dire', type: 'ban', change: direBanChanges});
         }
 
         draftState[userId] = {
