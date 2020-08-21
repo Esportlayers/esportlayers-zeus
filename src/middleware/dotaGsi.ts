@@ -83,7 +83,7 @@ function processRoshanState(client: GsiClient, data: any): void {
         sendMessage(client.userId, 'roshan', {state: 'alive', remaining: 0});
         logFile.write(`[Dota-GSI :: ${client.displayName}] Reset rosh state as game was left \n`);
         oldRoshState[client.userId] = null;
-    } else {
+    } else if(oldState) {
         oldRoshState[client.userId] = {
             aegis: Boolean(aegisState[client.userId]),
             state: data && data.map && data.map.roshan_state,
