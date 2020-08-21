@@ -67,7 +67,7 @@ function processRoshanState(client: GsiClient, data: any): void {
     const mapData = data && data.map;
 
     if(mapData && oldState) {
-        const roshState = data && data.map && data.map.roshan_state;
+        const roshState = data && data.map && data.map.roshan_state || 'alive';
         const roshEndSecond = data && data.map.roshan_state_end_seconds || 0;
         //rosh states: 'alive' | 'respawn_base' | 'respawn_variable'
         if(oldState.state !== roshState || oldState.aegis !== Boolean(aegisState[client.userId]) || ((oldState.respawn || 0 ) !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
@@ -81,7 +81,7 @@ function processRoshanState(client: GsiClient, data: any): void {
 
     const newState = {
         aegis: Boolean(aegisState[client.userId]),
-        state: data && data.map && data.map.roshan_state || 'alive',
+        state: data && data.map && data.map.roshan_state || 'alive',
         respawn: data && data.map && data.map.roshan_state_end_seconds || 0,
     }
 
@@ -221,7 +221,11 @@ async function processWinner(client: GsiClient, data: any): Promise<void> {
 
             sendMessage(client.userId, 'roshan', {state: 'alive', remaining: 0});
             logFile.write(`[Dota-GSI :: ${client.displayName}] Reset roshan state by winner \n`);
-            oldRoshState[client.userId] = null;
+            oldRoshState[client.userId] = {
+                aegis: false,
+                state: 'alive',
+                respawn: 0,
+            };;
         }
     }
 }
