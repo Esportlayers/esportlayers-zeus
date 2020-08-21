@@ -279,6 +279,7 @@ interface SupportItemStats {
         item_ward_observer: number;
         item_smoke_of_deceit: number;
         item_dust: number;
+        item_gem: number;
     };
     radiant: number;
     radiantItems: {
@@ -286,13 +287,14 @@ interface SupportItemStats {
         item_ward_observer: number;
         item_smoke_of_deceit: number;
         item_dust: number;
+        item_gem: number;
     };
 }
 
 const supportInvestment: {[x: string]: SupportItemStats} = {}; 
 const healingInvestment: {[x: string]: {dire: number; radiant: number}} = {};
 
-const supportItems = new Set(['item_ward_sentry', 'item_ward_observer', 'item_smoke_of_deceit', 'item_dust']);
+const supportItems = new Set(['item_ward_sentry', 'item_ward_observer', 'item_smoke_of_deceit', 'item_dust', 'item_gem']);
 const healingItems = new Set(['item_clarity', 'item_faerie_fire', 'item_flask', 'item_enchanted_mango', 'item_tango']);
 
 const priceList: {[x: string]: number} = {
@@ -305,6 +307,7 @@ const priceList: {[x: string]: number} = {
     item_flask: 110,
     item_enchanted_mango: 70,
     item_tango: 90,
+    item_gem: 900,
 };
 
 function parseUserItems(itemState: ItemState): PlayerItemStates {
@@ -351,6 +354,7 @@ function requireSupportInvestment(userId: number): SupportItemStats {
                 item_ward_observer: 0,
                 item_smoke_of_deceit: 0,
                 item_dust: 0,
+                item_gem: 0,
             },
             radiant: 0,
             radiantItems: {
@@ -358,6 +362,7 @@ function requireSupportInvestment(userId: number): SupportItemStats {
                 item_ward_observer: 0,
                 item_smoke_of_deceit: 0,
                 item_dust: 0,
+                item_gem: 0,
             },
         };
     }
