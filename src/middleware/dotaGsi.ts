@@ -225,7 +225,7 @@ async function processWinner(client: GsiClient, data: any): Promise<void> {
                 aegis: false,
                 state: 'alive',
                 respawn: 0,
-            };;
+            };
         }
     }
 }
@@ -291,8 +291,8 @@ interface SupportItemStats {
     };
 }
 
-const supportInvestment: {[x: string]: SupportItemStats} = {}; 
-const healingInvestment: {[x: string]: {dire: number; radiant: number}} = {};
+const supportInvestment: {[x: string]: SupportItemStats | null} = {}; 
+const healingInvestment: {[x: string]: {dire: number; radiant: number} | null} = {};
 
 const supportItems = new Set(['item_ward_sentry', 'item_ward_observer', 'item_smoke_of_deceit', 'item_dust', 'item_gem']);
 const healingItems = new Set(['item_clarity', 'item_faerie_fire', 'item_flask', 'item_enchanted_mango', 'item_tango']);
@@ -342,7 +342,7 @@ function requireHealingInvestment(userId: number): {dire: number; radiant: numbe
             radiant: 0,
         };
     }
-    return healingInvestment[userId];
+    return healingInvestment[userId]!;
 }
 
 function requireSupportInvestment(userId: number): SupportItemStats {
@@ -366,7 +366,7 @@ function requireSupportInvestment(userId: number): SupportItemStats {
             },
         };
     }
-    return supportInvestment[userId];
+    return supportInvestment[userId]!;
 }
 
 function processItems(client: GsiClient, data: any): void {
@@ -453,6 +453,13 @@ function processItems(client: GsiClient, data: any): void {
     }
 
     rawItemState[client.userId] = strItemState;
+
+
+
+    if(!data?.map) {
+        supportInvestment[client.userId] = null;
+        healingInvestment[client.userId] = null;
+    }
 }
 //#endregion
 
