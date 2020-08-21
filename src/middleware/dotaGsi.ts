@@ -62,30 +62,30 @@ enum GameState {
 const oldRoshState: {[x: string]: null | {state: string; respawn: number; aegis: boolean}} = {};
 const aegisState: {[x: string]: boolean} = {};
 
-function processRoshanState(userId: number, data: any): void {
-    const oldState = oldRoshState[userId];
+function processRoshanState(client: GsiClient, data: any): void {
+    const oldState = oldRoshState[client.userId];
     const mapData = data && data.map;
 
     if(mapData && oldState) {
         const roshState = data && data.map && data.map.roshan_state;
         const roshEndSecond = data && data.map.roshan_state_end_seconds || 0;
         //rosh states: 'alive' | 'respawn_base' | 'respawn_variable'
-        if(oldState.state !== roshState || oldState.aegis !== Boolean(aegisState[userId]) || ((oldState.respawn || 0 ) !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
+        if(oldState.state !== roshState || oldState.aegis !== Boolean(aegisState[client.userId]) || ((oldState.respawn || 0 ) !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
             if(oldState.state === 'alive' && roshState === 'respawn_base') {
-                aegisState[userId] = true;
+                aegisState[client.userId] = true;
             }
-            sendMessage(userId, 'roshan', {state: aegisState[userId] ? 'aegis' : roshState, remaining: roshEndSecond});
-            logFile.write(`[Dota-GSI :: ${userId}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
+            sendMessage(client.userId, 'roshan', {state: aegisState[client.userId] ? 'aegis' : roshState, remaining: roshEndSecond});
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
         }
     }
 
     if(!mapData && oldState && oldState.state !== 'alive') {
-        sendMessage(userId, 'roshan', {state: 'alive', remaining: 0});
-        logFile.write(`[Dota-GSI :: ${userId}] Reset rosh state as game was left \n`);
-        oldRoshState[userId] = null;
+        sendMessage(client.userId, 'roshan', {state: 'alive', remaining: 0});
+        logFile.write(`[Dota-GSI :: ${client.displayName}] Reset rosh state as game was left \n`);
+        oldRoshState[client.userId] = null;
     } else {
-        oldRoshState[userId] = {
-            aegis: Boolean(aegisState[userId]),
+        oldRoshState[client.userId] = {
+            aegis: Boolean(aegisState[client.userId]),
             state: data && data.map && data.map.roshan_state,
             respawn: data && data.map && data.map.roshan_state_end_seconds,
         };
@@ -147,9 +147,9 @@ function transformTeamPickState(data: {[x: string]: string}): PickState {
     }
 }
 
-function processPicksAndBans(userId: number, data: any): void {
-    const oldState = draftState[userId] || defaultState;
-    const oldRawState = rawDraftState[userId];
+function processPicksAndBans(client: GsiClient, data: any): void {
+    const oldState = draftState[client.userId] || defaultState;
+    const oldRawState = rawDraftState[client.userId];
     const draftData = data && data.draft;
     const matchId = data && data.map && data.map.matchid; 
 
@@ -160,32 +160,32 @@ function processPicksAndBans(userId: number, data: any): void {
         const radiantBanChanges = differenceBy(radiant.bans, oldState.radiant.bans, 'id');
 
         if(radiantPickChanges.length) {
-            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant pick: ${JSON.stringify(radiantPickChanges)} \n`);
-            sendMessage(userId, 'draft', {matchId, team: 'radiant', type: 'pick', change: radiantPickChanges});
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated, new radiant pick: ${JSON.stringify(radiantPickChanges)} \n`);
+            sendMessage(client.userId, 'draft', {matchId, team: 'radiant', type: 'pick', change: radiantPickChanges});
         }
         if(radiantBanChanges.length) {
-            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new radiant ban: ${JSON.stringify(radiantBanChanges)} \n`);
-            sendMessage(userId, 'draft', {matchId, team: 'radiant', type: 'ban', change: radiantBanChanges});
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated, new radiant ban: ${JSON.stringify(radiantBanChanges)} \n`);
+            sendMessage(client.userId, 'draft', {matchId, team: 'radiant', type: 'ban', change: radiantBanChanges});
         }
         const direPickChanges = differenceBy(dire.picks, oldState.dire.picks, 'id');
         const direBanChanges = differenceBy(dire.bans, oldState.dire.bans, 'id');
 
         if(direPickChanges.length) {
-            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new dire pick: ${JSON.stringify(direPickChanges)} \n`);
-            sendMessage(userId, 'draft', {matchId, team: 'dire', type: 'pick', change: direPickChanges});
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated, new dire pick: ${JSON.stringify(direPickChanges)} \n`);
+            sendMessage(client.userId, 'draft', {matchId, team: 'dire', type: 'pick', change: direPickChanges});
         }
         if(direBanChanges.length) {
-            logFile.write(`[Dota-GSI :: ${userId}] Draft updated, new dire ban: ${JSON.stringify(direBanChanges)} \n`);
-            sendMessage(userId, 'draft', {matchId, team: 'dire', type: 'ban', change: direBanChanges});
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated, new dire ban: ${JSON.stringify(direBanChanges)} \n`);
+            sendMessage(client.userId, 'draft', {matchId, team: 'dire', type: 'ban', change: direBanChanges});
         }
 
-        draftState[userId] = {
+        draftState[client.userId] = {
             radiant,
             dire
         };
     }
 
-    rawDraftState[userId] = draftData;
+    rawDraftState[client.userId] = draftData;
 }
 //#endregion
 //#region <winner>
@@ -257,6 +257,25 @@ interface ItemState {
         }
     }
 }
+
+const supportInvestment: {[x: string]: {dire: number; radiant: number}} = {}; 
+const healingInvestment: {[x: string]: {dire: number; radiant: number}} = {};
+
+const supportItems = new Set(['item_ward_sentry', 'item_ward_observer', 'item_smoke_of_deceit', 'item_dust']);
+const healingItems = new Set(['item_clarity', 'item_faerie_fire', 'item_flask', 'item_enchanted_mango', 'item_tango']);
+
+const priceList: {[x: string]: number} = {
+    item_ward_sentry: 75,
+    item_ward_observer: 0,
+    item_smoke_of_deceit: 50,
+    item_dust: 80,
+    item_clarity: 50,
+    item_faerie_fire: 70,
+    item_flask: 110,
+    item_enchanted_mango: 70,
+    item_tango: 90,
+};
+
 function parseUserItems(itemState: ItemState): PlayerItemStates {
     const teamItems = Object.values(itemState);
     const state: PlayerItemStates = {};
@@ -282,9 +301,29 @@ function parseUserItems(itemState: ItemState): PlayerItemStates {
     return state;
 }
 
-function processItems(userId: number, data: any): void {
-    const oldStrState = rawItemState[userId] || {};
-    const oldItemState = parsedItemState[userId] || {};
+function requireHealingInvestment(userId: number): {dire: number; radiant: number} {
+    if(!healingInvestment[userId]) {
+        healingInvestment[userId] = {
+            dire: 0,
+            radiant: 0,
+        };
+    }
+    return healingInvestment[userId];
+}
+
+function requireSupportInvestment(userId: number): {dire: number; radiant: number} {
+    if(!supportInvestment[userId]) {
+        supportInvestment[userId] = {
+            dire: 0,
+            radiant: 0,
+        };
+    }
+    return supportInvestment[userId];
+}
+
+function processItems(client: GsiClient, data: any): void {
+    const oldStrState = rawItemState[client.userId] || {};
+    const oldItemState = parsedItemState[client.userId] || {};
     const itemState = data?.items || {};
     const strItemState = JSON.stringify(itemState);
 
@@ -301,8 +340,24 @@ function processItems(userId: number, data: any): void {
             if(newItems.length > 0) {
                 for(const newItem of newItems) {
                     if(newItem.name === 'item_aegis') {
-                        logFile.write(`[Dota-GSI :: ${userId}] Aegis was picked up\n`);
-                        aegisState[userId] = true;
+                        logFile.write(`[Dota-GSI :: ${client.displayName}] Aegis was picked up\n`);
+                        aegisState[client.userId] = true;
+                    } else if(supportItems.has(newItem.name) && newItem.selfPurchased) {
+                        const supportInvestment = requireSupportInvestment(client.userId);
+                        if(+id < 5) {
+                            supportInvestment.radiant = supportInvestment.radiant + priceList[newItem.name];
+                        } else {
+                            supportInvestment.dire = supportInvestment.dire + priceList[newItem.name];
+                        }
+                        logFile.write(`[Dota-GSI :: ${client.displayName}] Changed support investment: ${supportInvestment.radiant} vs ${supportInvestment.dire}\n`);
+                    } else if(healingItems.has(newItem.name) && newItem.selfPurchased) {
+                        const healingInvestment = requireHealingInvestment(client.userId);
+                        if(+id < 5) {
+                            healingInvestment.radiant = healingInvestment.radiant + priceList[newItem.name];
+                        } else {
+                            healingInvestment.dire = healingInvestment.dire + priceList[newItem.name];
+                        }
+                        logFile.write(`[Dota-GSI :: ${client.displayName}] Changed healing investment: ${healingInvestment.radiant} vs ${healingInvestment.dire}\n`);
                     }
                 }
             }
@@ -310,16 +365,16 @@ function processItems(userId: number, data: any): void {
             if(droppedItems.length > 0) {
                 for(const droppedItem of droppedItems) {
                     if(droppedItem.name === 'item_aegis') {
-                        logFile.write(`[Dota-GSI :: ${userId}] Aegis was lost\n`);
-                        aegisState[userId] = false;
+                        logFile.write(`[Dota-GSI :: ${client.displayName}] Aegis was lost\n`);
+                        aegisState[client.userId] = false;
                     }
                 }
             }
         }
-        parsedItemState[userId] = newState;
+        parsedItemState[client.userId] = newState;
     }
 
-    rawItemState[userId] = strItemState;
+    rawItemState[client.userId] = strItemState;
 }
 //#endregion
 
@@ -378,9 +433,9 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     //Game states
     await processWinner(client, data);
     processDeaths(client, data);
-    processRoshanState(client.userId, data);
-    processPicksAndBans(client.userId, data);
-    processItems(client.userId, data);
+    processRoshanState(client, data);
+    processPicksAndBans(client, data);
+    processItems(client, data);
 
     //Update client data
     client.gamestate = data;
