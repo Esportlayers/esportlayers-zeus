@@ -391,15 +391,36 @@ function processItems(client: GsiClient, data: any): void {
                         logFile.write(`[Dota-GSI :: ${client.displayName}] Aegis was picked up\n`);
                         aegisState[client.userId] = true;
                     } else if(supportItems.has(newItem.name) && newItem.selfPurchased) {
+                        const wasDispensed = (newItem.name === 'item_ward_sentry' || newItem.name === 'item_ward_observer') && droppedItems.find(({name}) => name === 'item_ward_dispenser');
+                        if(!wasDispensed) {
+                            const supportInvestment = requireSupportInvestment(client.userId);
+                            if(+id < 5) {
+                                supportInvestment.radiant = supportInvestment.radiant + priceList[newItem.name];
+                                //@ts-ignore
+                                supportInvestment.radiantItems[newItem.name] = supportInvestment.radiantItems[newItem.name] + 1;
+                            } else {
+                                supportInvestment.dire = supportInvestment.dire + priceList[newItem.name];
+                                //@ts-ignore
+                                supportInvestment.direItems[newItem.name] = supportInvestment.direItems[newItem.name] + 1;
+                            }
+                            logFile.write(`[Dota-GSI :: ${client.displayName}] Changed support investment: ${supportInvestment.radiant} vs ${supportInvestment.dire}\n`);
+                            for(const [item, radiantCount] of Object.entries(supportInvestment.radiantItems)) {
+                                //@ts-ignore
+                                const direCount = supportInvestment.direItems[item];
+                                logFile.write(`[Dota-GSI :: ${client.displayName}] ${item}, Radiant: ${radiantCount}, Dire: ${direCount}\n`);
+                            }
+                        }
+                    } else if(newItem.name === 'item_ward_dispenser' && newItem.selfPurchased) {
+                        const newName = droppedItems.find(({name}) => name === 'item_ward_sentry') ? 'item_ward_observer' : 'item_ward_sentry';
                         const supportInvestment = requireSupportInvestment(client.userId);
                         if(+id < 5) {
-                            supportInvestment.radiant = supportInvestment.radiant + priceList[newItem.name];
+                            supportInvestment.radiant = supportInvestment.radiant + priceList[newName];
                             //@ts-ignore
-                            supportInvestment.radiantItems[newItem.name] = supportInvestment.radiantItems[newItem.name] + 1;
+                            supportInvestment.radiantItems[newName] = supportInvestment.radiantItems[newName] + 1;
                         } else {
-                            supportInvestment.dire = supportInvestment.dire + priceList[newItem.name];
+                            supportInvestment.dire = supportInvestment.dire + priceList[newName];
                             //@ts-ignore
-                            supportInvestment.direItems[newItem.name] = supportInvestment.direItems[newItem.name] + 1;
+                            supportInvestment.direItems[newName] = supportInvestment.direItems[newName] + 1;
                         }
                         logFile.write(`[Dota-GSI :: ${client.displayName}] Changed support investment: ${supportInvestment.radiant} vs ${supportInvestment.dire}\n`);
                         for(const [item, radiantCount] of Object.entries(supportInvestment.radiantItems)) {
