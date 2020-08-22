@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "express";
-import { gsiAuthTokenUnknown, saveDotaGame, userConnected, patchUser, loadUserById } from "../services/entity/User";
+import { Request, Response, NextFunction } from 'express';
+import { gsiAuthTokenUnknown, saveDotaGame, userConnected, patchUser, loadUserById } from '../services/entity/User';
 import {grey} from 'chalk';
-import { sendMessage } from "../services/websocket";
-import dayjs from "dayjs";
+import { sendMessage } from '../services/websocket';
+import dayjs from 'dayjs';
 import isEqual from 'lodash/isEqual';
 import differenceBy from 'lodash/differenceBy';
-import { getObj, setObj, get, set } from "../loader/redis";
+import { getObj, setObj, get, set } from '../loader/redis';
 
 var fs = require('fs');
 var logFile = fs.createWriteStream('log.txt', { flags: 'a' });
@@ -79,6 +79,9 @@ async function processRoshanState(client: GsiClient, data: any): Promise<void> {
         //rosh states: 'alive' | 'respawn_base' | 'respawn_variable'
         if((oldState.state || 'alive') !== roshState || oldState.aegis !== aegisAlive || ((oldState.respawn || 0 ) !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
             if(oldState.state === 'alive' && roshState === 'respawn_base') {
+                await set(getAegisKey(client.userId), '1');
+            }
+            if(roshState === 'respawn_base' && roshEndSecond < 300) {
                 await set(getAegisKey(client.userId), '1');
             }
             sendMessage(client.userId, 'roshan', {state: aegisAlive ? 'aegis' : roshState, remaining: roshEndSecond});
@@ -180,22 +183,22 @@ async function processPicksAndBans(client: GsiClient, data: any): Promise<void> 
         const radiantBanChanges = differenceBy(radiant.bans, oldState.radiant.bans, 'id');
 
         if(radiantPickChanges.length) {
-            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated, new radiant pick: ${JSON.stringify(radiantPickChanges)} \n`);
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated; new radiant pick: ${JSON.stringify(radiantPickChanges)} \n`);
             sendMessage(client.userId, 'draft', {matchId, team: 'radiant', type: 'pick', change: radiantPickChanges});
         }
         if(radiantBanChanges.length) {
-            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated, new radiant ban: ${JSON.stringify(radiantBanChanges)} \n`);
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated; new radiant ban: ${JSON.stringify(radiantBanChanges)} \n`);
             sendMessage(client.userId, 'draft', {matchId, team: 'radiant', type: 'ban', change: radiantBanChanges});
         }
         const direPickChanges = differenceBy(dire.picks, oldState.dire.picks, 'id');
         const direBanChanges = differenceBy(dire.bans, oldState.dire.bans, 'id');
 
         if(direPickChanges.length) {
-            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated, new dire pick: ${JSON.stringify(direPickChanges)} \n`);
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated; new dire pick: ${JSON.stringify(direPickChanges)} \n`);
             sendMessage(client.userId, 'draft', {matchId, team: 'dire', type: 'pick', change: direPickChanges});
         }
         if(direBanChanges.length) {
-            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated, new dire ban: ${JSON.stringify(direBanChanges)} \n`);
+            logFile.write(`[Dota-GSI :: ${client.displayName}] Draft updated; new dire ban: ${JSON.stringify(direBanChanges)} \n`);
             sendMessage(client.userId, 'draft', {matchId, team: 'dire', type: 'ban', change: direBanChanges});
         }
 
@@ -432,7 +435,7 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
                             for(const [item, radiantCount] of Object.entries(supportInvestment.radiantItems)) {
                                 //@ts-ignore
                                 const direCount = supportInvestment.direItems[item];
-                                logFile.write(`[Dota-GSI :: ${client.displayName}] ${item}, Radiant: ${radiantCount}, Dire: ${direCount}\n`);
+                                logFile.write(`[Dota-GSI :: ${client.displayName}] ${item}; Radiant: ${radiantCount}; Dire: ${direCount}\n`);
                             }
                         }
                     } else if(newItem.name === 'item_ward_dispenser' && newItem.selfPurchased) {
@@ -453,7 +456,7 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
                         for(const [item, radiantCount] of Object.entries(supportInvestment.radiantItems)) {
                             //@ts-ignore
                             const direCount = supportInvestment.direItems[item];
-                            logFile.write(`[Dota-GSI :: ${client.displayName}] ${item}, Radiant: ${radiantCount}, Dire: ${direCount}\n`);
+                            logFile.write(`[Dota-GSI :: ${client.displayName}] ${item}; Radiant: ${radiantCount}; Dire: ${direCount}\n`);
                         }
                     } else if(healingItems.has(newItem.name) && newItem.selfPurchased) {
                         const healingInvestment = await requireHealingInvestment(client.userId);
@@ -487,11 +490,116 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
     }
 }
 //#endregion
+//#region <wards>
+/*
+interface PlayeResponse {
+    steamid:string;
+    name:string;
+    activity:string;
+    kills:number;
+    deaths:number;
+    assists:number;
+    last_hits:number;
+    denies:number;
+    kill_streak:number;
+    commands_issued:number;
+    kill_list:{
+        [x: string]: number;
+    };
+    team_name:string;
+    gold:number;
+    gold_reliable:number;
+    gold_unreliable:number;
+    gold_from_hero_kills:number;
+    gold_from_creep_kills:number;
+    gold_from_income:number;
+    gold_from_shared:number;
+    gpm:number;
+    xpm:number;
+    net_worth:number;
+    hero_damage:number;
+    wards_purchased:number;
+    wards_placed:number;
+    wards_destroyed:number;
+    runes_activated:number;
+    camps_stacked:number;
+    support_gold_spent:number;
+    consumable_gold_spent:number;
+    item_gold_spent:number;
+    gold_lost_to_death:number;
+    gold_spent_on_buybacks:number;
+}
+
+interface TeamPlayers {
+    [x: string]: {
+        [x: string]: PlayeResponse;
+    }
+}
+interface WardState {
+    [x: string]: {
+        sentry: number;
+        observer: number;
+        supportGold: number;
+    }
+}
+
+function getWardKey(userId: number): string {
+    return `gsi_${userId}_wards`;
+}
+
+async function requireWardState(userId: number): Promise<WardState> {
+    return (await getObj(getWardKey(userId))) || {};
+}
+
+function parseWardState(data: {player?: TeamPlayers}, oldWardState: WardState): WardState {
+    if(data.player) {
+        const players = Object.values(data.player).reduce<{[x: string]: PlayeResponse}>((acc, teams) => {
+            return {...acc, ...teams};
+        }, {});
+
+        return Object.entries(players).reduce<WardState>((acc, [playerId, response]) => {
+            const priorState = oldWardState[playerId];
+            const obs = priorState && priorState.observer || 0;
+            const sent = priorState && priorState.sentry || 0;
+            const supGold = priorState && priorState.supportGold;
+            console.log(playerId, obs + sent, response.wards_purchased);
+            if((obs + sent) !== response.wards_purchased) {
+                const isObs = response.support_gold_spent !== supGold;
+                acc[playerId] = {
+                    supportGold: response.support_gold_spent,
+                    observer: obs + (isObs ? 1 : 0),
+                    sentry: sent + (isObs ? 0: 1),
+                }
+                console.log(playerId, priorState, acc[playerId]);
+            } else {
+                acc[playerId] = priorState;
+            }
+            return acc;
+        }, {});
+    }
+
+    return {};
+}
+
+async function processWards(client: GsiClient, data: any): Promise<void> {
+    const oldWardState = await requireWardState(client.userId);
+    const newWardState = parseWardState(data, oldWardState);
+
+    if(!isEqual(oldWardState, newWardState)) {
+
+        await setObj(getWardKey(client.userId), newWardState);
+
+    };
+
+}
+*/
+//#endregion
+
 
 const connectedIds = new Set();
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
-        console.log(grey('[Dota-GSI] Rejected access, no auth key was given.'));
+        console.log(grey('[Dota-GSI] Rejected access; no auth key was given.'));
         return res.status(403).json('Forbidden').end();
     }
 
@@ -546,6 +654,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     await processDeaths(client, data);
     await processPicksAndBans(client, data);
     await processItems(client, data);
+    //await processWards(client, data);
 
     //Update client data
     client.gamestate = data;
