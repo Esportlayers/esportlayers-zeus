@@ -71,7 +71,7 @@ function getAegisKey(userId: number): string {
 async function processRoshanState(client: GsiClient, data: any): Promise<void> {
     const oldState = await getObj<{state: string; respawn: number; aegis: boolean}>(getRoshKey(client.userId));
     const mapData = data && data.map;
-    const aegisAlive = Boolean(await get(getAegisKey(client.userId)));
+    const aegisAlive = Boolean(+(await get(getAegisKey(client.userId)) || 0));
 
     if(mapData && oldState) {
         const roshState = data && data.map && data.map.roshan_state || 'alive';
@@ -595,7 +595,21 @@ async function processWards(client: GsiClient, data: any): Promise<void> {
 */
 //#endregion
 
+//#region <paused>
+function getPauseKey(userId: number): string {
+    return `gsi_${userId}_gamePaused`;
+}
+async function processPause(client: GsiClient, data: any): Promise<void> {
+    const oldState = Boolean(+(await get(getPauseKey(client.userId)) || 0));
+    if(oldState !== Boolean(data?.map?.paused)) {
+        sendMessage(client.userId, 'pause', !oldState);
+        logFile.write(`[Dota-GSI :: ${client.displayName}] The game was ${oldState ? 'unpaused' : 'paused'} \n`);
+        await set(getPauseKey(client.userId), ''+(+!oldState));
+    }
 
+} 
+
+//#endregion
 const connectedIds = new Set();
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
@@ -654,6 +668,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     await processDeaths(client, data);
     await processPicksAndBans(client, data);
     await processItems(client, data);
+    await processPause(client, data);
     //await processWards(client, data);
 
     //Update client data
