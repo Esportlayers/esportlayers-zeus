@@ -3,6 +3,7 @@ import expressLoader from './express';
 import twitchOAuthLoader from './passportTwitchOAuth';
 import jwtVerify from './passportJWTVerify';
 import anonymous from './passportAnonymous';
+import './redis';
 
 import {cyan} from 'chalk';
 import { PassportStatic } from 'passport';
