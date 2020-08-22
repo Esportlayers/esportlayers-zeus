@@ -50,11 +50,30 @@ export async function getDotaOverlayByUser(userId: number): Promise<OverlayConfi
     return requireDotaOverlay(userId);
 }
 
-export async function updateOverlay(userId: number, cfg: OverlayConfig): Promise<void> {
+const transformMap: {[x: string]: string} = {
+    font: 'font',
+    fontSize: 'font_size',
+    variant: 'variant',
+    winColor: 'win_color',
+    dividerColor: 'divider_color',
+    lossColor: 'loss_color',
+    showBackground: 'show_background',
+    winX: 'winX',
+    winY: 'winY',
+    dividerX: 'dividerX',
+    dividerY: 'dividerY',
+    lossX: 'lossX',
+    lossY: 'lossY',
+};
+
+export async function updateOverlay(userId: number, cfg: Partial<OverlayConfig>): Promise<void> {
     const conn = await getConn();
-    await conn.execute(
-        "UPDATE dota_overlays SET font=?, variant=?, font_size=?, win_color=?, divider_color=?, loss_color=?, show_background =?, winX=?, winY=?, lossX=?, lossY=?, dividerX=?, dividerY=? WHERE user_id=?", 
-        [cfg.font, cfg.variant, cfg.fontSize, cfg.winColor, cfg.dividerColor, cfg.lossColor, cfg.showBackground, cfg.winX, cfg.winY, cfg.lossX, cfg.lossY, cfg.dividerX, cfg.dividerY, userId]
-    );
+
+    for(const [key, value] of Object.entries(cfg)) {
+        if(transformMap[key]) {
+            await conn.execute(`UPDATE dota_overlays SET ${transformMap[key]} = ? WHERE user_id = ?`, [value, userId]);
+        }
+    }
+    
     await conn.end();
 }
