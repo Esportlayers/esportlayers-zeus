@@ -34,7 +34,7 @@ export async function getObj<T>(key: string): Promise<T | null> {
     });
 }
 
-export async function set(key: string, data: string): Promise<void> {
+export async function set(key: string, data: string = ''): Promise<void> {
     return new Promise((resolve, reject) => {
         client.set(key, data, (err) => {
             if(err) {
