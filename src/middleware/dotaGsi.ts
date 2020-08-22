@@ -60,31 +60,34 @@ enum GameState {
 
 
 //#region <roshan state>
-const aegisState: {[x: string]: boolean} = {};
-
 function getRoshKey(userId: number): string {
     return `gsi_${userId}_roshState`;
+}
+
+function getAegisKey(userId: number): string {
+    return `gsi_${userId}_aegis`;
 }
 
 async function processRoshanState(client: GsiClient, data: any): Promise<void> {
     const oldState = await getObj<{state: string; respawn: number; aegis: boolean}>(getRoshKey(client.userId));
     const mapData = data && data.map;
+    const aegisAlive = Boolean(await get(getAegisKey(client.userId)));
 
     if(mapData && oldState) {
         const roshState = data && data.map && data.map.roshan_state || 'alive';
         const roshEndSecond = data && data.map.roshan_state_end_seconds || 0;
         //rosh states: 'alive' | 'respawn_base' | 'respawn_variable'
-        if((oldState.state || 'alive') !== roshState || oldState.aegis !== Boolean(aegisState[client.userId]) || ((oldState.respawn || 0 ) !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
+        if((oldState.state || 'alive') !== roshState || oldState.aegis !== aegisAlive || ((oldState.respawn || 0 ) !== roshEndSecond && (roshEndSecond === 0 || roshEndSecond % 10 === 0))) {
             if(oldState.state === 'alive' && roshState === 'respawn_base') {
-                aegisState[client.userId] = true;
+                await set(getAegisKey(client.userId), '1');
             }
-            sendMessage(client.userId, 'roshan', {state: aegisState[client.userId] ? 'aegis' : roshState, remaining: roshEndSecond});
+            sendMessage(client.userId, 'roshan', {state: aegisAlive ? 'aegis' : roshState, remaining: roshEndSecond});
             logFile.write(`[Dota-GSI :: ${client.displayName}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
         }
     }
 
     const newState = {
-        aegis: Boolean(aegisState[client.userId]),
+        aegis: aegisAlive,
         state: data && data.map && data.map.roshan_state || 'alive',
         respawn: data && data.map && data.map.roshan_state_end_seconds || 0,
     }
@@ -97,9 +100,10 @@ async function processRoshanState(client: GsiClient, data: any): Promise<void> {
             state: 'alive',
             respawn: 0,
         });
+        await set(getAegisKey(client.userId), '0');
     } else if(!isEqual(oldState, newState)) {
         await setObj(getRoshKey(client.userId), {
-            aegis: Boolean(aegisState[client.userId]),
+            aegis: aegisAlive,
             state: data && data.map && data.map.roshan_state,
             respawn: data && data.map && data.map.roshan_state_end_seconds,
         });
@@ -206,9 +210,13 @@ async function processPicksAndBans(client: GsiClient, data: any): Promise<void> 
 
 //#endregion
 //#region <winner>
+function getGameStateKey(userId: number): string {
+    return `gsi_${userId}_gameState`;
+}
+
 async function processWinner(client: GsiClient, data: any): Promise<void> {
     //Game state
-    const oldGameState = client.gamestate.map && client.gamestate.map.game_state;
+    const oldGameState = await get(getGameStateKey(client.userId));
     const newGameState = data.map && data.map.game_state;
 
     if(newGameState && newGameState !== oldGameState) {
@@ -234,17 +242,24 @@ async function processWinner(client: GsiClient, data: any): Promise<void> {
                 respawn: 0,
             });
         }
+
+        await set(getGameStateKey(client.userId), newGameState);
     }
 }
 //#endregion
 //#region <deaths>
-function processDeaths(client: GsiClient, data: any): void {
+function getDeathKey(userId: number): string {
+    return `gsi_${userId}_deaths`;
+}
+
+async function processDeaths(client: GsiClient, data: any): Promise<void> {
     //Death
-    const oldDeaths = client.gamestate.player && client.gamestate.player.deaths || 0;
+    const oldDeaths = +(await get(getDeathKey(client.userId)) || 0);
     const newDeaths = data.player && data.player.deaths || 0;
     if(newDeaths > 0 && newDeaths !== oldDeaths) {
         console.log(grey('[Dota-GSI] User ' + client.displayName + ' died.'));
         sendMessage(client.userId, 'death', newDeaths);
+        await set(getDeathKey(client.userId), ''+newDeaths);
     }
 }
 //#endregion
@@ -295,9 +310,6 @@ interface SupportItemStats {
     };
 }
 
-const supportInvestment: {[x: string]: SupportItemStats | null} = {}; 
-const healingInvestment: {[x: string]: {dire: number; radiant: number} | null} = {};
-
 const supportItems = new Set(['item_ward_sentry', 'item_ward_observer', 'item_smoke_of_deceit', 'item_dust', 'item_gem']);
 const healingItems = new Set(['item_clarity', 'item_faerie_fire', 'item_flask', 'item_enchanted_mango', 'item_tango']);
 
@@ -339,19 +351,26 @@ function parseUserItems(itemState: ItemState): PlayerItemStates {
     return state;
 }
 
-function requireHealingInvestment(userId: number): {dire: number; radiant: number} {
-    if(!healingInvestment[userId]) {
-        healingInvestment[userId] = {
-            dire: 0,
-            radiant: 0,
-        };
-    }
-    return healingInvestment[userId]!;
+function getItemsKey(userId: number, suffix = ''): string {
+    return `gsi_${userId}_items${suffix.length ? '_' + suffix : ''}`;
 }
 
-function requireSupportInvestment(userId: number): SupportItemStats {
-    if(!supportInvestment[userId]) {
-        supportInvestment[userId] = {
+async function requireHealingInvestment(userId: number): Promise<{dire: number; radiant: number}> {
+    const healingInvestmentKey = getItemsKey(userId, 'healing_investment');
+    if(!await getObj(healingInvestmentKey)) {
+        await setObj(healingInvestmentKey, {
+            dire: 0,
+            radiant: 0,
+        })
+    }
+    return (await getObj<{dire: number; radiant: number}>(healingInvestmentKey))!;
+}
+
+async function requireSupportInvestment(userId: number): Promise<SupportItemStats> {
+    const supportingKey = getItemsKey(userId, 'support_investment');
+
+    if(!await getObj(supportingKey)) {
+        await setObj(supportingKey, {
             dire: 0,
             direItems: {
                 item_ward_sentry: 0,
@@ -368,13 +387,9 @@ function requireSupportInvestment(userId: number): SupportItemStats {
                 item_dust: 0,
                 item_gem: 0,
             },
-        };
+        });
     }
-    return supportInvestment[userId]!;
-}
-
-function getItemsKey(userId: number, suffix = ''): string {
-    return `gsi_${userId}_items${suffix.length ? '_' + suffix : ''}`;
+    return (await getObj<SupportItemStats>(supportingKey))!;
 }
 
 async function processItems(client: GsiClient, data: any): Promise<void> {
@@ -397,11 +412,11 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
                 for(const newItem of newItems) {
                     if(newItem.name === 'item_aegis') {
                         logFile.write(`[Dota-GSI :: ${client.displayName}] Aegis was picked up\n`);
-                        aegisState[client.userId] = true;
+                        await set(getAegisKey(client.userId), '1');
                     } else if(supportItems.has(newItem.name) && newItem.selfPurchased) {
                         const wasDispensed = (newItem.name === 'item_ward_sentry' || newItem.name === 'item_ward_observer') && droppedItems.find(({name}) => name === 'item_ward_dispenser');
                         if(!wasDispensed) {
-                            const supportInvestment = requireSupportInvestment(client.userId);
+                            const supportInvestment = await requireSupportInvestment(client.userId);
                             if(+id < 5) {
                                 supportInvestment.radiant = supportInvestment.radiant + priceList[newItem.name];
                                 //@ts-ignore
@@ -412,6 +427,8 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
                                 supportInvestment.direItems[newItem.name] = supportInvestment.direItems[newItem.name] + 1;
                             }
                             logFile.write(`[Dota-GSI :: ${client.displayName}] Changed support investment: ${supportInvestment.radiant} vs ${supportInvestment.dire}\n`);
+                            await setObj(getItemsKey(client.userId, 'support_investment'), supportInvestment);
+                            
                             for(const [item, radiantCount] of Object.entries(supportInvestment.radiantItems)) {
                                 //@ts-ignore
                                 const direCount = supportInvestment.direItems[item];
@@ -420,7 +437,7 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
                         }
                     } else if(newItem.name === 'item_ward_dispenser' && newItem.selfPurchased) {
                         const newName = droppedItems.find(({name}) => name === 'item_ward_sentry') ? 'item_ward_observer' : 'item_ward_sentry';
-                        const supportInvestment = requireSupportInvestment(client.userId);
+                        const supportInvestment = await requireSupportInvestment(client.userId);
                         if(+id < 5) {
                             supportInvestment.radiant = supportInvestment.radiant + priceList[newName];
                             //@ts-ignore
@@ -431,18 +448,21 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
                             supportInvestment.direItems[newName] = supportInvestment.direItems[newName] + 1;
                         }
                         logFile.write(`[Dota-GSI :: ${client.displayName}] Changed support investment: ${supportInvestment.radiant} vs ${supportInvestment.dire}\n`);
+                        await setObj(getItemsKey(client.userId, 'support_investment'), supportInvestment);
+
                         for(const [item, radiantCount] of Object.entries(supportInvestment.radiantItems)) {
                             //@ts-ignore
                             const direCount = supportInvestment.direItems[item];
                             logFile.write(`[Dota-GSI :: ${client.displayName}] ${item}, Radiant: ${radiantCount}, Dire: ${direCount}\n`);
                         }
                     } else if(healingItems.has(newItem.name) && newItem.selfPurchased) {
-                        const healingInvestment = requireHealingInvestment(client.userId);
+                        const healingInvestment = await requireHealingInvestment(client.userId);
                         if(+id < 5) {
                             healingInvestment.radiant = healingInvestment.radiant + priceList[newItem.name];
                         } else {
                             healingInvestment.dire = healingInvestment.dire + priceList[newItem.name];
                         }
+                        await setObj(getItemsKey(client.userId, 'healing_investment'), healingInvestment);
                         logFile.write(`[Dota-GSI :: ${client.displayName}] Changed healing investment: ${healingInvestment.radiant} vs ${healingInvestment.dire}\n`);
                     }
                 }
@@ -452,7 +472,7 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
                 for(const droppedItem of droppedItems) {
                     if(droppedItem.name === 'item_aegis') {
                         logFile.write(`[Dota-GSI :: ${client.displayName}] Aegis was lost\n`);
-                        aegisState[client.userId] = false;
+                        await set(getAegisKey(client.userId), '0');
                     }
                 }
             }
@@ -462,8 +482,8 @@ async function processItems(client: GsiClient, data: any): Promise<void> {
     await set(getItemsKey(client.userId, 'raw'), strItemState);
 
     if(!data?.map) {
-        supportInvestment[client.userId] = null;
-        healingInvestment[client.userId] = null;
+        await setObj(getItemsKey(client.userId, 'support_investment'), null);
+        await setObj(getItemsKey(client.userId, 'healing_investment'), null);
     }
 }
 //#endregion
@@ -523,9 +543,9 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     //Game states
     await processWinner(client, data);
     await processRoshanState(client, data);
-    processDeaths(client, data);
+    await processDeaths(client, data);
     await processPicksAndBans(client, data);
-    processItems(client, data);
+    await processItems(client, data);
 
     //Update client data
     client.gamestate = data;
