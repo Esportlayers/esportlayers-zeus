@@ -16,7 +16,7 @@ export default (app: Router) => {
     });
     
     route.patch('/', reuqireAuthorization, async (req: Request, res: Response) => {
-        const config = await updateOverlay((req.user as User).id, req.body as OverlayConfig);
-        return res.json(config).status(200);
+        await updateOverlay((req.user as User).id, req.body as OverlayConfig);
+        return res.sendStatus(204);
     });
 };
