@@ -5,6 +5,7 @@ import { sendMessage } from "../services/websocket";
 import dayjs from "dayjs";
 import isEqual from 'lodash/isEqual';
 import differenceBy from 'lodash/differenceBy';
+import { getObj, setObj, get, set } from "../loader/redis";
 
 var fs = require('fs');
 var logFile = fs.createWriteStream('log.txt', { flags: 'a' });
@@ -44,7 +45,7 @@ async function checkClientHeartbet(): Promise<void> {
 }
 
 setInterval(checkClientHeartbet, 5000);
-////#endregion
+//#endregion
 
 enum GameState {
     playersLoading = 'DOTA_GAMERULES_STATE_WAIT_FOR_PLAYERS_TO_LOAD',
@@ -59,11 +60,14 @@ enum GameState {
 
 
 //#region <roshan state>
-const oldRoshState: {[x: string]: null | {state: string; respawn: number; aegis: boolean}} = {};
 const aegisState: {[x: string]: boolean} = {};
 
-function processRoshanState(client: GsiClient, data: any): void {
-    const oldState = oldRoshState[client.userId];
+function getRoshKey(userId: number): string {
+    return `gsi_${userId}_roshState`;
+}
+
+async function processRoshanState(client: GsiClient, data: any): Promise<void> {
+    const oldState = await getObj<{state: string; respawn: number; aegis: boolean}>(getRoshKey(client.userId));
     const mapData = data && data.map;
 
     if(mapData && oldState) {
@@ -88,17 +92,17 @@ function processRoshanState(client: GsiClient, data: any): void {
     if(!mapData && oldState && oldState.state !== 'alive') {
         sendMessage(client.userId, 'roshan', {state: 'alive', remaining: 0});
         logFile.write(`[Dota-GSI :: ${client.displayName}] Reset rosh state as game was left \n`);
-        oldRoshState[client.userId] = {
+        await setObj(getRoshKey(client.userId), {
             aegis: false,
             state: 'alive',
             respawn: 0,
-        };
+        });
     } else if(!isEqual(oldState, newState)) {
-        oldRoshState[client.userId] = {
+        await setObj(getRoshKey(client.userId), {
             aegis: Boolean(aegisState[client.userId]),
             state: data && data.map && data.map.roshan_state,
             respawn: data && data.map && data.map.roshan_state_end_seconds,
-        };
+        });
     }
 }
 //#endregion
@@ -117,8 +121,6 @@ interface TeamPickState {
     dire: PickState;
     radiant: PickState;
 }
-const draftState: {[x: string]: TeamPickState | null} = {}; 
-const rawDraftState: {[x: string]: object | null} = {};
 
 const defaultState: TeamPickState = {
     dire: {
@@ -157,9 +159,13 @@ function transformTeamPickState(data: {[x: string]: string}): PickState {
     }
 }
 
-function processPicksAndBans(client: GsiClient, data: any): void {
-    const oldState = draftState[client.userId] || defaultState;
-    const oldRawState = rawDraftState[client.userId];
+function getDraftKey(userId: number, raw: boolean = false): string {
+    return `gsi_${userId}_draft${raw ? '_raw' : ''}`;
+}
+
+async function processPicksAndBans(client: GsiClient, data: any): Promise<void> {
+    const oldState = await getObj<TeamPickState>(getDraftKey(client.userId)) || defaultState;
+    const oldRawState = await getObj<any>(getDraftKey(client.userId, true));
     const draftData = data && data.draft;
     const matchId = data && data.map && data.map.matchid; 
 
@@ -189,14 +195,15 @@ function processPicksAndBans(client: GsiClient, data: any): void {
             sendMessage(client.userId, 'draft', {matchId, team: 'dire', type: 'ban', change: direBanChanges});
         }
 
-        draftState[client.userId] = {
+        await setObj(getDraftKey(client.userId), {
             radiant,
             dire
-        };
+        });
     }
 
-    rawDraftState[client.userId] = draftData;
+    await setObj(getDraftKey(client.userId, true), draftData);
 }
+
 //#endregion
 //#region <winner>
 async function processWinner(client: GsiClient, data: any): Promise<void> {
@@ -221,11 +228,11 @@ async function processWinner(client: GsiClient, data: any): Promise<void> {
 
             sendMessage(client.userId, 'roshan', {state: 'alive', remaining: 0});
             logFile.write(`[Dota-GSI :: ${client.displayName}] Reset roshan state by winner \n`);
-            oldRoshState[client.userId] = {
+            await setObj(getRoshKey(client.userId), {
                 aegis: false,
                 state: 'alive',
                 respawn: 0,
-            };
+            });
         }
     }
 }
@@ -260,9 +267,6 @@ interface ParsedItem extends BaseItem {
 interface PlayerItemStates {
     [x: string]: ParsedItem[];
 }
-
-const parsedItemState: {[x: string]: PlayerItemStates} = {};
-const rawItemState: {[x: string]: string} = {};
 
 interface ItemState {
     [x: string]: {
@@ -369,9 +373,13 @@ function requireSupportInvestment(userId: number): SupportItemStats {
     return supportInvestment[userId]!;
 }
 
-function processItems(client: GsiClient, data: any): void {
-    const oldStrState = rawItemState[client.userId] || {};
-    const oldItemState = parsedItemState[client.userId] || {};
+function getItemsKey(userId: number, suffix = ''): string {
+    return `gsi_${userId}_items${suffix.length ? '_' + suffix : ''}`;
+}
+
+async function processItems(client: GsiClient, data: any): Promise<void> {
+    const oldStrState = await get(getItemsKey(client.userId, 'raw'));
+    const oldItemState = (await getObj<PlayerItemStates>(getItemsKey(client.userId))) || {};
     const itemState = data?.items || {};
     const strItemState = JSON.stringify(itemState);
 
@@ -449,12 +457,9 @@ function processItems(client: GsiClient, data: any): void {
                 }
             }
         }
-        parsedItemState[client.userId] = newState;
+        await setObj(getItemsKey(client.userId), newState);
     }
-
-    rawItemState[client.userId] = strItemState;
-
-
+    await set(getItemsKey(client.userId, 'raw'), strItemState);
 
     if(!data?.map) {
         supportInvestment[client.userId] = null;
@@ -517,9 +522,9 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
 
     //Game states
     await processWinner(client, data);
+    await processRoshanState(client, data);
     processDeaths(client, data);
-    processRoshanState(client, data);
-    processPicksAndBans(client, data);
+    await processPicksAndBans(client, data);
     processItems(client, data);
 
     //Update client data
