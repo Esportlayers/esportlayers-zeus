@@ -81,8 +81,8 @@ async function processRoshanState(client: GsiClient, data: any): Promise<void> {
             if(oldState.state === 'alive' && roshState === 'respawn_base') {
                 await set(getAegisKey(client.userId), '1');
             }
-            if(roshState === 'respawn_base' && roshEndSecond < 300) {
-                await set(getAegisKey(client.userId), '1');
+            if(roshState === 'respawn_base' && roshEndSecond < 300 && aegisAlive) {
+                await set(getAegisKey(client.userId), '0');
             }
             sendMessage(client.userId, 'roshan', {state: aegisAlive ? 'aegis' : roshState, remaining: roshEndSecond});
             logFile.write(`[Dota-GSI :: ${client.displayName}] Roshan state: ${roshState} | Respawning in ${roshEndSecond}s \n`);
