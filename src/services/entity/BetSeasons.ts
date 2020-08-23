@@ -72,6 +72,7 @@ export async function patchUserBetSeason(seasonId: number, data: Partial<BetSeas
 export async function deleteBetSeason(seasonId: number, userId: number): Promise<void> {
     const userInfo = await loadUserById(userId)
     const conn = await getConn();
+
     if(userInfo?.betSeasonId === seasonId) {
         const seasons = await getUserBetSeasons(userId);
         const otherId = seasons.find(({id}) => id !== seasonId);

@@ -297,7 +297,7 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
         await conn.execute('UPDATE user SET gsi_active=? WHERE id=?', [data.gsiActive, userId]);
     }
 
-    if(data.betSeasonId) {
+    if(data.hasOwnProperty('betSeasonId')) {
         await conn.execute('UPDATE user SET bet_season_id=? WHERE id=?', [data.betSeasonId, userId]);
     }
     
