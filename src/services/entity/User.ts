@@ -53,7 +53,9 @@ SELECT
     use_bets as useBets,
     gsi_active as gsiActive,
     status,
-    UNIX_TIMESTAMP(created) as created
+    UNIX_TIMESTAMP(created) as created,
+    dota_stats_pick_hidden as dotaStatsPickHidden,
+    dota_stats_menu_hidden as dotaStatsMenuHidden
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
@@ -294,6 +296,14 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
 
     if(data.hasOwnProperty('betSeasonId')) {
         await conn.execute('UPDATE user SET bet_season_id=? WHERE id=?', [data.betSeasonId, userId]);
+    }
+
+    if(data.hasOwnProperty('dotaStatsPickHidden')) {
+        await conn.execute('UPDATE user SET dota_stats_pick_hidden=? WHERE id=?', [data.dotaStatsPickHidden, userId]);
+    }
+
+    if(data.hasOwnProperty('dotaStatsMenuHidden')) {
+        await conn.execute('UPDATE user SET dota_stats_menu_hidden=? WHERE id=?', [data.dotaStatsMenuHidden, userId]);
     }
     
     await conn.end();
