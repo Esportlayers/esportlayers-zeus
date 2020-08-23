@@ -6,7 +6,7 @@ import {v4} from 'uuid';
 import { createInstance, deleteInstance } from "../twitchChat";
 import dayjs from 'dayjs';
 import { getUserBetSeasons } from "./BetSeasons";
-import { createBetCommands } from "./Command";
+import { createBetCommands, getUserCommands } from "./Command";
 
 type UserResponse = User & RowDataPacket & OkPacket;
 
@@ -241,7 +241,7 @@ export async function getUserByTrustedChannel(channel: string): Promise<{id: num
     await conn.end();
     return rows[0];
 }
-
+/*
 function replaceTrustedPlaceholder(msg: string, uptime: number | null): string {
     let fullMsg = msg;
 
@@ -260,20 +260,15 @@ function replaceTrustedPlaceholder(msg: string, uptime: number | null): string {
 
     return fullMsg;
 }
+*/
 
-export async function getChannelCommands(channel: string, types: Command['type'][]): Promise<{[x: string]: string}> {
+export async function getChannelCommands(channel: string, types: Set<Command['type']>): Promise<Command[]> {
     const conn = await getConn();
     const user = await getUserByTrustedChannel(channel);
-    const [commandRows] = await conn.execute<Array<Command & RowDataPacket>>('SELECT id, command, message, type FROM bot_commands WHERE user_id = ? AND active = TRUE', [user.id]);
+    const commands = await getUserCommands(user.id);
     await conn.end();
 
-    const onlineSince = await getOnlineSince(user.id);
-    const uptime = onlineSince && dayjs().unix() - onlineSince;
-
-    return commandRows.filter(({type}) => types.includes(type)).reduce<{[x: string]: string}>((acc, {command, message}) => {
-        acc[command] = replaceTrustedPlaceholder(message, uptime);
-        return acc;
-    }, {});
+    return commands.filter(({type}) => types.has(type));
 }
 
 export async function patchUser(userId: number, data: Partial<User>): Promise<void> {
