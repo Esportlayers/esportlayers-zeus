@@ -37,13 +37,15 @@ export async function createUserCommand(
     readonly: boolean = false,
     deleteAble: boolean = true,
     identifier: string = '',
+    access?: Set<string>,
 ): Promise<void> {
+    let acc = access ? access : new Set(['userAccess', 'tier1Access', 'tier2Access', 'tier3Access', 'vipAccess', 'modAccess', 'streamerAccess']);
     const conn = await getConn();
     await conn.execute(`INSERT INTO bot_commands 
-        (id, user_id, command, message, active, type, no_response, delete_able, internal_identifier) 
+        (id, user_id, command, message, active, type, no_response, delete_able, internal_identifier, user_access, sub_tier1_access, sub_tier2_access, sub_tier3_access, vip_access, mod_access, streamer_access) 
         VALUES 
-        (NULL, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-        [userId, command, message, active, type, readonly, deleteAble, identifier]);
+        (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [userId, command, message, active, type, readonly, deleteAble, identifier, acc.has('userAccess'), acc.has('tier1Access'), acc.has('tier2Access'), acc.has('tier3Access'), acc.has('vipAccess'), acc.has('modAccess'), acc.has('streamerAccess')]);
     await conn.end();
 
     await clearUserCommandsChache(userId);
@@ -90,8 +92,8 @@ export async function createBetCommands(userId: number): Promise<void> {
     const hasBetCommands = userCommands.filter(({type}) => type === 'betting_streamer' || type === 'betting_user').length > 0;
 
     if(!hasBetCommands) {
-        await createUserCommand(userId, true, '!startbet', 'Die Wetten sind offen, es kann nun mit “{BET_COMMAND} a” oder “{BET_COMMAND} b” abgestimmt werden', 'betting_streamer', false, false, 'startbet');
-        await createUserCommand(userId, true, '!winner', 'Der Gewinner der Wetter wurde auf Team {WINNER} festgelegt.', 'betting_streamer', false, false, 'betwinner');
+        await createUserCommand(userId, true, '!startbet', 'Die Wetten sind offen, es kann nun mit “{BET_COMMAND} a” oder “{BET_COMMAND} b” abgestimmt werden', 'betting_streamer', false, false, 'startbet', new Set(['streamerAccess']));
+        await createUserCommand(userId, true, '!winner', 'Der Gewinner der Wetter wurde auf Team {WINNER} festgelegt.', 'betting_streamer', false, false, 'betwinner', new Set(['streamerAccess']));
         await createUserCommand(userId, true, '!bet', '', 'betting_user', true, false, 'bet');
         await createUserCommand(userId, true, '!toplist', 'Die aktuelle Toplist ist: {TOPLIST_STATS}', 'betting_user');
         await createUserCommand(userId, true, '!betstats', '{USER}, du hast aktuell {USER_BETS_CORRECT} von {USER_BETS_TOTAL} Wetten korrekt.', 'betting_user');
