@@ -60,7 +60,7 @@ export async function startBet(channel: string, userId: number, reset: boolean =
         currentRound.chatters = chatters;
     }
 
-    const {startBet: startBetCommand, bet: betCommand} = await getBettingCommands(userId, channel);
+    const {startBet: startBetCommand, bet: betCommand} = await getBettingCommands(channel);
     const message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
     await publish(channel, message);
 
@@ -92,7 +92,7 @@ export async function updateBetState(userId: number, started: boolean = false, f
     sendMessage(user.id, 'betting', userBetting.get(channel.toLowerCase())!);
 
     if(finished) {
-        const {winner: winnerCommand} = await getBettingCommands(user.id, channel);
+        const {winner: winnerCommand} = await getBettingCommands(channel);
         const msg = winnerCommand.message.replace(/\{WINNER\}/g, result.toUpperCase());
         await publish(channel, msg);
     }
