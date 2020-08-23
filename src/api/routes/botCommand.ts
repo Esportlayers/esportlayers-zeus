@@ -16,19 +16,19 @@ export default (app: Router) => {
 
     route.post('/create', reuqireAuthorization, async(req: Request, res: Response) => {
         const user = req.user as User;
-        const commands = await createUserCommand(user.id, req.body.active, req.body.command, req.body.message, req.body.type);
-        return res.json(commands).status(200);
+        await createUserCommand(user.id, req.body.active, req.body.command, req.body.message, req.body.type);
+        return res.sendStatus(201);
     });
 
     route.patch('/:commandId', reuqireAuthorization, async(req: Request, res: Response) => {
         const user = req.user as User;
-        const commands = await patchCommand(+req.params.commandId, user.id, req.body.active, req.body.command, req.body.message);
-        return res.json(commands).status(200);
+        await patchCommand(+req.params.commandId, user.id, req.body);
+        return res.sendStatus(204);
     });
 
     route.delete('/:commandId', reuqireAuthorization, async(req: Request, res: Response) => {
         const user = req.user as User;
-        const commands = await deleteCommand(+req.params.commandId, user.id);
-        return res.json(commands).status(200);
+        await deleteCommand(+req.params.commandId, user.id);
+        return res.sendStatus(204);
     });
 }

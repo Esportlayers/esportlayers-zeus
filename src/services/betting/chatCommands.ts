@@ -1,27 +1,35 @@
 import { ChatUserstate } from "tmi.js";
 import { createBetRound, createBet, getRoundId, patchBetRound } from "../entity/BetRound";
 import { sendMessage } from "../websocket";
-import { getUserCommands } from "../entity/Command";
-import { publish } from "../twitchChat";
+import { publish, ChannelCommand, getCommandsCacheKey, hasAccess } from "../twitchChat";
 import { seasonTopList, getUserSeasonStats } from "../entity/BetSeasons";
 import { CurrentBetRound, requireUser, requireBettingRound, startBet } from "./state";
 import {Command, User} from '@streamdota/shared-types';
+import { getChannelCommands } from "../entity/User";
+import { getObj, setObj } from "../../loader/redis";
 
-const userCommandCache = new Map<string, Command[]>();
 
-export async function requireUserCommands(channel: string, userId: number): Promise<Command[]> {
-    if(!userCommandCache.has(channel.toLowerCase())) {
-        const commands = await getUserCommands(userId);
-        userCommandCache.set(channel.toLowerCase(), commands.filter(({type}) => type === 'betting_user' || type === 'betting_streamer'));
+export async function requireUserCommands(channel: string): Promise<ChannelCommand> {
+	let betCommands = await getObj<ChannelCommand>(getCommandsCacheKey(channel, ['betting_user', 'betting_streamer']));
+
+    if(!betCommands) {
+        const commands = await getChannelCommands(channel.toLowerCase(), new Set(['betting_user', 'betting_streamer']));
+		const mapped = commands.reduce<ChannelCommand>((acc, command) => {
+			acc[command.command.toLowerCase()] = command;
+			return acc;
+		}, {});
+		await setObj(getCommandsCacheKey(channel, ['betting_user', 'betting_streamer']), mapped);
+		const commandKeys = commands.map(({command}) => command.toLowerCase());
+		await setObj(getCommandsCacheKey(channel, ['betting_user', 'betting_streamer'], 'commands'), commandKeys);
+		betCommands = mapped;
     }
 
-    return userCommandCache.get(channel.toLowerCase())!;
+    return betCommands;
 }
 
-export function clearBettingCommandsCache(channel: string): void {
-	if(userCommandCache.has(channel.toLowerCase())) {
-		userCommandCache.delete(channel.toLowerCase());
-	}
+export async function clearBettingCommandsCache(channel: string): Promise<void> {
+	await setObj(getCommandsCacheKey(channel, ['betting_user', 'betting_streamer']), null);
+	await setObj(getCommandsCacheKey(channel, ['betting_user', 'betting_streamer'], 'commands'), null);
 }
 
 export async function replaceBetPlaceholder(msg: string, userName: string, seasonId: number): Promise<string> {
@@ -41,36 +49,35 @@ export async function replaceBetPlaceholder(msg: string, userName: string, seaso
     return replacedMsg;
 }
 
-export async function handleStaticCommands(channel: string, message: string, user: User, userName: string): Promise<boolean> {
-    const userCommands = await requireUserCommands(channel, user.id);
-    const nonFixed = userCommands.filter(({active, identifier}) => !identifier && active)
-    .reduce<{[x: string]: string}>((acc, {command, message}) => ({...acc, [command.toLowerCase()]: message}), {});
-    if(nonFixed[message.toLowerCase()] && user.betSeasonId) {
-        publish(channel, await replaceBetPlaceholder(nonFixed[message], userName, user.betSeasonId));
+export async function handleStaticCommands(channel: string, message: string, user: User, userName: string, tags: ChatUserstate): Promise<boolean> {
+    const userCommands = await requireUserCommands(channel);
+    if(userCommands[message.toLowerCase()] && !userCommands[message.toLowerCase()].identifier && userCommands[message.toLowerCase()].active && hasAccess(tags, userCommands[message.toLowerCase()]) && user.betSeasonId) {
+        publish(channel, await replaceBetPlaceholder(userCommands[message.toLowerCase()].message, userName, user.betSeasonId));
         return true;
     }
 
     return false;
 }
 
-export async function getBettingCommands(userId: number, channel: string): Promise<{startBet: Command, bet: Command, winner: Command}> {
-    const userCommands = await requireUserCommands(channel, userId);
-    const startBet = userCommands?.find(({identifier}) => identifier === 'startbet')!;
-    const bet = userCommands?.find(({identifier}) => identifier === 'bet')!;
-    const winner = userCommands?.find(({identifier}) => identifier === 'betwinner')!;
+export async function getBettingCommands(channel: string): Promise<{startBet: Command, bet: Command, winner: Command}> {
+    const userCommands = await requireUserCommands(channel);
+    const list = Object.values(userCommands);
+    const startBet = list.find(({identifier}) => identifier === 'startbet')!;
+    const bet = list.find(({identifier}) => identifier === 'bet')!;
+    const winner = list.find(({identifier}) => identifier === 'betwinner')!;
 
     return {startBet, bet, winner};
 }
 
 export async function handleUserBet(message: string, betCommand: Command, tags: ChatUserstate, currentRound: CurrentBetRound, userId: number): Promise<void> {
     const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
-    if(bet === 'a') {
+    if(bet === 'a' && hasAccess(tags, betCommand)) {
         await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
         currentRound.total = currentRound.total + 1;
         currentRound.aBets = currentRound.aBets + 1;
         currentRound.betters.push(tags.username!);
         sendMessage(userId, 'betting', currentRound);
-    } else if(bet === 'b') {
+    } else if(bet === 'b' && hasAccess(tags, betCommand)) {
         await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
         currentRound.total = currentRound.total + 1;
         currentRound.bBets = currentRound.bBets + 1;
@@ -86,12 +93,12 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         return;
     }
 
-    const isStatic = await handleStaticCommands(channel, message, user, tags.username!);
+    const isStatic = await handleStaticCommands(channel, message, user, tags.username!, tags);
     if(isStatic) {
         return;
     }
 
-    const {startBet: startBetCommand, bet: betCommand, winner: winnerCommand} = await getBettingCommands(user.id, channel);
+    const {startBet: startBetCommand, bet: betCommand, winner: winnerCommand} = await getBettingCommands(channel);
 
     if(!startBetCommand || !betCommand || !winnerCommand) {
         return;
@@ -103,7 +110,7 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
 
     const currentRound = await requireBettingRound(channel, user.id);
 
-    if(message === startBetCommand.command && startBetCommand.active && tags.badges?.broadcaster ) {
+    if(message === startBetCommand.command && startBetCommand.active && hasAccess(tags, startBetCommand)) {
         if(currentRound.status === 'finished') {
             await startBet(channel, user.id);
             await createBetRound(user.id, user.betSeasonId);
@@ -111,7 +118,7 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         } else {
             await publish(channel, '@' + tags.username + ' es läuft bereits eine Wette.');
         }
-    } else if(message.startsWith(winnerCommand.command || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && tags.badges?.broadcaster && currentRound.status === 'running' ) {
+    } else if(message.startsWith(winnerCommand.command || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
         const result = message.substr(winnerCommand.command.length + 1, 1).toLowerCase();
         const betRoundId = await getRoundId(user.id);
         await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
