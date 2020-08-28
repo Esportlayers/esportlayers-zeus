@@ -3,6 +3,7 @@ import { RowDataPacket, OkPacket } from "mysql2";
 import { v4 } from "uuid";
 import {BetSeasonInvite, BetSeason, BetSeasonToplist} from '@streamdota/shared-types';
 import { loadUserById, patchUser } from "./User";
+import { deleteBetRound } from "./BetRound";
 
 export const rolePrio: {[x: string]: number} = {
     user: 0,
@@ -80,7 +81,10 @@ export async function deleteBetSeason(seasonId: number, userId: number): Promise
         await patchUser(userId, {betSeasonId: newSeason});
     }
     await conn.execute('DELETE FROM bet_season_users WHERE bet_season_id = ?', [seasonId]);
-    await conn.execute('DELETE FROM bet_rounds WHERE bet_season_id = ?', [seasonId]);
+    const [rounds] = await conn.execute<Array<{id: number} & RowDataPacket>>('SELECT id FROM bet_rounds WHERE bet_season_id = ?', [seasonId]);
+    for(const round of rounds) {
+        await deleteBetRound(round.id)
+    }
     await conn.execute('DELETE FROM bet_seasons WHERE id = ?', [seasonId]);
     await conn.end();
 }
