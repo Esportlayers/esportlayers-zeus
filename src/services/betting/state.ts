@@ -82,7 +82,7 @@ export async function updateBetState(userId: number, started: boolean = false, f
     }
 
     const roundId = await getRoundId(user.id);
-    const {chatters, status, created, result, total, aBets, bBets} = (await getRoundById(roundId))!;
+    const {chatters, status, created, result, total, aBets, bBets} = (await getRoundById(roundId)) || {chatters: 0, status: 'finished', created: dayjs().unix(), result: '', total: 0, aBets: '0', bBets: '0'};
     userBetting.set(channel.toLowerCase(), {id: roundId, betters: [], chatters, status, created, result,  total, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
     
     if(started) {
