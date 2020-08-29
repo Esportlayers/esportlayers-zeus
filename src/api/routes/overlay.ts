@@ -13,7 +13,6 @@ export default (app: Router) => {
 
     route.get('/', checkUserFrameAPIKey, reuqireAuthorization, async (req: Request, res: Response) => {
         const config = await getDotaOverlayByUser((req.user as User).id)
-        sendMessage((req.user as User).id, 'overlay', true);
         return res.json(config).status(200);
     });
     
