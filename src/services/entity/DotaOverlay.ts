@@ -24,7 +24,7 @@ async function requireDotaOverlay(userId: number): Promise<OverlayConfig> {
         return rows[0];
     }
 
-    await conn.execute("INSERT INTO dota_overlays(id, user_id, font, variant, font_size, win_color, loss_color, show_background, winX, winY, lossX, lossY) VALUES (NULL, ?, 'Arial', '400', 50, '#0F0' , '#F00', TRUE, 35, 5, 107, 5);", [userId]);
+    await conn.execute("INSERT INTO dota_overlays(id, user_id, font, variant, font_size, win_color, loss_color, show_background, winX, winY, lossX, lossY) VALUES (NULL, ?, 'Arial', '400', 50, '#0F0' , '#F00', TRUE, 31, 8, 96, 8);", [userId]);
     await conn.end();
     return {
         font: 'Arial',
@@ -33,10 +33,10 @@ async function requireDotaOverlay(userId: number): Promise<OverlayConfig> {
         winColor: '#0F0',
         lossColor: '#F00',
         showBackground: true,
-        winX: 35,
-        winY: 5,
-        lossX: 107,
-        lossY: 5,
+        winX: 31,
+        winY: 8,
+        lossX: 96,
+        lossY: 8,
     };
 }
 
