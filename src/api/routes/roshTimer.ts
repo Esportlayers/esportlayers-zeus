@@ -4,6 +4,7 @@ import {OverlayConfig} from '@streamdota/shared-types';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
 import { requireRoshOverlay, patchRoshOverlay } from '../../services/entity/RoshOverlay';
+import { sendMessage } from '../../services/websocket';
 
 const route = Router();
 
@@ -17,6 +18,7 @@ export default (app: Router) => {
     
     route.patch('/', reuqireAuthorization, async (req: Request, res: Response) => {
         await patchRoshOverlay((req.user as User).id, req.body as OverlayConfig);
+        sendMessage((req.user as User).id, 'overlay', true);
         return res.sendStatus(204);
     });
 };

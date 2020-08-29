@@ -3,6 +3,7 @@ import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import {User} from '@streamdota/shared-types';
 import { requireBetOverlay, patchBetOverlay } from '../../services/entity/BetOverlay';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
+import { sendMessage } from '../../services/websocket';
 
 const route = Router();
 
@@ -19,6 +20,7 @@ export default (app: Router) => {
   route.patch('/', reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     await patchBetOverlay(user.id, req.body);
+    sendMessage((req.user as User).id, 'overlay', true);
     return res.sendStatus(204);
   });
 };
