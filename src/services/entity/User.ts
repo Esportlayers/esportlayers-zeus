@@ -55,7 +55,8 @@ SELECT
     status,
     UNIX_TIMESTAMP(created) as created,
     dota_stats_pick_hidden as dotaStatsPickHidden,
-    dota_stats_menu_hidden as dotaStatsMenuHidden
+    dota_stats_menu_hidden as dotaStatsMenuHidden,
+    stream_delay as streamDelay
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
@@ -304,6 +305,10 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
 
     if(data.hasOwnProperty('dotaStatsMenuHidden')) {
         await conn.execute('UPDATE user SET dota_stats_menu_hidden=? WHERE id=?', [data.dotaStatsMenuHidden, userId]);
+    }
+
+    if(data.hasOwnProperty('streamDelay')) {
+        await conn.execute('UPDATE user SET stream_delay=? WHERE id=?', [data.streamDelay, userId]);
     }
     
     await conn.end();
