@@ -24,7 +24,8 @@ async function selectBetOverlay(userId: number): Promise<BetOverlay | null> {
             toplist_font_size as toplistFontSize,
             toplist_show_rank as toplistShowRank,
             toplist_show_total_bets as toplistShowTotalBets,
-            toplist_show_accuracy as toplistShowAccuracy
+            toplist_show_accuracy as toplistShowAccuracy,
+            toplist_max_number as toplistMaxEntry
         FROM bet_overlays WHERE user_id = ?
     `, [userId]);
     await conn.end();
@@ -64,6 +65,7 @@ const transformMap: {[x: string]: string} = {
     toplistShowTotalBets: 'toplist_show_total_bets',     
     toplistShowAccuracy: 'toplist_show_accuracy',   
     distributionNumbers: 'distribution_numbers',
+    toplistMaxEntry: 'toplist_max_number',
 }
 
 export async function patchBetOverlay(userId: number, data: Partial<Omit<BetOverlay, 'userId'>>): Promise<void> {
