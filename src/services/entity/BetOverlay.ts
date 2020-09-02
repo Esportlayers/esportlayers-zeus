@@ -15,6 +15,7 @@ async function selectBetOverlay(userId: number): Promise<BetOverlay | null> {
             distribution_font_size as distributionFontSize,
             distribution_color_left as distributionColorLeft,
             distribution_color_right as distributionColorRight,
+            distribution_numbers as distributionNumbers,
             timer_background as timerBackground,
             timer_font as timerFont,
             timer_font_size as timerFontSize,
@@ -62,6 +63,7 @@ const transformMap: {[x: string]: string} = {
     toplistShowRank: 'toplist_show_rank',     
     toplistShowTotalBets: 'toplist_show_total_bets',     
     toplistShowAccuracy: 'toplist_show_accuracy',   
+    distributionNumbers: 'distribution_numbers',
 }
 
 export async function patchBetOverlay(userId: number, data: Partial<Omit<BetOverlay, 'userId'>>): Promise<void> {
