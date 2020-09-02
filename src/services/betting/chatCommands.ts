@@ -71,13 +71,13 @@ export async function getBettingCommands(channel: string): Promise<{startBet: Co
 
 export async function handleUserBet(message: string, betCommand: Command, tags: ChatUserstate, currentRound: CurrentBetRound, userId: number): Promise<void> {
     const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
-    if(bet === 'a' && hasAccess(tags, betCommand)) {
+    if(bet.toLowerCase() === 'a' && hasAccess(tags, betCommand)) {
         await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
         currentRound.total = currentRound.total + 1;
         currentRound.aBets = currentRound.aBets + 1;
         currentRound.betters.push(tags.username!);
         sendMessage(userId, 'betting', currentRound);
-    } else if(bet === 'b' && hasAccess(tags, betCommand)) {
+    } else if(bet.toLowerCase() === 'b' && hasAccess(tags, betCommand)) {
         await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
         currentRound.total = currentRound.total + 1;
         currentRound.bBets = currentRound.bBets + 1;
@@ -110,7 +110,7 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
 
     const currentRound = await requireBettingRound(channel, user.id);
 
-    if(message === startBetCommand.command && startBetCommand.active && hasAccess(tags, startBetCommand)) {
+    if(message.toLowerCase() === startBetCommand.command.toLowerCase() && startBetCommand.active && hasAccess(tags, startBetCommand)) {
         if(currentRound.status === 'finished') {
             await startBet(channel, user.id);
             await createBetRound(user.id, user.betSeasonId);
@@ -118,11 +118,11 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         } else {
             await publish(channel, '@' + tags.username + ' es läuft bereits eine Wette.');
         }
-    } else if(message.startsWith(winnerCommand.command || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
+    } else if(message.toLowerCase().startsWith(winnerCommand.command.toLowerCase() || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
         const result = message.substr(winnerCommand.command.length + 1, 1).toLowerCase();
         const betRoundId = await getRoundId(user.id);
         await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
-    } else if(message.startsWith(betCommand.command || '') && betCommand.active &&  betCommand.command.length + 2 === message.length && currentRound.status === 'betting' &&! currentRound.betters.includes(tags.username!)) {
+    } else if(message.toLowerCase().startsWith(betCommand.command.toLowerCase() || '') && betCommand.active &&  betCommand.command.length + 2 === message.length && currentRound.status === 'betting' &&! currentRound.betters.includes(tags.username!)) {
         await handleUserBet(message, betCommand, tags, currentRound, user.id);
 	}
 }
