@@ -194,7 +194,7 @@ export async function seasonTopList(betSeasonId: number): Promise<BetSeasonTopli
        FROM bets b
  INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? AND br.status = 'finished'
  INNER JOIN watchers w on b.watcher_id = w.id
-   GROUP BY b.watcher_id
+   GROUP BY b.twitch_id
    ORDER BY won DESC, total
 `, [betSeasonId]);
     await conn.end();
