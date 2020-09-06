@@ -7,6 +7,7 @@ stages:
   - build
   - deploy
   - notification
+  - sentry
 
 include:
   stage: test
@@ -79,7 +80,7 @@ production:
     - scp -P22 -r lib/* $PROD_USER@$PROD_HOST:$CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE/lib
     - scp -P22 -r scripts/* $PROD_USER@$PROD_HOST:$CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE/scripts
     - scp -P22 -r migrations/* $PROD_USER@$PROD_HOST:$CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE/migrations
-    #- scp -P22 -r static/heroes/* $PROD_USER@$PROD_HOST:$CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE/static/heroes
+    - scp -P22 -r static/heroes/i_* $PROD_USER@$PROD_HOST:$CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE/static/heroes
     - ssh -p22 $PROD_USER@$PROD_HOST "cd $CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE && yarn install && yarn migrate"
     - ssh -p22 $PROD_USER@$PROD_HOST "sudo pm2 restart $CI_PROJECT_NAMESPACE/$CI_PROJECT_TITLE"
   when: manual
@@ -94,3 +95,26 @@ success_notification:
     - chmod +x send.sh
     - ./send.sh success $DISCORD_WEBHOOK
   when: on_success
+
+sentry:
+  image: 
+    name: getsentry/sentry-cli:latest
+    entrypoint: [""]
+  stage: sentry
+  needs:
+    - job: build
+      artifacts: true
+    - job: production
+      artifacts: false
+  only:
+    - master
+  script:
+    - echo "Uploading JavaScript files to Sentry..."
+    - export SENTRY_AUTH_TOKEN=$SENTRY_BASE_TOKEN
+    - export SENTRY_ORG=$SENTRY_BASE_ORGANIZATION
+    - export SENTRY_PROJECT=$SENTRY_BASE_PROJECT
+    - sentry-cli releases new -p $SENTRY_BASE_PROJECT "$CI_COMMIT_SHA"
+    - sentry-cli releases files "$CI_COMMIT_SHA" upload-sourcemaps --no-rewrite ./lib/
+    - sentry-cli releases set-commits --auto "$CI_COMMIT_SHA"
+    - sentry-cli releases finalize "$CI_COMMIT_SHA"
+    - sentry-cli releases deploys "$CI_COMMIT_SHA" new -e production
