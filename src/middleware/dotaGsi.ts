@@ -14,7 +14,6 @@ class GsiClient {
     auth: string;
     userId: number;
     displayName: string;
-    gamestate: any = {};
 
     constructor(auth: string, userId: number, displayName: string) {
         this.auth = auth;
@@ -29,7 +28,7 @@ let clients: GsiClient[] = [];
 const heartbeat: Map<number, number> = new Map();
 
 async function checkClientHeartbet(): Promise<void> {
-    const maxLastPing = dayjs().unix() - 31;
+    const maxLastPing = dayjs().unix() - 6;
     const heartbeatclients = [...heartbeat.entries()];
     for(const [userId, lastInteraction] of heartbeatclients) {
         if(lastInteraction < maxLastPing) {
@@ -40,6 +39,18 @@ async function checkClientHeartbet(): Promise<void> {
             connectedIds.delete(userId);
             console.log(grey('[Dota-GSI] User disconnected by heartbeat ' + user?.displayName));
             clients = clients.filter(({userId: clientUserId}) => clientUserId !== userId);
+            await set(getAegisKey(userId), '0');
+            await setObj(getRoshKey(userId), {
+                aegis: false,
+                state: 'alive',
+                respawn: 0,
+            });
+            await setObj(getDraftKey(userId), defaultState);
+            await setObj(getDraftKey(userId, true), null);
+            await set(getGameStateKey(userId), '');
+            await set(getDeathKey(userId), '0');
+            await set(getPauseKey(userId), 'false');
+
         }
     }
 }
@@ -180,6 +191,7 @@ async function processPicksAndBans(client: GsiClient, data: any): Promise<void> 
         const radiant = transformTeamPickState(data.draft.team2);
         const dire = transformTeamPickState(data.draft.team3);
         const radiantPickChanges = differenceBy(radiant.picks, oldState.radiant.picks, 'id');
+        sendMessage(client.userId, 'draft2', {matchId, radiant: data.draft.team2, dire: data.draft.team3});
         const radiantBanChanges = differenceBy(radiant.bans, oldState.radiant.bans, 'id');
 
         if(radiantPickChanges.length) {
@@ -648,8 +660,6 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     clients.push(newClient);
     //@ts-ignore
     req.client = newClient;
-    //@ts-ignore
-    req.client.gamestate = req.body;
 
     console.log(grey('[Dota-GSI] Connected user ' + userData.displayName));
 
@@ -670,9 +680,6 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     await processItems(client, data);
     await processPause(client, data);
     //await processWards(client, data);
-
-    //Update client data
-    client.gamestate = data;
 
     return next();
 }
