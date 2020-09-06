@@ -623,20 +623,26 @@ async function processPause(client: GsiClient, data: any): Promise<void> {
 
 //#endregion
 const connectedIds = new Set();
+const knownRejections = new Set();
 export async function checkGSIAuth(req: Request, res: Response, next: NextFunction) {
     if(!req.body.auth || !req.body.auth.token) {
         console.log(grey('[Dota-GSI] Rejected access; no auth key was given.'));
         return res.status(403).json('Forbidden').end();
     }
+    if(knownRejections.has(req.body.auth.token)) {
+        return res.status(404).json('Unknown Auth token').end();
+    }
 
     const userData = await gsiAuthTokenUnknown(req.body.auth.token);
+    
     if(!userData) {
-        console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as auth key is not known.'));
+        knownRejections.add(req.body.auth.token);
+        console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth.token + ' - as auth key is not known.'));
         return res.status(404).json('Unknown Auth token').end();
     }
     
     if(userData.status !== 'active') {
-        console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth + ' - as account of ' + userData.displayName + ' is disabled'));
+        console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth.token + ' - as account of ' + userData.displayName + ' is disabled'));
         return res.status(403).json('Account locked').end();
     }
     
