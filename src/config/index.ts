@@ -39,4 +39,5 @@ export default {
     defaultBotToken: process.env.TWITCH_BOT_IDENTITY_TOKEN || '',
   },
   sentryDSN: process.env.SENTRY_DSN || '',
+  steamApiKey: process.env.STEAM_API_KEY || '',
 }
