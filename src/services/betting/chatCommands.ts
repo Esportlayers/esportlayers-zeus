@@ -104,7 +104,7 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         return;
     }
 
-    if(message !== startBetCommand.command && !message.startsWith(betCommand.command) && !message.startsWith(winnerCommand.command)) {
+    if(message !== startBetCommand.command && !message.toLowerCase().startsWith(betCommand.command.toLowerCase()) && !message.startsWith(winnerCommand.command)) {
         return;
     }
 
