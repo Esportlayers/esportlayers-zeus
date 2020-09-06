@@ -36,7 +36,7 @@ async function startServer() {
             // enable Express.js middleware tracing
             new Apm.Integrations.Express({ app }),
             ],
-            tracesSampleRate: .5, // Be sure to lower this in production
+            tracesSampleRate: .005, // Be sure to lower this in production
         });
   
         console.log(green(`🐞 Registered sentry`));
