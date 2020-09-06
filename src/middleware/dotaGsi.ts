@@ -28,7 +28,7 @@ let clients: GsiClient[] = [];
 const heartbeat: Map<number, number> = new Map();
 
 async function checkClientHeartbet(): Promise<void> {
-    const maxLastPing = dayjs().unix() - 6;
+    const maxLastPing = dayjs().unix() - 31;
     const heartbeatclients = [...heartbeat.entries()];
     for(const [userId, lastInteraction] of heartbeatclients) {
         if(lastInteraction < maxLastPing) {
@@ -634,7 +634,7 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     }
 
     const userData = await gsiAuthTokenUnknown(req.body.auth.token);
-    
+
     if(!userData) {
         knownRejections.add(req.body.auth.token);
         console.log(grey('[Dota-GSI] Rejected access with token ' + req.body.auth.token + ' - as auth key is not known.'));
