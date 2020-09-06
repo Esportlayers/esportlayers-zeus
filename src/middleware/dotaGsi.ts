@@ -191,6 +191,7 @@ async function processPicksAndBans(client: GsiClient, data: any): Promise<void> 
         const radiant = transformTeamPickState(data.draft.team2);
         const dire = transformTeamPickState(data.draft.team3);
         const radiantPickChanges = differenceBy(radiant.picks, oldState.radiant.picks, 'id');
+        sendMessage(client.userId, 'draft2', {matchId, radiant: data.draft.team2, dire: data.draft.team3});
         const radiantBanChanges = differenceBy(radiant.bans, oldState.radiant.bans, 'id');
 
         if(radiantPickChanges.length) {
