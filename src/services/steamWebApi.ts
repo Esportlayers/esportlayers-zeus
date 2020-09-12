@@ -22,7 +22,6 @@ async function cdnQuery(id: string): Promise<any> {
         ugcid: id,
     };
     const qry = Object.entries(allParams).map(([key, val]) => `${key}=${val}`).join('&');
-    console.log(cdnRoute + '/GetUGCFileDetails/v1/' + '?' + qry);
     const response = await fetch(cdnRoute + '/GetUGCFileDetails/v1/' + '?' + qry)
     return response;
 }
