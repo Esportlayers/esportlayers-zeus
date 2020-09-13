@@ -50,9 +50,10 @@ export async function getRoundById(roundId: number): Promise<DecoratedBetRound |
                br.chatters as chatters,
                UNIX_TIMESTAMP(br.created) as created,
                COUNT(b.id) as total,
-               SUM(IF(b.bet = 'a', 1, 0)) as aBets,
-               SUM(IF(b.bet = 'b', 1, 0)) as bBets
+               SUM(IF(b.bet = u.team_a_name, 1, 0)) as aBets,
+               SUM(IF(b.bet = u.team_b_name, 1, 0)) as bBets
         FROM bet_rounds br
+  INNER JOIN user u ON u.id = br.user_id
    LEFT JOIN bets b ON b.bet_round_id = br.id
        WHERE br.id = ? 
     GROUP BY br.id`, [roundId]);
@@ -75,8 +76,8 @@ export async function getBetSeasonRounds(seasonId: number): Promise<BetRoundStat
             u.display_name as displayName,
             UNIX_TIMESTAMP(br.created) as created,
             COUNT(b.id) as total,
-            SUM(IF(b.bet = 'a', 1, 0)) as aBets,
-            SUM(IF(b.bet = 'b', 1, 0)) as bBets,
+            SUM(IF(b.bet = u.team_a_name, 1, 0)) as aBets,
+            SUM(IF(b.bet = u.team_b_name, 1, 0)) as bBets,
             br.bet_season_id as betSeason
        FROM bet_rounds br
   LEFT JOIN bets b ON b.bet_round_id = br.id

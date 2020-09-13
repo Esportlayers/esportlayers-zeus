@@ -2,7 +2,7 @@ import config from '../../../config';
 import { getObj, setObj } from '../../../loader/redis';
 import { GsiClient } from '../../../middleware/dotaGsi';
 import { resolveBet, startBetFromGsi } from '../../betting/state';
-import { saveDotaGame } from '../../entity/User';
+import { loadUserById, saveDotaGame } from '../../entity/User';
 import { fetchMatchTeams } from '../../steamWebApi';
 import { sendMessage } from '../../websocket';
 
@@ -106,7 +106,8 @@ export async function process(client: GsiClient, data: any): Promise<void> {
                     if(oldData.type === 'playing') {
                         await saveDotaGame(client.userId, isPlayingWin);        
                     }
-                    await resolveBet(client.userId, client.displayName, newData.win_team === 'radiant' ? 'a' : 'b');
+                    const user = await loadUserById(client.userId);
+                    await resolveBet(client.userId, client.displayName, newData.win_team === 'radiant' ? (user?.teamAName.toLowerCase() || 'a') : (user?.teamBName.toLowerCase() || 'b'));
                 }
             }
             if(oldData.radiantWinChance !== newData.radiant_win_chance) {

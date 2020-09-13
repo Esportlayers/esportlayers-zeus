@@ -5,7 +5,7 @@ import { publish, ChannelCommand, getCommandsCacheKey, hasAccess } from "../twit
 import { seasonTopList, getUserSeasonStats } from "../entity/BetSeasons";
 import { CurrentBetRound, requireUser, requireBettingRound, startBet } from "./state";
 import {Command, User} from '@streamdota/shared-types';
-import { getChannelCommands } from "../entity/User";
+import { getChannelCommands, loadUserById } from "../entity/User";
 import { getObj, setObj } from "../../loader/redis";
 
 
@@ -32,7 +32,7 @@ export async function clearBettingCommandsCache(channel: string): Promise<void> 
 	await setObj(getCommandsCacheKey(channel, ['betting_user', 'betting_streamer'], 'commands'), null);
 }
 
-export async function replaceBetPlaceholder(msg: string, userName: string, seasonId: number): Promise<string> {
+export async function replaceBetPlaceholder(msg: string, userName: string, seasonId: number, teamA = 'a', teamB = 'b'): Promise<string> {
     let replacedMsg =  msg;
     const toplist = await seasonTopList(seasonId);
     const topListStats = toplist.slice(0, 5).map(({name, won, total}, idx) => `${idx + 1}. ${name} (${won}/${total})`).join('  ');
@@ -45,6 +45,8 @@ export async function replaceBetPlaceholder(msg: string, userName: string, seaso
     replacedMsg = replacedMsg.replace(/\{USER_BETS_WRONG\}/g, '' + wrong);
     replacedMsg = replacedMsg.replace(/\{USER_BETS_TOTAL\}/g, '' + total);
     replacedMsg = replacedMsg.replace(/\{USER_BETS_ACCURACY\}/g, accuracy + '%');
+    replacedMsg = replacedMsg.replace(/\{TEAM_A\}/g, teamA);
+    replacedMsg = replacedMsg.replace(/\{TEAM_B\}/g, teamB);
 
     return replacedMsg;
 }
@@ -52,7 +54,7 @@ export async function replaceBetPlaceholder(msg: string, userName: string, seaso
 export async function handleStaticCommands(channel: string, message: string, user: User, userName: string, tags: ChatUserstate): Promise<boolean> {
     const userCommands = await requireUserCommands(channel);
     if(userCommands[message.toLowerCase()] && !userCommands[message.toLowerCase()].identifier && userCommands[message.toLowerCase()].active && hasAccess(tags, userCommands[message.toLowerCase()]) && user.betSeasonId) {
-        publish(channel, await replaceBetPlaceholder(userCommands[message.toLowerCase()].message, userName, user.betSeasonId));
+        publish(channel, await replaceBetPlaceholder(userCommands[message.toLowerCase()].message, userName, user.betSeasonId, user.teamAName, user.teamBName));
         return true;
     }
 
@@ -70,14 +72,16 @@ export async function getBettingCommands(channel: string): Promise<{startBet: Co
 }
 
 export async function handleUserBet(message: string, betCommand: Command, tags: ChatUserstate, currentRound: CurrentBetRound, userId: number): Promise<void> {
-    const bet = message.substr(betCommand.command.length + 1, 1).toLowerCase();
-    if(bet.toLowerCase() === 'a' && hasAccess(tags, betCommand)) {
+    const user = await loadUserById(userId);
+    const bet = message.substr(betCommand.command.length + 1).toLowerCase();
+
+    if(bet.toLowerCase() === user?.teamAName.toLowerCase() && hasAccess(tags, betCommand)) {
         await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
         currentRound.total = currentRound.total + 1;
         currentRound.aBets = currentRound.aBets + 1;
         currentRound.betters.push(tags.username!);
         sendMessage(userId, 'betting', currentRound);
-    } else if(bet.toLowerCase() === 'b' && hasAccess(tags, betCommand)) {
+    } else if(bet.toLowerCase() === user?.teamBName.toLowerCase() && hasAccess(tags, betCommand)) {
         await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
         currentRound.total = currentRound.total + 1;
         currentRound.bBets = currentRound.bBets + 1;
@@ -118,11 +122,14 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         } else {
             publish(channel, '@' + tags.username + ' es läuft bereits eine Wette.');
         }
-    } else if(message.toLowerCase().startsWith(winnerCommand.command.toLowerCase() || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
-        const result = message.substr(winnerCommand.command.length + 1, 1).toLowerCase();
-        const betRoundId = await getRoundId(user.id);
-        await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
-    } else if(message.toLowerCase().startsWith(betCommand.command.toLowerCase() || '') && betCommand.active &&  betCommand.command.length + 2 === message.length && currentRound.status === 'betting' &&! currentRound.betters.includes(tags.username!)) {
+    } else if(message.toLowerCase().startsWith(winnerCommand.command.toLowerCase() || '') && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
+        const result = message.substr(winnerCommand.command.length + 1).toLowerCase();
+        console.log(result, user.teamAName.toLowerCase(), user.teamBName.toLowerCase());
+        if(result === user.teamAName.toLowerCase() || result === user.teamBName.toLowerCase()) {
+            const betRoundId = await getRoundId(user.id);
+            await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
+        }
+    } else if(message.toLowerCase().startsWith(betCommand.command.toLowerCase() || '') && betCommand.active && currentRound.status === 'betting' &&! currentRound.betters.includes(tags.username!)) {
         await handleUserBet(message, betCommand, tags, currentRound, user.id);
 	}
 }

@@ -62,7 +62,10 @@ export async function startBet(channel: string, userId: number, reset: boolean =
     }
 
     const {startBet: startBetCommand, bet: betCommand} = await getBettingCommands(channel);
-    const message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
+    const user = await loadUserById(userId);
+    let message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
+    message = message.replace(/\{TEAM_A\}/g, user?.teamAName || 'a');
+    message = message.replace(/\{TEAM_B\}/g, user?.teamAName || 'b');
     publish(channel, message);
 
     setTimeout(async () => {
@@ -126,7 +129,7 @@ export async function startBetFromGsi(userId: number, displayName: string): Prom
     }
 }
 
-export async function resolveBet(userId: number, displayName: string, result: 'a' | 'b'): Promise<void> {
+export async function resolveBet(userId: number, displayName: string, result: string): Promise<void> {
     const channel = '#' + displayName.toLowerCase();
     const currentRound = await requireBettingRound(channel, userId);
 
