@@ -124,7 +124,6 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         }
     } else if(message.toLowerCase().startsWith(winnerCommand.command.toLowerCase() || '') && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
         const result = message.substr(winnerCommand.command.length + 1).toLowerCase();
-        console.log(result, user.teamAName.toLowerCase(), user.teamBName.toLowerCase());
         if(result === user.teamAName.toLowerCase() || result === user.teamBName.toLowerCase()) {
             const betRoundId = await getRoundId(user.id);
             await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
