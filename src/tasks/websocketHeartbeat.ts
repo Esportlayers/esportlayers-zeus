@@ -20,5 +20,5 @@ if(process.env.NODE_ENV !== 'test') {
         ws.isAlive = false;
         ws.ping(noop);
       });
-  }, 30000);
+  }, 15000);
 }
