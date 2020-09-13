@@ -110,6 +110,13 @@ export async function process(client: GsiClient, data: any): Promise<void> {
                 changeSet.radiantWinChance = newData.radiant_win_chance;
                 config.debugGsi && console.log(`[${client.displayName}] Game radiant win chance changed: ${newData.radiant_win_chance}`);
             }
+
+            const playType = data?.player.hasOwnProperty('steamid') ? 'playing' : 'observing';
+            if(playType !== oldData.type) {
+                sendMessage(client.userId, 'gsi_game_view_type', playType);
+                changeSet.type = playType;
+            }
+
             if(Object.keys(changeSet).length > 0) {
                 await setObj(key(client.userId), {...oldData, ...changeSet});
             }
@@ -125,7 +132,7 @@ export async function reset(client: GsiClient): Promise<void> {
     sendMessage(client.userId, 'gsi_gamedata', null);
     sendMessage(client.userId, 'gsi_game_paused', false);
     sendMessage(client.userId, 'gsi_game_state', null);
-    sendMessage(client.userId, 'gsi_game_winner', 'none');
+    sendMessage(client.userId, 'gsi_game_winner', {isPlayingWin: false, winnerTeam: 'none'});
     sendMessage(client.userId, 'gsi_game_win_chance', 0);
 }
 
@@ -135,7 +142,6 @@ export async function intializeNewConnection(userId: number): Promise<void> {
         sendMessage(userId, 'gsi_gamedata', data);
         sendMessage(userId, 'gsi_game_paused', data.paused);
         sendMessage(userId, 'gsi_game_state', data.gameState);
-        sendMessage(userId, 'gsi_game_winner', data.winner);
         sendMessage(userId, 'gsi_game_win_chance', data.radiantWinChance);
     }
 }
