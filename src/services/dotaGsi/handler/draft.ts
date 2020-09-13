@@ -94,5 +94,7 @@ export async function reset(client: GsiClient): Promise<void> {
 
 export async function intializeNewConnection(userId: number): Promise<void> {
     const data = await getObj<DraftData>(key(userId));
-    sendMessage(userId, 'gsi_draft', data);
+    if(data) {
+        sendMessage(userId, 'gsi_draft', data);
+    }
 }

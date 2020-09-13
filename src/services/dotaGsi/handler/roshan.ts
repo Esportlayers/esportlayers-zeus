@@ -3,6 +3,7 @@ import { get, getObj, setObj } from '../../../loader/redis';
 import { GsiClient } from '../../../middleware/dotaGsi';
 import { sendMessage } from '../../websocket';
 import { GsiMapData } from './game';
+import { key as aegisKey } from './aegis'
 
 //#region <interfaces>
 interface RoshanState {
@@ -13,10 +14,6 @@ interface RoshanState {
 
 function key(userId: number): string {
     return `gsi_${userId}_roshan`;
-}
-
-function aegisKey(userId: number): string {
-    return `gsi_${userId}_aegis`;
 }
 
 export async function process(client: GsiClient, data: any): Promise<void> {

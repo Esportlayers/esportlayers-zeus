@@ -40,5 +40,5 @@ export default {
   },
   sentryDSN: process.env.SENTRY_DSN || '',
   steamApiKey: process.env.STEAM_API_KEY || '',
-  debugGsi: process.env.DEBUG_GSI || true,
+  debugGsi: process.env.DEBUG_GSI || false,
 }

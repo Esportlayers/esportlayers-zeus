@@ -8,6 +8,7 @@ import {intializeNewConnection as initializeDraft, process as draftProcess, rese
 import {intializeNewConnection as initializeGameData, process as gameDataProcess, reset as gameDataReset} from '../services/dotaGsi/handler/game';
 import {intializeNewConnection as initializeWards, process as wardsProcess, reset as wardsReset} from '../services/dotaGsi/handler/wards';
 import {intializeNewConnection as initializeRoshan, process as roshanProcess, reset as roshanReset} from '../services/dotaGsi/handler/roshan';
+import {intializeNewConnection as initializeAegis, process as aegisProcess, reset as aegisReset} from '../services/dotaGsi/handler/aegis';
 import { User } from '@streamdota/shared-types';
 
 export class GsiClient {
@@ -43,6 +44,7 @@ async function checkClientHeartbet(): Promise<void> {
             await draftReset(client);
             await roshanReset(client);
             await wardsReset(client);
+            await aegisReset(client);
             clients = clients.filter(({userId: clientUserId}) => clientUserId !== userId);
         }
     }
@@ -103,24 +105,26 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
 
 export async function gsiBodyParser(req: Request, res: Response, next: NextFunction) {
     //@ts-ignore
-    const client = (req.client as Client);
+    const client = req.client;
     const data = req.body;
     heartbeat.set(client.userId, dayjs().unix());
 
     await gameDataProcess(client, data);
     await draftProcess(client, data);
     await wardsProcess(client, data);
+    await aegisProcess(client, data);
     await roshanProcess(client, data);
 
     return next();
 }
 
-export async function gsiListener(ws: ws, req: Request) {
+export async function gsiListener(_ws: ws, req: Request) {
     if(req.user) {
         const id = (req.user as User).id;
         await initializeGameData(id);
         await initializeDraft(id);
         await initializeWards(id);
+        await initializeAegis(id);
         await initializeRoshan(id);
     }
 }
