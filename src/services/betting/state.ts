@@ -65,7 +65,7 @@ export async function startBet(channel: string, userId: number, reset: boolean =
     const user = await loadUserById(userId);
     let message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
     message = message.replace(/\{TEAM_A\}/g, user?.teamAName || 'a');
-    message = message.replace(/\{TEAM_B\}/g, user?.teamAName || 'b');
+    message = message.replace(/\{TEAM_B\}/g, user?.teamBName || 'b');
     publish(channel, message);
 
     setTimeout(async () => {
