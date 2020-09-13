@@ -1,6 +1,7 @@
 import config from '../../../config';
 import { getObj, setObj } from '../../../loader/redis';
 import { GsiClient } from '../../../middleware/dotaGsi';
+import { resolveBet, startBetFromGsi } from '../../betting/state';
 import { fetchMatchTeams } from '../../steamWebApi';
 import { sendMessage } from '../../websocket';
 
@@ -89,12 +90,20 @@ export async function process(client: GsiClient, data: any): Promise<void> {
                 sendMessage(client.userId, 'gsi_game_state', newData.game_state);
                 changeSet.gameState = newData.game_state;
                 config.debugGsi && console.log(`[${client.displayName}] Game state changed: ${newData.game_state}`);
+
+                if(newData.game_state === GameState.running) {
+                    await startBetFromGsi(client.userId, client.displayName);
+                }
             }
             if(oldData.winner !== newData.win_team) {
                 const isPlayingWin = oldData.type === 'playing' ? data.player.team_name === newData.win_team : false;
                 sendMessage(client.userId, 'gsi_game_winner', {isPlayingWin, winnerTeam: newData.win_team});
                 config.debugGsi && console.log(`[${client.displayName}] Game winner team changed: ${newData.win_team}`);
                 changeSet.winner = newData.win_team;
+
+                if(newData.win_team !== 'none') {
+                    await resolveBet(client.userId, client.displayName, newData.win_team === 'radiant' ? 'a' : 'b');
+                }
             }
             if(oldData.radiantWinChance !== newData.radiant_win_chance) {
                 sendMessage(client.userId, 'gsi_game_win_chance', newData.radiant_win_chance);

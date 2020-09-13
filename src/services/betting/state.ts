@@ -1,4 +1,4 @@
-import { getRoundId, getRoundById, patchBetRound } from "../entity/BetRound";
+import { getRoundId, getRoundById, patchBetRound, createBetRound } from "../entity/BetRound";
 import { getUserByTrustedChannel, loadUserById } from "../entity/User";
 import {User} from '@streamdota/shared-types';
 import { fetchChatterCount } from "../twitchApi";
@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { getBettingCommands } from "./chatCommands";
 import { publish } from "../twitchChat";
 import { sendMessage } from "../websocket";
+import { getBetSeason } from "../entity/BetSeasons";
 
 export interface CurrentBetRound {
     id: number;
@@ -62,13 +63,13 @@ export async function startBet(channel: string, userId: number, reset: boolean =
 
     const {startBet: startBetCommand, bet: betCommand} = await getBettingCommands(channel);
     const message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
-    await publish(channel, message);
+    publish(channel, message);
 
     setTimeout(async () => {
         currentRound.status = 'running';
         const roundId = await getRoundId(userId);
         await patchBetRound(roundId, {status: 'running'});
-        await publish(channel, 'Die Wetten sind geschlossen.');
+        publish(channel, 'Die Wetten sind geschlossen.');
         sendMessage(userId, 'betting', currentRound);
     }, 90000);
 }
@@ -94,7 +95,7 @@ export async function updateBetState(userId: number, started: boolean = false, f
     if(finished) {
         const {winner: winnerCommand} = await getBettingCommands(channel);
         const msg = winnerCommand.message.replace(/\{WINNER\}/g, result.toUpperCase());
-        await publish(channel, msg);
+        publish(channel, msg);
     }
 }
 
@@ -107,5 +108,30 @@ export function clearBettingCache(channel: string): void {
 export function clearUserCache(channel: string): void {
     if(channeUserCache.has(channel)) {
         channeUserCache.delete(channel);
+    }
+}
+
+export async function startBetFromGsi(userId: number, displayName: string): Promise<void> {
+    const channel = '#' + displayName.toLowerCase();
+    const currentRound = await requireBettingRound(channel, userId);
+    const user = await loadUserById(userId);
+
+    if(user && user.betSeasonId) {
+        const betSeason = await getBetSeason(user.betSeasonId);
+        if(currentRound.status === 'finished' && betSeason?.type === 'ladder') {
+            await startBet(channel, userId);
+            await createBetRound(userId, user.betSeasonId);
+            sendMessage(userId, 'betting', currentRound);
+        }
+    }
+}
+
+export async function resolveBet(userId: number, displayName: string, result: 'a' | 'b'): Promise<void> {
+    const channel = '#' + displayName.toLowerCase();
+    const currentRound = await requireBettingRound(channel, userId);
+
+    if(currentRound.status === 'running') {
+        const betRoundId = await getRoundId(userId);
+        await patchBetRound(betRoundId, {result, status: 'finished'}, true, userId);
     }
 }

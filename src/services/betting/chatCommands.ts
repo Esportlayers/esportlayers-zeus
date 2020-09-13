@@ -116,7 +116,7 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
             await createBetRound(user.id, user.betSeasonId);
             sendMessage(user.id, 'betting', currentRound);
         } else {
-            await publish(channel, '@' + tags.username + ' es läuft bereits eine Wette.');
+            publish(channel, '@' + tags.username + ' es läuft bereits eine Wette.');
         }
     } else if(message.toLowerCase().startsWith(winnerCommand.command.toLowerCase() || '') && winnerCommand.command.length + 2 === message.length && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
         const result = message.substr(winnerCommand.command.length + 1, 1).toLowerCase();
