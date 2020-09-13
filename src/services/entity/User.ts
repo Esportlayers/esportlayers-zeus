@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import { getUserBetSeasons } from "./BetSeasons";
 import { createBetCommands, getUserCommands } from "./Command";
 import { clearBettingCommandsCache } from '../betting/chatCommands';
+import { sendMessage } from '../websocket';
 
 type UserResponse = User & RowDataPacket & OkPacket;
 
@@ -317,13 +318,15 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
     if(data.hasOwnProperty('teamAName')) {
         await conn.execute('UPDATE user SET team_a_name=? WHERE id=?', [data.teamAName, userId]);
         const user = await loadUserById(userId);
-        await clearBettingCommandsCache('#' + user?.displayName.toLowerCase())
+        await clearBettingCommandsCache('#' + user?.displayName.toLowerCase());
+        sendMessage(userId, 'overlay', true);
     }
 
     if(data.hasOwnProperty('teamBName')) {
         await conn.execute('UPDATE user SET team_b_name=? WHERE id=?', [data.teamBName, userId]);
         const user = await loadUserById(userId);
-        await clearBettingCommandsCache('#' + user?.displayName.toLowerCase())
+        await clearBettingCommandsCache('#' + user?.displayName.toLowerCase());
+        sendMessage(userId, 'overlay', true);
     }
     
     await conn.end();
