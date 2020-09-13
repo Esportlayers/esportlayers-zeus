@@ -13,7 +13,7 @@ export async function getGoogleFonts(): Promise<Font[]> {
     if(fonts.length === 0) {
         const response = await fetch(url);
         const fontFamilies: {items: Array<{family: string; files: {[x: string]: string}}>} = await response.json();
-        fonts = (fontFamilies.items || []).map(({family, files}) => ({family, subSets: Object.keys(files)}))
+        fonts = (fontFamilies?.items || []).map(({family, files}) => ({family, subSets: Object.keys(files)}))
     }
     return fonts;
 }
