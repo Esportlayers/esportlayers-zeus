@@ -20,6 +20,7 @@ export async function process(client: GsiClient, data: any): Promise<void> {
 
 export async function reset(client: GsiClient): Promise<void> {
     await set(key(client.userId), '0');
+    sendMessage(client.userId, 'gsi_aegis_available', false);
 }
 
 export async function intializeNewConnection(userId: number): Promise<void> {

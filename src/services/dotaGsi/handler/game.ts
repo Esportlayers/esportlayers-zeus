@@ -122,6 +122,11 @@ export async function process(client: GsiClient, data: any): Promise<void> {
 export async function reset(client: GsiClient): Promise<void> {
     config.debugGsi && console.log(`[${client.displayName}] Reseting game state`);
     await setObj(key(client.userId), null);
+    sendMessage(client.userId, 'gsi_gamedata', null);
+    sendMessage(client.userId, 'gsi_game_paused', false);
+    sendMessage(client.userId, 'gsi_game_state', null);
+    sendMessage(client.userId, 'gsi_game_winner', 'none');
+    sendMessage(client.userId, 'gsi_game_win_chance', 0);
 }
 
 export async function intializeNewConnection(userId: number): Promise<void> {

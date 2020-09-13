@@ -35,6 +35,7 @@ export async function process(client: GsiClient, data: any): Promise<void> {
 export async function reset(client: GsiClient): Promise<void> {
     config.debugGsi && console.log(`[${client.displayName}] Reseting game state`);
     await setObj(key(client.userId), null);
+    sendMessage(client.userId, 'gsi_roshan', {state: 'alive', respawnTime: 0});
 }
 
 export async function intializeNewConnection(userId: number): Promise<void> {
