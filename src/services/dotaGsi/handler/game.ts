@@ -91,7 +91,7 @@ export async function process(client: GsiClient, data: any): Promise<void> {
                 changeSet.gameState = newData.game_state;
                 config.debugGsi && console.log(`[${client.displayName}] Game state changed: ${newData.game_state}`);
 
-                if(newData.game_state === GameState.running && oldData.type === 'playing') {
+                if(newData.game_state === GameState.preGame && oldData.type === 'playing') {
                     await startBetFromGsi(client.userId, client.displayName);
                 }
             }

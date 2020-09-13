@@ -3,13 +3,11 @@ import { gsiAuthTokenUnknown, userConnected, patchUser, loadUserById } from '../
 import {grey} from 'chalk';
 import { sendMessage } from '../services/websocket';
 import dayjs from 'dayjs';
-import ws from 'ws';
 import {intializeNewConnection as initializeDraft, process as draftProcess, reset as draftReset} from '../services/dotaGsi/handler/draft';
 import {intializeNewConnection as initializeGameData, process as gameDataProcess, reset as gameDataReset} from '../services/dotaGsi/handler/game';
 import {intializeNewConnection as initializeWards, process as wardsProcess, reset as wardsReset} from '../services/dotaGsi/handler/wards';
 import {intializeNewConnection as initializeRoshan, process as roshanProcess, reset as roshanReset} from '../services/dotaGsi/handler/roshan';
 import {intializeNewConnection as initializeAegis, process as aegisProcess, reset as aegisReset} from '../services/dotaGsi/handler/aegis';
-import { User } from '@streamdota/shared-types';
 
 export class GsiClient {
     auth: string;
@@ -118,13 +116,12 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     return next();
 }
 
-export async function gsiListener(_ws: ws, req: Request) {
-    if(req.user) {
-        const id = (req.user as User).id;
-        await initializeGameData(id);
-        await initializeDraft(id);
-        await initializeWards(id);
-        await initializeAegis(id);
-        await initializeRoshan(id);
+export async function newGsiListener(userId: number) {
+    if(userId) {
+        await initializeGameData(userId);
+        await initializeDraft(userId);
+        await initializeWards(userId);
+        await initializeAegis(userId);
+        await initializeRoshan(userId);
     }
 }
