@@ -4,6 +4,7 @@ import {User} from '@streamdota/shared-types';
 import { requireBetOverlay, patchBetOverlay } from '../../services/entity/BetOverlay';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
 import { sendMessage } from '../../services/websocket';
+import { getUserCommands } from '../../services/entity/Command';
 
 const route = Router();
 
@@ -15,6 +16,13 @@ export default (app: Router) => {
     const overlay = await requireBetOverlay(user.id);
 
     return res.json(overlay).status(200);
+  });
+
+  route.get('/bettingCommand', checkUserFrameAPIKey, reuqireAuthorization, async (req: Request, res: Response) => {
+    const user = req.user as User;
+    const commands = await getUserCommands(user.id);
+    const betCommand = commands.find(({identifier}) => identifier === 'bet');
+    return res.json({command: betCommand?.command}).status(200);
   });
 
   route.patch('/', reuqireAuthorization, async (req: Request, res: Response) => {
