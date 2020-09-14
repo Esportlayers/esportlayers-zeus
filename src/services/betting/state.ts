@@ -7,6 +7,7 @@ import { getBettingCommands } from "./chatCommands";
 import { publish } from "../twitchChat";
 import { sendMessage } from "../websocket";
 import { getBetSeason } from "../entity/BetSeasons";
+import { requireBetOverlay } from "../entity/BetOverlay";
 
 export interface CurrentBetRound {
     id: number;
@@ -50,6 +51,7 @@ export async function requireUser(channel: string): Promise<User> {
 
 export async function startBet(channel: string, userId: number, reset: boolean = true): Promise<void> {
     const currentRound = await requireBettingRound(channel, userId);
+    const overlay = await requireBetOverlay(userId);
     if(reset) {
         const chatters = await fetchChatterCount(channel.substring(1));
         currentRound.status = 'betting';
@@ -74,7 +76,7 @@ export async function startBet(channel: string, userId: number, reset: boolean =
         await patchBetRound(roundId, {status: 'running'});
         publish(channel, 'Die Wetten sind geschlossen.');
         sendMessage(userId, 'betting', currentRound);
-    }, 90000);
+    }, overlay.timerDuration * 1000);
 }
 
 export async function updateBetState(userId: number, started: boolean = false, finished: boolean = false): Promise<void> {
