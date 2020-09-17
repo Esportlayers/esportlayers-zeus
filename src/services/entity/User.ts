@@ -166,7 +166,9 @@ export async function loadStats(userId: number, statsFrom?: User['dotaStatsFrom'
         from = dotaStatsFrom;
     }
 
-    let startTs = dayjs().startOf('day').unix();
+    const startOfDay = dayjs().startOf('day').unix();
+    let startTs = startOfDay;
+
     if(statsFrom === 'session') {
         const onlineSince = await getOnlineSince(userId);
         if(onlineSince) {
@@ -176,9 +178,23 @@ export async function loadStats(userId: number, statsFrom?: User['dotaStatsFrom'
         }
     }
 
+    await clearUserStats(userId, Math.min(startOfDay, startTs));
+
     const [rows] = await conn.execute<StatsRow[]>('SELECT UNIX_TIMESTAMP(finished) as date, won FROM dota_games WHERE UNIX_TIMESTAMP(finished) >= ? AND user_id = ?;', [startTs, userId]);
     await conn.end();
     return rows;
+}
+
+export async function clearUserStats(userId: number, ts: number): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('DELETE FROM dota_games WHERE UNIX_TIMESTAMP(finished) < ? AND user_id = ?', [ts, userId]);
+    await conn.end();
+}
+
+export async function removeDotaGames(userId: number, ts: number): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('DELETE FROM dota_games WHERE UNIX_TIMESTAMP(finished) = ? AND user_id = ?', [ts, userId]);
+    await conn.end();
 }
 
 export async function getDeaultChannels(): Promise<string[]> {

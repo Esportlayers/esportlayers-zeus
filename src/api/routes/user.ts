@@ -1,8 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { loadSteamConnections, loadStats, patchUser } from '../../services/entity/User';
+import { loadSteamConnections, loadStats, patchUser, removeDotaGames } from '../../services/entity/User';
 import {User} from '@streamdota/shared-types';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
+import { sendMessage } from '../../services/websocket';
 
 const route = Router();
 
@@ -23,9 +24,16 @@ export default (app: Router) => {
         return res.json(connections).status(200);
     });
 
-    route.get('/dotaStats/:frameApiKey', checkUserFrameAPIKey, reuqireAuthorization, async (req: Request, res: Response) => {
+    route.get('/dotaStats', checkUserFrameAPIKey, reuqireAuthorization, async (req: Request, res: Response) => {
         const user = (req.user as User);
         const stats = await loadStats(user.id, user.dotaStatsFrom);
         return res.json(stats).status(200);
+    });
+
+    route.delete('/dotaStats/:ts', reuqireAuthorization, async (req: Request, res: Response) => {
+        const user = (req.user as User);
+        await removeDotaGames(user.id, +req.params.ts);
+        sendMessage(user.id, 'dota_wl_reset', {});
+        return res.sendStatus(204);
     });
 };
