@@ -1,5 +1,5 @@
 import { ChatUserstate } from "tmi.js";
-import { createBetRound, createBet, getRoundId, patchBetRound } from "../entity/BetRound";
+import { createBet, getRoundId, patchBetRound } from "../entity/BetRound";
 import { sendMessage } from "../websocket";
 import { publish, ChannelCommand, getCommandsCacheKey, hasAccess } from "../twitchChat";
 import { seasonTopList, getUserSeasonStats } from "../entity/BetSeasons";
@@ -117,16 +117,16 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
     if(message.toLowerCase() === startBetCommand.command.toLowerCase() && startBetCommand.active && hasAccess(tags, startBetCommand)) {
         if(currentRound.status === 'finished') {
             await startBet(channel, user.id);
-            await createBetRound(user.id, user.betSeasonId);
-            sendMessage(user.id, 'betting', currentRound);
         } else {
             publish(channel, '@' + tags.username + ' es läuft bereits eine Wette.');
         }
     } else if(message.toLowerCase().startsWith(winnerCommand.command.toLowerCase() || '') && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
         const result = message.substr(winnerCommand.command.length + 1).toLowerCase();
         if(result === user.teamAName.toLowerCase() || result === user.teamBName.toLowerCase()) {
-            const betRoundId = await getRoundId(user.id);
-            await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
+            setTimeout(async () => {
+                const betRoundId = await getRoundId(user.id);
+                await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
+            }, user.streamDelay * 1000);
         }
     } else if(message.toLowerCase().startsWith(betCommand.command.toLowerCase() || '') && betCommand.active && currentRound.status === 'betting' &&! currentRound.betters.includes(tags.username!)) {
         await handleUserBet(message, betCommand, tags, currentRound, user.id);

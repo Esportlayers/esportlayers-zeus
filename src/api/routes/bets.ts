@@ -21,13 +21,17 @@ export default (app: Router) => {
 
   route.post('/', reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
-    await createBetRound(user.id, user.betSeasonId, true);
+    setTimeout(async () => {
+      await createBetRound(user.id, user.betSeasonId, true);
+    }, user.streamDelay * 1000);
     return res.sendStatus(201);
   });
 
   route.patch('/:roundId', reuqireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
     const user = req.user as User;
-    await patchBetRound(+req.params.roundId, req.body, true, user.id);
+    setTimeout(async () => {
+      await patchBetRound(+req.params.roundId, req.body, true, user.id);
+    }, user.streamDelay * 1000);
     return res.sendStatus(204);
   });
 
