@@ -71,17 +71,19 @@ async function updateListener(channel: string, userId: number): Promise<void> {
 async function startVote(channel: string, user: User): Promise<void> {
     const currentRound = await getObj<BetRoundData>(roundKey(channel));
     const {startBet: startBetCommand, bet: betCommand } = await getBettingCommands(channel);
-    let message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
-    message = message.replace(/\{TEAM_A\}/g, user?.teamAName || 'a');
-    message = message.replace(/\{TEAM_B\}/g, user?.teamBName || 'b');
-    publish(channel, message);
-    await createBetRound(user.id, user.betSeasonId);
-    await setObj(roundKey(channel), {
-        ...currentRound,
-        status: 'betting',
-        announcedStart: true,
-    })
-    await updateListener(channel, user.id);
+    if(startBetCommand) {
+        let message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
+        message = message.replace(/\{TEAM_A\}/g, user?.teamAName || 'a');
+        message = message.replace(/\{TEAM_B\}/g, user?.teamBName || 'b');
+        publish(channel, message);
+        await createBetRound(user.id, user.betSeasonId);
+        await setObj(roundKey(channel), {
+            ...currentRound,
+            status: 'betting',
+            announcedStart: true,
+        })
+        await updateListener(channel, user.id);
+    }
 }
 
 async function finishVote(channel: string, user: User): Promise<void> {
