@@ -139,10 +139,6 @@ export async function initializeBet(channel: string, userId: number): Promise<vo
             announcedWinner: false,
         });
         await addChannel(channel);
-        if(user.streamDelay === 0) {
-            await startVote(channel, user);
-        }
-
         await updateListener(channel, userId);
     }
 }
@@ -238,3 +234,7 @@ export async function updateBetRounds(): Promise<void> {
     }
 }
 
+export async function newBettingListener(userId: number, displayName: string): Promise<void> {
+    await updateListener('#' + displayName.toLowerCase(), userId);
+
+}

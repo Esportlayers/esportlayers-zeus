@@ -1,11 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
-import { createBetRound, patchBetRound, deleteBetRound, getRoundId, getRoundById } from '../../services/entity/BetRound';
+import { patchBetRound, deleteBetRound, getRoundId, getRoundById } from '../../services/entity/BetRound';
 import {User} from '@streamdota/shared-types';
 import { requireBetRoundAccess } from '../../middleware/requireBetSeasonAccess';
 import { checkUserFrameWebsocketApiKey, checkUserFrameAPIKey } from '../../middleware/frameApi';
 import { heartbeat } from '../../tasks/websocketHeartbeat';
 import ws from 'ws';
+import { initializeBet, newBettingListener } from '../../services/betting/state';
 
 const route = Router();
 
@@ -21,9 +22,7 @@ export default (app: Router) => {
 
   route.post('/', reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
-    setTimeout(async () => {
-      await createBetRound(user.id, user.betSeasonId, true);
-    }, user.streamDelay * 1000);
+    await initializeBet('#' + user.displayName.toLowerCase(), user.id);
     return res.sendStatus(201);
   });
 
@@ -40,9 +39,10 @@ export default (app: Router) => {
     return res.sendStatus(204);
   });
 
-  route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, (ws: ws, req: Request) => {
+  route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, async (ws: ws, req: Request) => {
     //@ts-ignore
     ws.isAlive = true;
     ws.on('pong', heartbeat);
+    await newBettingListener((req.user as User).id, (req.user as User).displayName);
   });
 };
