@@ -200,6 +200,11 @@ async function streamDelayChecker(data: BetRoundData, ts: number, channel: strin
 }
 
 async function bettingChecker(data: BetRoundData, ts: number, channel: string, user: User): Promise<void> {
+    if(data.overlayVisible && data.overlayVisibleUntil <= ts) {
+        await setObj(roundKey(channel), {...data, overlayVisible: false});
+        await updateListener(channel, user.id);
+    }
+    
     if(data.votingPossibleUntil <= ts && !data.announcedVoteEnd) {
         await finishVote(channel, user);
     } else {
