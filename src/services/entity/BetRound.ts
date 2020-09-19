@@ -4,7 +4,6 @@ import { RowDataPacket } from "mysql2";
 import { requireWatcher } from "./Watcher";
 import {BetRound, BetRoundStats} from '@streamdota/shared-types';
 import { fetchChatterCount } from "../twitchApi";
-import { updateBetState } from "../betting/state";
 
 async function getRound(userId: number): Promise<number> {
     const user = await loadUserById(userId);
@@ -106,10 +105,6 @@ export async function createBetRound(userId: number, seasonId: number | null, no
         );
         await conn.end();    
     }
-    
-    if(notify) {
-        await updateBetState(userId, true);
-    }
 }
 
 interface PatchableData {
@@ -129,10 +124,6 @@ const conn = await getConn();
     }
 
     await conn.end();
-
-    if(notify) {
-        await updateBetState(userId!, false, data?.status === 'finished');
-    }
 }
 
 export async function deleteBetRound(roundId: number): Promise<void> {

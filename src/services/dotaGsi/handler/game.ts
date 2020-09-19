@@ -1,7 +1,7 @@
 import config from '../../../config';
 import { getObj, setObj } from '../../../loader/redis';
 import { GsiClient } from '../../../middleware/dotaGsi';
-import { resolveBet, startBetFromGsi } from '../../betting/state';
+import { initializeBet, resolveBet } from '../../betting/state';
 import { loadUserById, saveDotaGame } from '../../entity/User';
 import { fetchMatchTeams } from '../../steamWebApi';
 import { sendMessage } from '../../websocket';
@@ -81,6 +81,7 @@ export async function process(client: GsiClient, data: any): Promise<void> {
         }
 
         if(oldData) {
+            const channel = '#' + client.displayName.toLowerCase();
             let changeSet: Partial<GameData> = {};
             if(oldData.paused !== newData.paused) {
                 sendMessage(client.userId, 'gsi_game_paused', newData.paused);
@@ -93,7 +94,7 @@ export async function process(client: GsiClient, data: any): Promise<void> {
                 config.debugGsi && console.log(`[${client.displayName}] Game state changed: ${newData.game_state}`);
 
                 if(newData.game_state === GameState.preGame && oldData.type === 'playing') {
-                    await startBetFromGsi(client.userId, client.displayName);
+                    await initializeBet(channel, client.userId);
                 }
             }
             if(oldData.winner !== newData.win_team) {
@@ -107,7 +108,7 @@ export async function process(client: GsiClient, data: any): Promise<void> {
                         await saveDotaGame(client.userId, isPlayingWin);        
                     }
                     const user = await loadUserById(client.userId);
-                    await resolveBet(client.userId, client.displayName, newData.win_team === 'radiant' ? (user?.teamAName.toLowerCase() || 'a') : (user?.teamBName.toLowerCase() || 'b'));
+                    await resolveBet(channel, client.userId, newData.win_team === 'radiant' ? (user?.teamAName.toLowerCase() || 'a') : (user?.teamBName.toLowerCase() || 'b'));
                 }
             }
             if(oldData.radiantWinChance !== newData.radiant_win_chance) {

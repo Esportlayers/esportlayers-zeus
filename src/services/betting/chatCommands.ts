@@ -1,12 +1,10 @@
 import { ChatUserstate } from "tmi.js";
-import { createBet, getRoundId, patchBetRound } from "../entity/BetRound";
-import { sendMessage } from "../websocket";
 import { publish, ChannelCommand, getCommandsCacheKey, hasAccess } from "../twitchChat";
 import { seasonTopList, getUserSeasonStats } from "../entity/BetSeasons";
-import { CurrentBetRound, requireUser, requireBettingRound, startBet } from "./state";
 import {Command, User} from '@streamdota/shared-types';
-import { getChannelCommands, loadUserById } from "../entity/User";
+import { getChannelCommands } from "../entity/User";
 import { getObj, setObj } from "../../loader/redis";
+import { initializeBet, registerBet, resolveBet, requireUser } from "./state";
 
 
 export async function requireUserCommands(channel: string): Promise<ChannelCommand> {
@@ -71,25 +69,6 @@ export async function getBettingCommands(channel: string): Promise<{startBet: Co
     return {startBet, bet, winner};
 }
 
-export async function handleUserBet(message: string, betCommand: Command, tags: ChatUserstate, currentRound: CurrentBetRound, userId: number): Promise<void> {
-    const user = await loadUserById(userId);
-    const bet = message.substr(betCommand.command.length + 1).toLowerCase();
-
-    if(bet.toLowerCase() === user?.teamAName.toLowerCase() && hasAccess(tags, betCommand)) {
-        await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
-        currentRound.total = currentRound.total + 1;
-        currentRound.aBets = currentRound.aBets + 1;
-        currentRound.betters.push(tags.username!);
-        sendMessage(userId, 'betting', currentRound);
-    } else if(bet.toLowerCase() === user?.teamBName.toLowerCase() && hasAccess(tags, betCommand)) {
-        await createBet(userId, +tags["user-id"]!, tags["display-name"]!, tags.username!, bet);
-        currentRound.total = currentRound.total + 1;
-        currentRound.bBets = currentRound.bBets + 1;
-        currentRound.betters.push(tags.username!);
-        sendMessage(userId, 'betting', currentRound);
-    }
-}
-
 export async function processCommands(channel: string, tags: ChatUserstate, message: string): Promise<void> {
     const user = await requireUser(channel);
 
@@ -112,23 +91,12 @@ export async function processCommands(channel: string, tags: ChatUserstate, mess
         return;
     }
 
-    const currentRound = await requireBettingRound(channel, user.id);
-
     if(message.toLowerCase() === startBetCommand.command.toLowerCase() && startBetCommand.active && hasAccess(tags, startBetCommand)) {
-        if(currentRound.status === 'finished') {
-            await startBet(channel, user.id);
-        } else {
-            publish(channel, '@' + tags.username + ' es läuft bereits eine Wette.');
-        }
-    } else if(message.toLowerCase().startsWith(winnerCommand.command.toLowerCase() || '') && winnerCommand.active && hasAccess(tags, winnerCommand) && currentRound.status === 'running' ) {
+        await initializeBet(channel, user.id);
+    } else if(message.toLowerCase().startsWith(winnerCommand.command.toLowerCase() || '') && winnerCommand.active && hasAccess(tags, winnerCommand)) {
         const result = message.substr(winnerCommand.command.length + 1).toLowerCase();
-        if(result === user.teamAName.toLowerCase() || result === user.teamBName.toLowerCase()) {
-            setTimeout(async () => {
-                const betRoundId = await getRoundId(user.id);
-                await patchBetRound(betRoundId, {result, status: 'finished'}, true, user.id);
-            }, user.streamDelay * 1000);
-        }
-    } else if(message.toLowerCase().startsWith(betCommand.command.toLowerCase() || '') && betCommand.active && currentRound.status === 'betting' &&! currentRound.betters.includes(tags.username!)) {
-        await handleUserBet(message, betCommand, tags, currentRound, user.id);
+        await resolveBet(channel, user.id, result);
+    } else if(message.toLowerCase().startsWith(betCommand.command.toLowerCase() || '') && betCommand.active && hasAccess(tags, betCommand)) {
+        await registerBet(channel, user.id, +tags["user-id"]!, tags["display-name"]!, tags.username!, message);
 	}
 }

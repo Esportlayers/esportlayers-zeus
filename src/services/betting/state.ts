@@ -1,42 +1,38 @@
-import { getRoundId, getRoundById, patchBetRound, createBetRound } from "../entity/BetRound";
-import { getUserByTrustedChannel, loadUserById } from "../entity/User";
-import {User} from '@streamdota/shared-types';
-import { fetchChatterCount } from "../twitchApi";
+import { User } from "@streamdota/shared-types";
 import dayjs from "dayjs";
-import { getBettingCommands } from "./chatCommands";
+import { getObj, setObj } from "../../loader/redis";
+import { requireBetOverlay } from "../entity/BetOverlay";
+import { createBet, createBetRound, getRoundId, patchBetRound } from "../entity/BetRound";
+import { getUserByTrustedChannel, loadUserById } from "../entity/User";
+import { fetchChatterCount } from "../twitchApi";
 import { publish } from "../twitchChat";
 import { sendMessage } from "../websocket";
-import { getBetSeason } from "../entity/BetSeasons";
-import { requireBetOverlay } from "../entity/BetOverlay";
+import { getBettingCommands } from "./chatCommands";
 
-export interface CurrentBetRound {
-    id: number;
-    status: 'betting' | 'running' | 'finished';
-    created: number;
-    result: string;
-    total: number;
-    aBets: number;
-    bBets: number;
-    chatters: number;
-    betters: string[];
+interface BetRoundData {
+    status: 'stream_delay' | 'betting' | 'game_running' | 'finished';
+    overlayVisibleUntil: number;
+    overlayVisible: boolean;
+    streamDelay: number;
+    votingStartingAt: number;
+    votingTimeRemaining: number;
+    votingPossibleUntil: number;
+    voteCreated: number;
+    totalVotesCount: number;
+    chatterCounts: number;
+    teamACount: number;
+    teamAVoters: string[];
+    teamBCount: number;
+    teamBVoters: string[];
+    allVoters: string[];
+    winner: null | string;
+    winnerAnnouncement: null | number;
+    announcedStart: boolean;
+    announcedVoteEnd: boolean;
+    announcedWinner: boolean;
 }
 
 const channeUserCache = new Map<string, User>();
-const userBetting = new Map<string, CurrentBetRound>();
-
-export async function requireBettingRound(channel: string, userId: number): Promise<CurrentBetRound> {
-    if(! userBetting.has(channel.toLowerCase())) {
-        const roundId = await getRoundId(userId);
-        if(roundId !== 0) {
-            const {chatters, status, created, result, total, aBets, bBets} = (await getRoundById(roundId))!;
-            userBetting.set(channel.toLowerCase(), {id: roundId, betters: [], chatters, status, created, result, total, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)})
-        } else {
-            userBetting.set(channel.toLowerCase(), {id: 0, betters: [], chatters: 0, status: 'finished', created: 0, result: '', total: 0, aBets: 0, bBets: 0});
-        }
-    }
-
-    return userBetting.get(channel.toLowerCase())!;
-}
 
 export async function requireUser(channel: string): Promise<User> {
     const lowerChannel = channel.toLowerCase();
@@ -45,107 +41,200 @@ export async function requireUser(channel: string): Promise<User> {
         const user = (await loadUserById(id))!;
         channeUserCache.set(lowerChannel, user);
     }
-
     return channeUserCache.get(lowerChannel)!;
 }
 
-export async function startBet(channel: string, userId: number, reset: boolean = true): Promise<void> {
-    const user = await loadUserById(userId);
 
-    setTimeout(async () => {
-        const currentRound = await requireBettingRound(channel, userId);
-        const overlay = await requireBetOverlay(userId);
-        if(reset) {
-            const chatters = await fetchChatterCount(channel.substring(1));
-            currentRound.status = 'betting';
-            currentRound.created = dayjs().unix();
-            currentRound.result = '';
-            currentRound.total = 0;
-            currentRound.aBets = 0;
-            currentRound.bBets = 0;
-            currentRound.chatters = chatters;
-        }
-    
-        const {startBet: startBetCommand, bet: betCommand} = await getBettingCommands(channel);
-        let message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
-        message = message.replace(/\{TEAM_A\}/g, user?.teamAName || 'a');
-        message = message.replace(/\{TEAM_B\}/g, user?.teamBName || 'b');
-        publish(channel, message);
-    
-        await createBetRound(userId, user!.betSeasonId);
-        sendMessage(userId, 'betting', currentRound);
-    
-        setTimeout(async () => {
-            currentRound.status = 'running';
-            const roundId = await getRoundId(userId);
-            await patchBetRound(roundId, {status: 'running'});
-            publish(channel, 'Die Wetten sind geschlossen.');
-            sendMessage(userId, 'betting', currentRound);
-        }, overlay.timerDuration * 1000);
-    }, user!.streamDelay * 1000);
+function activeVoteKeys(): string {
+    return `betting_active_channels`;
 }
 
-export async function updateBetState(userId: number, started: boolean = false, finished: boolean = false): Promise<void> {
-    const user = (await loadUserById(userId))!;
-    const channel = '#' + user.displayName;
+async function addChannel(channel: string): Promise<void> {
+    const channels = (await getObj<string[]>(activeVoteKeys()) || []);
+    await setObj(activeVoteKeys(), channels.concat(channel));
+}
 
-    if(!channeUserCache.has(channel.toLowerCase())) {
-        channeUserCache.set(channel.toLowerCase(), user);
-    }
+async function removeChannel(channel: string): Promise<void> {
+    const channels = (await getObj<string[]>(activeVoteKeys()) || []);
+    await setObj(activeVoteKeys(), channels.filter((c) => c !== channel));
+}
 
+function roundKey(channel: string): string {
+    return `betting_round_state_${channel}`;
+}
+
+async function updateListener(channel: string, userId: number): Promise<void> {
+    const currentRound = await getObj<BetRoundData>(roundKey(channel));
+    sendMessage(userId, 'betting_v2', currentRound);
+}
+
+async function startVote(channel: string, user: User): Promise<void> {
+    const currentRound = await getObj<BetRoundData>(roundKey(channel));
+    const {startBet: startBetCommand, bet: betCommand } = await getBettingCommands(channel);
+    let message = startBetCommand.message.replace(/\{BET_COMMAND\}/g, betCommand?.command || '');
+    message = message.replace(/\{TEAM_A\}/g, user?.teamAName || 'a');
+    message = message.replace(/\{TEAM_B\}/g, user?.teamBName || 'b');
+    publish(channel, message);
+    await createBetRound(user.id, user.betSeasonId);
+    await setObj(roundKey(channel), {
+        ...currentRound,
+        status: 'betting',
+        announcedStart: true,
+    })
+    await updateListener(channel, user.id);
+}
+
+async function finishVote(channel: string, user: User): Promise<void> {
     const roundId = await getRoundId(user.id);
-    const {chatters, status, created, result, total, aBets, bBets} = (await getRoundById(roundId)) || {chatters: 0, status: 'finished', created: dayjs().unix(), result: '', total: 0, aBets: '0', bBets: '0'};
-    userBetting.set(channel.toLowerCase(), {id: roundId, betters: [], chatters, status, created, result,  total, aBets: parseInt(aBets, 10), bBets: parseInt(bBets, 10)});
-    
-    if(started) {
-        await startBet(channel, userId, false);
-    }
-    
-    sendMessage(user.id, 'betting', userBetting.get(channel.toLowerCase())!);
-
-    if(finished) {
-        const {winner: winnerCommand} = await getBettingCommands(channel);
-        const msg = winnerCommand.message.replace(/\{WINNER\}/g, result.toUpperCase());
-        publish(channel, msg);
-    }
+    await patchBetRound(roundId, {status: 'running'});
+    publish(channel, 'Die Votes sind geschlossen.');
+    const currentRound = await getObj<BetRoundData>(roundKey(channel));
+    await setObj(roundKey(channel), {
+        ...currentRound,
+        status: 'game_running',
+        announcedVoteEnd: true,
+    })
+    await updateListener(channel, user.id);
 }
 
-export function clearBettingCache(channel: string): void {
-    if(userBetting.has(channel)) {
-        userBetting.delete(channel);
-    }
+async function closeVote(channel: string, user: User): Promise<void> {
+    const roundId = await getRoundId(user.id);
+    const currentRound = await getObj<BetRoundData>(roundKey(channel));
+    await patchBetRound(roundId, {result: currentRound!.winner!, status: 'finished'}, true, user.id);
+    const {winner: winnerCommand} = await getBettingCommands(channel);
+    publish(channel, winnerCommand.message.replace(/\{WINNER\}/g, currentRound!.winner!));
+    await setObj(roundKey(channel), null);
+    await removeChannel(channel);
+    await updateListener(channel, user.id);
 }
 
-export function clearUserCache(channel: string): void {
-    if(channeUserCache.has(channel)) {
-        channeUserCache.delete(channel);
-    }
-}
-
-export async function startBetFromGsi(userId: number, displayName: string): Promise<void> {
-    const channel = '#' + displayName.toLowerCase();
-    const currentRound = await requireBettingRound(channel, userId);
+export async function initializeBet(channel: string, userId: number): Promise<void> {
     const user = await loadUserById(userId);
+    const currentRound = await getObj<BetRoundData>(roundKey(channel));
+    
+    if(user && (! currentRound || currentRound.status === 'finished')) {
+        const overlay = await requireBetOverlay(userId);
+        const chatters = await fetchChatterCount(channel.substring(1));
+        const ts = dayjs().unix();
+        await setObj(roundKey(channel), {
+            status: 'stream_delay',
+            overlayVisibleUntil: ts + overlay.timerDuration,
+            overlayVisible: true,
+            streamDelay: user.streamDelay,
+            votingStartingAt: ts + user.streamDelay,
+            votingTimeRemaining: ts + user.streamDelay,
+            votingPossibleUntil: ts + user.streamDelay + overlay.timerDuration,
+            voteCreated: ts,
+            totalVotesCount: 0,
+            chatterCounts: chatters,
+            teamACount: 0,
+            teamBCount: 0,
+            teamAVoters: [],
+            teamBVoters: [],
+            allVoters: [],
+            winner: null,
+            winnerAnnouncement: null,
+            announcedStart: false,
+            announcedVoteEnd: false,
+            announcedWinner: false,
+        });
+        await addChannel(channel);
+        if(user.streamDelay === 0) {
+            await startVote(channel, user);
+        }
 
-    if(user && user.betSeasonId) {
-        const betSeason = await getBetSeason(user.betSeasonId);
-        if(currentRound.status === 'finished' && betSeason?.type === 'ladder') {
-            await startBet(channel, userId);
-            await createBetRound(userId, user.betSeasonId);
-            sendMessage(userId, 'betting', currentRound);
+        await updateListener(channel, userId);
+    }
+}
+
+export async function registerBet(channel: string, userId: number, votingUserId: number, displayName: string, userName: string, message: string): Promise<void> {
+    const currentRound = await getObj<BetRoundData>(roundKey(channel));
+    if(currentRound && currentRound.status === 'betting' && !currentRound?.allVoters.includes(userName)) {
+        const {bet} = await getBettingCommands(channel);
+        const payload = message.substr(bet.command.length + 1).toLowerCase();
+        const user = await loadUserById(userId);
+        const betOnTeamA = payload.toLowerCase() === user?.teamAName.toLowerCase();
+        const betOnTeamB = payload.toLowerCase() === user?.teamBName.toLowerCase();
+
+        if(user && (betOnTeamA || betOnTeamB)) {
+            await createBet(userId, votingUserId, displayName, userName, betOnTeamA ? user.teamAName : user.teamBName);
+            await setObj(roundKey(channel), {
+                ...currentRound,
+                allVoters: currentRound.allVoters.concat(userName),
+                ...(betOnTeamA ? {teamAVoters: currentRound.teamAVoters.concat(userName), teamACount: currentRound.teamACount + 1, totalVotesCount: currentRound.totalVotesCount + 1} : {}),
+                ...(betOnTeamB ? {teamBVoters: currentRound.teamBVoters.concat(userName), teamBCount: currentRound.teamBCount + 1, totalVotesCount: currentRound.totalVotesCount + 1} : {}),
+            });
+
+            await updateListener(channel, userId);
         }
     }
 }
 
-export async function resolveBet(userId: number, displayName: string, result: string): Promise<void> {
-    const user = (await loadUserById(userId))!;
-    setTimeout(async () => {
-        const channel = '#' + displayName.toLowerCase();
-        const currentRound = await requireBettingRound(channel, userId);
-    
-        if(currentRound.status === 'running') {
-            const betRoundId = await getRoundId(userId);
-            await patchBetRound(betRoundId, {result, status: 'finished'}, true, userId);
+export async function resolveBet(channel: string, userId: number, result: string): Promise<void> {
+    const currentRound = await getObj<BetRoundData>(roundKey(channel));
+    if(currentRound && currentRound.status === 'game_running') {
+        const user = await loadUserById(userId);
+        if(user?.teamAName.toLowerCase() === result.toLowerCase() || user?.teamBName.toLowerCase() === result.toLowerCase()) {
+            const ts = dayjs().unix();
+            if(user) {
+                await setObj(roundKey(channel), {
+                    ...currentRound,
+                    winner: user?.teamAName.toLowerCase() === result.toLowerCase() ? user?.teamAName : user?.teamBName,
+                    winnerAnnouncement: ts + user?.streamDelay,
+                });
+
+                await updateListener(channel, userId);
+            }
         }
-    }, user.streamDelay * 1000)
+    }
 }
+
+async function streamDelayChecker(data: BetRoundData, ts: number, channel: string, user: User): Promise<void> {
+    if(data.overlayVisible && data.overlayVisibleUntil <= ts) {
+        await setObj(roundKey(channel), {...data, overlayVisible: false});
+        await updateListener(channel, user.id);
+    }
+
+    if(data.votingStartingAt <= ts && !data.announcedStart) {
+        await startVote(channel, user);
+    }
+}
+
+async function bettingChecker(data: BetRoundData, ts: number, channel: string, user: User): Promise<void> {
+    if(data.votingPossibleUntil <= ts && !data.announcedVoteEnd) {
+        await finishVote(channel, user);
+    } else {
+        await setObj(roundKey(channel), {
+            ...data,
+            votingTimeRemaining: data.votingPossibleUntil - ts,
+        });
+        await updateListener(channel, user.id);
+    }
+}
+
+async function gameRunningChecker(data: BetRoundData, ts: number, channel: string, user: User): Promise<void> {
+    if(data.winner && data.winnerAnnouncement! <= ts && !data.announcedWinner) {
+        await closeVote(channel, user);
+    }
+}
+
+const statusChecker = {
+    stream_delay: streamDelayChecker,
+    betting: bettingChecker,
+    game_running: gameRunningChecker,
+}
+
+export async function updateBetRounds(): Promise<void> {
+    const activeBettingChannel = await getObj<string[]>(activeVoteKeys()) || [];
+    const ts = dayjs().unix();
+
+    for(const channel of activeBettingChannel) {
+        const round = await getObj<BetRoundData>(roundKey(channel));
+        const user = await requireUser(channel);
+
+        if(round && round.status !== 'finished') {
+            await statusChecker[round.status](round, ts, channel, user);
+        }
+    }
+}
+
