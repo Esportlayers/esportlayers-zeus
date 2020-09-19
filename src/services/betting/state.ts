@@ -95,6 +95,7 @@ async function finishVote(channel: string, user: User): Promise<void> {
         ...currentRound,
         status: 'game_running',
         announcedVoteEnd: true,
+        overlayVisible: false,
     })
     await updateListener(channel, user.id);
 }
