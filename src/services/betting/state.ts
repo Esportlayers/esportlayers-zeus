@@ -101,9 +101,7 @@ async function finishVote(channel: string, user: User): Promise<void> {
 }
 
 async function closeVote(channel: string, user: User): Promise<void> {
-    const roundId = await getRoundId(user.id);
     const currentRound = await getObj<BetRoundData>(roundKey(channel));
-    await patchBetRound(roundId, {result: currentRound!.winner!, status: 'finished'}, true, user.id);
     const {winner: winnerCommand} = await getBettingCommands(channel);
     publish(channel, winnerCommand.message.replace(/\{WINNER\}/g, currentRound!.winner!));
     await setObj(roundKey(channel), null);
@@ -181,7 +179,8 @@ export async function resolveBet(channel: string, userId: number, result: string
                     winner: user?.teamAName.toLowerCase() === result.toLowerCase() ? user?.teamAName : user?.teamBName,
                     winnerAnnouncement: ts + user?.streamDelay,
                 });
-
+                const roundId = await getRoundId(user.id);
+                await patchBetRound(roundId, {result: user?.teamAName.toLowerCase() === result.toLowerCase() ? user?.teamAName : user?.teamBName, status: 'finished'}, true, user.id);
                 await updateListener(channel, userId);
             }
         }
