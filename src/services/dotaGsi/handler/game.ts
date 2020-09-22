@@ -114,7 +114,7 @@ export async function process(client: GsiClient, data: any): Promise<void> {
             if(oldData.radiantWinChance !== newData.radiant_win_chance) {
                 sendMessage(client.userId, 'gsi_game_win_chance', newData.radiant_win_chance);
                 changeSet.radiantWinChance = newData.radiant_win_chance;
-                config.debugGsi && console.log(`[${client.displayName}] Game radiant win chance changed: ${newData.radiant_win_chance}`);
+                //config.debugGsi && console.log(`[${client.displayName}] Game radiant win chance changed: ${newData.radiant_win_chance}`);
             }
 
             const playType = data?.player.hasOwnProperty('steamid') ? 'playing' : 'observing';
