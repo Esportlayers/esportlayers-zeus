@@ -9,7 +9,7 @@ import { publish } from "../twitchChat";
 import { sendMessage } from "../websocket";
 import { getBettingCommands } from "./chatCommands";
 
-interface BetRoundData {
+export interface BetRoundData {
     status: 'stream_delay' | 'betting' | 'game_running' | 'finished';
     overlayVisibleUntil: number;
     overlayVisible: boolean;
@@ -59,7 +59,7 @@ async function removeChannel(channel: string): Promise<void> {
     await setObj(activeVoteKeys(), channels.filter((c) => c !== channel));
 }
 
-function roundKey(channel: string): string {
+export function roundKey(channel: string): string {
     return `betting_round_state_${channel}`;
 }
 

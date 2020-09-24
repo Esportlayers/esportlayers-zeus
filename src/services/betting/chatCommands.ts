@@ -4,7 +4,8 @@ import { seasonTopList, getUserSeasonStats } from "../entity/BetSeasons";
 import {Command, User} from '@streamdota/shared-types';
 import { getChannelCommands } from "../entity/User";
 import { getObj, setObj } from "../../loader/redis";
-import { initializeBet, registerBet, resolveBet, requireUser } from "./state";
+import { initializeBet, registerBet, resolveBet, requireUser, BetRoundData, roundKey } from "./state";
+import { createBetRound } from "../entity/BetRound";
 
 
 export async function requireUserCommands(channel: string): Promise<ChannelCommand> {
@@ -52,7 +53,15 @@ export async function replaceBetPlaceholder(msg: string, userName: string, seaso
 export async function handleStaticCommands(channel: string, message: string, user: User, userName: string, tags: ChatUserstate): Promise<boolean> {
     const userCommands = await requireUserCommands(channel);
     if(userCommands[message.toLowerCase()] && !userCommands[message.toLowerCase()].identifier && userCommands[message.toLowerCase()].active && hasAccess(tags, userCommands[message.toLowerCase()]) && user.betSeasonId) {
-        publish(channel, await replaceBetPlaceholder(userCommands[message.toLowerCase()].message, userName, user.betSeasonId, user.teamAName, user.teamBName));
+        const currentRound = await getObj<BetRoundData>(roundKey(channel));
+    
+        const msg = userCommands[message.toLowerCase()].message;
+        if((!msg.includes('USER_BETS_CORRECT') && !msg.includes('USER_BETS_WRONG') && !msg.includes('USER_BETS_ACCURACY')) || user.streamDelay === 0 || (!currentRound || (!currentRound.winner || currentRound.announcedWinner))) {
+            publish(channel, await replaceBetPlaceholder(msg, userName, user.betSeasonId, user.teamAName, user.teamBName));
+        } else {
+            publish(channel, 'Der Command ist derzeit nicht verfügbar.');
+        }
+        
         return true;
     }
 
