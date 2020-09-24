@@ -5,7 +5,6 @@ import {Command, User} from '@streamdota/shared-types';
 import { getChannelCommands } from "../entity/User";
 import { getObj, setObj } from "../../loader/redis";
 import { initializeBet, registerBet, resolveBet, requireUser, BetRoundData, roundKey } from "./state";
-import { createBetRound } from "../entity/BetRound";
 
 
 export async function requireUserCommands(channel: string): Promise<ChannelCommand> {
