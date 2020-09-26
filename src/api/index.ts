@@ -12,6 +12,7 @@ import betOverlayRoute from './routes/betsOverlay';
 import castingRoute from './routes/casting';
 import simulationRoutes from './routes/simulate';
 import roshTimerRoutes from './routes/roshTimer';
+import antiSnipeRoutes from './routes/antiSnipe';
 import { PassportStatic } from 'passport';
 import config from "../config";
 
@@ -31,6 +32,8 @@ export default ({passport}: {passport: PassportStatic}) => {
 	betOverlayRoute(app);
 	castingRoute(app);
 	roshTimerRoutes(app);
+	antiSnipeRoutes(app);
+	
 	if(config.env === 'development') {
 		simulationRoutes(app);
 	}
