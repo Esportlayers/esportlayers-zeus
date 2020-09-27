@@ -18,7 +18,7 @@ enum GameState {
     postGame = 'DOTA_GAMERULES_STATE_POST_GAME'
 }
 
-interface GameData {
+export interface GameData {
     matchId: number;
     type: 'playing' | 'observing';
     gameState: GameState;
@@ -54,7 +54,7 @@ export interface GsiMapData {
 }
 //#endregion
 
-function key(userId: number): string {
+export function key(userId: number): string {
     return `gsi_${userId}_game`;
 }
 

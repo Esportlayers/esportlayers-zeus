@@ -8,6 +8,7 @@ import {intializeNewConnection as initializeGameData, process as gameDataProcess
 import {intializeNewConnection as initializeWards, process as wardsProcess, reset as wardsReset} from '../services/dotaGsi/handler/wards';
 import {intializeNewConnection as initializeRoshan, process as roshanProcess, reset as roshanReset} from '../services/dotaGsi/handler/roshan';
 import {intializeNewConnection as initializeAegis, process as aegisProcess, reset as aegisReset} from '../services/dotaGsi/handler/aegis';
+import {intializeNewConnection as initializePlayer, process as playerProcess, reset as playerReset} from '../services/dotaGsi/handler/player';
 
 export class GsiClient {
     auth: string;
@@ -43,6 +44,7 @@ async function checkClientHeartbet(): Promise<void> {
             await roshanReset(client);
             await wardsReset(client);
             await aegisReset(client);
+            await playerReset(client);
             clients = clients.filter(({userId: clientUserId}) => clientUserId !== userId);
         }
     }
@@ -112,6 +114,7 @@ export async function gsiBodyParser(req: Request, res: Response, next: NextFunct
     await wardsProcess(client, data);
     await aegisProcess(client, data);
     await roshanProcess(client, data);
+    await playerProcess(client, data);
 
     return next();
 }
@@ -123,5 +126,6 @@ export async function newGsiListener(userId: number) {
         await initializeWards(userId);
         await initializeAegis(userId);
         await initializeRoshan(userId);
+        await initializePlayer(userId);
     }
 }
