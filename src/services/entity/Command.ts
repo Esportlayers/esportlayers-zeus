@@ -92,11 +92,11 @@ export async function createBetCommands(userId: number): Promise<void> {
     const hasBetCommands = userCommands.filter(({type}) => type === 'betting_streamer' || type === 'betting_user').length > 0;
 
     if(!hasBetCommands) {
-        await createUserCommand(userId, true, '!startbet', 'Das Voting sind offen, es kann nun mit “{BET_COMMAND} {TEAM_A}” oder “{BET_COMMAND} {TEAM_B}” abgestimmt werden', 'betting_streamer', false, false, 'startbet', new Set(['streamerAccess']));
+        await createUserCommand(userId, true, '!startvote', 'Das Voting sind offen, es kann nun mit “{BET_COMMAND} {TEAM_A}” oder “{BET_COMMAND} {TEAM_B}” abgestimmt werden', 'betting_streamer', false, false, 'startbet', new Set(['streamerAccess']));
         await createUserCommand(userId, true, '!winner', 'Der Gewinner des Votings wurde auf Team {WINNER} festgelegt.', 'betting_streamer', false, false, 'betwinner', new Set(['streamerAccess']));
-        await createUserCommand(userId, true, '!bet', '', 'betting_user', true, false, 'bet');
+        await createUserCommand(userId, true, '!vote', '', 'betting_user', true, false, 'bet');
         await createUserCommand(userId, true, '!toplist', 'Die aktuelle Toplist ist: {TOPLIST_STATS}', 'betting_user');
-        await createUserCommand(userId, true, '!betstats', '{USER}, du hast aktuell {USER_BETS_CORRECT} von {USER_BETS_TOTAL} Votings korrekt.', 'betting_user');
+        await createUserCommand(userId, true, '!votestats', '{USER}, du hast aktuell {USER_BETS_CORRECT} von {USER_BETS_TOTAL} Votings korrekt.', 'betting_user');
     }
 
 }

@@ -3,12 +3,13 @@ import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
-import { createInstance, deleteInstance } from "../twitchChat";
+import { createInstance, deleteInstance, joinChannel } from "../twitchChat";
 import dayjs from 'dayjs';
 import { getUserBetSeasons } from "./BetSeasons";
 import { createBetCommands, getUserCommands } from "./Command";
 import { clearBettingCommandsCache } from '../betting/chatCommands';
 import { sendMessage } from '../websocket';
+import { clearChannelUserChannel } from '../betting/state';
 
 type UserResponse = User & RowDataPacket & OkPacket;
 
@@ -30,6 +31,8 @@ export async function findOrCreateUser(twitchId: number, displayName: string, av
         );
         const [userRow] = await conn.query<UserResponse[]>('SELECT * FROM user WHERE twitch_id = ?;', [twitchId]);
         user = userRow[0];
+
+        joinChannel('#' + displayName.toLowerCase());
     } else {
         user = await loadUserByTwitchId(twitchId);
     }
@@ -307,6 +310,7 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
             const userSeasons = await getUserBetSeasons(userId);
             if(! userSeasons.length) {
                 await createBetCommands(userId);
+                clearChannelUserChannel(userId);
             }
         }
     }

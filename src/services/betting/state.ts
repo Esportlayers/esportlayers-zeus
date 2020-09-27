@@ -44,6 +44,12 @@ export async function requireUser(channel: string): Promise<User> {
     return channeUserCache.get(lowerChannel)!;
 }
 
+export function clearChannelUserChannel(userId: number): void {
+    const user = [...channeUserCache.entries()].find(([, usr]) => usr.id === userId);
+    if(user && user[0]) {
+        channeUserCache.delete(user[0]);
+    }
+}
 
 function activeVoteKeys(): string {
     return `betting_active_channels`;
