@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import {HeroOverview} from '../stratzApi';
+import {HeroOverview} from './stratzApi';
 
 const BASE_URL = 'https://www.datdota.com/api';
 const DRAFTS = '/drafts?default=true';
@@ -28,8 +28,8 @@ export async function fetchCurrentPatchHeroStats(heroId: number): Promise<HeroOv
 
     if(response.ok) {
         const {data} = (await response.json()) as Response;
-        if(data.length) {
-            const heroStats = data.find(({hero}) => hero === heroId);
+        const heroStats = data.find(({hero}) => hero === heroId);
+        if(data.length > 0 && heroStats) {
             const totalGamesCount = data.reduce((acc, {picks}) => {
                 return acc + picks;
             }, 0) / 10;
