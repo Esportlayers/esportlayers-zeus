@@ -4,6 +4,7 @@ import { checkUserFrameAPIKey } from '../../middleware/frameApi';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { patchCastingOverlay, requireCastingOverlay } from '../../services/entity/CastingOverlay';
 import { fetchHeroStats } from '../../services/stratzApi';
+import { fetchCurrentPatchHeroStats } from '../../services/datdotaApi';
 import { sendMessage } from '../../services/websocket';
 
 const route = Router();
@@ -12,7 +13,12 @@ export default (app: Router) => {
     app.use('/casting', route);
 
     route.get('/heroStats/:leagueId/:heroId', reuqireAuthorization, async (req: Request, res: Response) => {
-        const heroStats = await fetchHeroStats(+req.params.leagueId, +req.params.heroId);
+        let heroStats = null;
+        if(req.params.leagueId.includes('.')) {
+            heroStats = await fetchCurrentPatchHeroStats(+req.params.heroId);
+        } else {
+            heroStats = await fetchHeroStats(+req.params.leagueId, +req.params.heroId);
+        }
 
         if(heroStats === null) {
             return res.sendStatus(503);

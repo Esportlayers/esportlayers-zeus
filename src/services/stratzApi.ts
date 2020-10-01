@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 const BASE_URL = 'https://api.stratz.com/api/v1';
 
-interface HeroOverview {
+export interface HeroOverview {
     index: number;
     heroId: number;
     matchCount: number;
