@@ -38,7 +38,7 @@ export async function fetchCurrentPatchHeroStats(heroId: number): Promise<HeroOv
                 totalGamesCount,
                 index: 0,
                 heroId: heroStats.hero,
-                matchCount: heroStats.picks + heroStats.bans,
+                matchCount: heroStats.picks,
                 matchWins: heroStats.wins,
                 pickPhaseOne: heroStats.firstPhasePicks,
                 pickPhaseTwo: heroStats.secondPhasePicks,
