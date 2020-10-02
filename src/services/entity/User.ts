@@ -321,6 +321,7 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
 
     if(data.hasOwnProperty('betSeasonId')) {
         await conn.execute('UPDATE user SET bet_season_id=? WHERE id=?', [data.betSeasonId, userId]);
+        clearChannelUserChannel(userId);
     }
 
     if(data.hasOwnProperty('dotaStatsPickHidden')) {
@@ -333,6 +334,10 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
 
     if(data.hasOwnProperty('streamDelay')) {
         await conn.execute('UPDATE user SET stream_delay=? WHERE id=?', [data.streamDelay, userId]);
+        clearChannelUserChannel(userId);
+        const user = await loadUserById(userId);
+        await clearBettingCommandsCache('#' + user?.displayName.toLowerCase());
+        sendMessage(userId, 'overlay', true);
     }
 
     if(data.hasOwnProperty('teamAName')) {
