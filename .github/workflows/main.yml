@@ -65,4 +65,4 @@ jobs:
         command: cd ${{ github.repository }} && yarn install
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
-        privateKey: ${{ secrets.PRIVATE_KEY}}
+        privateKey: ${{ secrets.SERVER_SSH_KEY }}
