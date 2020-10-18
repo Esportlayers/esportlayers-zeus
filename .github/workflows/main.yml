@@ -1,6 +1,6 @@
 name: Automatic deploy
 env:
-  APP_LOCATION: ${{ github.repository }}
+  APP_LOCATION: streamdota/api
 
 on:
   push:
