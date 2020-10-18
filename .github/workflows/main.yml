@@ -75,9 +75,9 @@ jobs:
     - name: Install dependencies
       uses: JimCronqvist/action-ssh@master
       with:
-        hosts: ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}
+        hosts: '${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}'
         privateKey: ${{ secrets.PRIVATE_KEY }}
-        debug: true
+        debug: false
         command: |
           cd ${{ github.repository }}
           yarn install
