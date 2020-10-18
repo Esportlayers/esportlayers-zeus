@@ -73,11 +73,10 @@ jobs:
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ github.repository }}/migrations
     - name: Install dependencies
-      uses: JimCronqvist/action-ssh@master
+      uses: garygrossgarten/github-action-ssh@release
       with:
-        hosts: '${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}'
-        privateKey: ${{ secrets.PRIVATE_KEY }}
-        debug: false
-        command: |
-          cd ${{ github.repository }}
-          yarn install
+        command: cd ${{ github.repository }} && yarn install
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        passphrase: ${{ secrets.PASSPHRASE }}
+        privateKey: ${{ secrets.PRIVATE_KEY}}
