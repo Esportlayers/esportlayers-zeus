@@ -26,12 +26,12 @@ jobs:
           SOURCE: "lib/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ APP_LOCATION }}/lib
+          TARGET: ${{ env.APP_LOCATION }}/lib
     - name: Copy package.json
       uses: garygrossgarten/github-action-scp@release
       with:
         local: package.json
-        remote: ${{ APP_LOCATION }}/package.json
+        remote: ${{ env.APP_LOCATION }}/package.json
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.SERVER_SSH_KEY }}
@@ -39,7 +39,7 @@ jobs:
       uses: garygrossgarten/github-action-scp@release
       with:
         local: yarn.lock
-        remote: ${{ APP_LOCATION }}/yarn.lock
+        remote: ${{ env.APP_LOCATION }}/yarn.lock
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.SERVER_SSH_KEY }}
@@ -51,7 +51,7 @@ jobs:
           SOURCE: "scripts/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ APP_LOCATION }}/scripts
+          TARGET: ${{ env.APP_LOCATION }}/scripts
     - name: Sync migrations
       uses: easingthemes/ssh-deploy@v2.1.5
       env:
@@ -60,18 +60,18 @@ jobs:
           SOURCE: "migrations/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ APP_LOCATION }}/migrations
+          TARGET: ${{ env.APP_LOCATION }}/migrations
     - name: Install dependencies
       uses: garygrossgarten/github-action-ssh@release
       with:
-        command: cd ${{ APP_LOCATION }} && yarn install &&  && yarn migrate
+        command: cd ${{ env.APP_LOCATION }} && yarn install &&  && yarn migrate
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.SERVER_SSH_KEY }}
     - name: Restart API
       uses: garygrossgarten/github-action-ssh@release
       with:
-        command: sudo pm2 restart ${{ APP_LOCATION }}
+        command: sudo pm2 restart ${{ env.APP_LOCATION }}
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.SERVER_SSH_KEY }}
