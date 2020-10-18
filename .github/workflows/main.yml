@@ -1,25 +1,22 @@
-name: Node CI
+name: Automatic deploy
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+    - main
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Install Node.js
       uses: actions/setup-node@v1
-      with:
-        node-version: '14'
-        check-latest: true
     - name: Install dependencies
       run: yarn install
     - name: Run build task
       run: yarn run build
-    - name: Deploy to Server
+    - name: Upload build artifacts
       uses: easingthemes/ssh-deploy@v2.1.5
       env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
@@ -27,4 +24,47 @@ jobs:
           SOURCE: "lib/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ github.repository }}
+          TARGET: ${{ github.repository }}/lib
+    - name: Copy package.json
+      uses: garygrossgarten/github-action-scp@release
+      with:
+        local: package.json
+        remote: ${{ github.repository }}
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        privateKey: ${{ secrets.SERVER_SSH_KEY }}
+    - name: Copy yarn.lock
+      uses: garygrossgarten/github-action-scp@release
+      with:
+        local: yarn.lock
+        remote: ${{ github.repository }}
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        privateKey: ${{ secrets.SERVER_SSH_KEY }}
+    - name: Sync scripts
+      uses: easingthemes/ssh-deploy@v2.1.5
+      env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          ARGS: "-rltgoDzvO --delete"
+          SOURCE: "scripts/"
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: ${{ github.repository }}/scripts
+    - name: Sync migrations
+      uses: easingthemes/ssh-deploy@v2.1.5
+      env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          ARGS: "-rltgoDzvO --delete"
+          SOURCE: "migrations/"
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: ${{ github.repository }}/migrations
+    - name: Install dependencies
+      uses: JimCronqvist/action-ssh@master
+      with:
+        hosts: ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}
+        privateKey: ${{ secrets.PRIVATE_KEY }}
+        debug: false
+        command: |
+          cd ${{ github.repository }}
+          yarn install
