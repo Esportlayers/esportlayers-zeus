@@ -1,4 +1,6 @@
 name: Automatic deploy
+env:
+  APP_LOCATION: ${{ github.repository }}
 
 on:
   push:
@@ -24,12 +26,12 @@ jobs:
           SOURCE: "lib/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ github.repository }}/lib
+          TARGET: ${{ APP_LOCATION }}/lib
     - name: Copy package.json
       uses: garygrossgarten/github-action-scp@release
       with:
         local: package.json
-        remote: ${{ github.repository }}/package.json
+        remote: ${{ APP_LOCATION }}/package.json
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.SERVER_SSH_KEY }}
@@ -37,7 +39,7 @@ jobs:
       uses: garygrossgarten/github-action-scp@release
       with:
         local: yarn.lock
-        remote: ${{ github.repository }}/yarn.lock
+        remote: ${{ APP_LOCATION }}/yarn.lock
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.SERVER_SSH_KEY }}
@@ -49,7 +51,7 @@ jobs:
           SOURCE: "scripts/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ github.repository }}/scripts
+          TARGET: ${{ APP_LOCATION }}/scripts
     - name: Sync migrations
       uses: easingthemes/ssh-deploy@v2.1.5
       env:
@@ -58,11 +60,18 @@ jobs:
           SOURCE: "migrations/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ github.repository }}/migrations
+          TARGET: ${{ APP_LOCATION }}/migrations
     - name: Install dependencies
       uses: garygrossgarten/github-action-ssh@release
       with:
-        command: cd ${{ github.repository }} && yarn install
+        command: cd ${{ APP_LOCATION }} && yarn install &&  && yarn migrate
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        privateKey: ${{ secrets.SERVER_SSH_KEY }}
+    - name: Restart API
+      uses: garygrossgarten/github-action-ssh@release
+      with:
+        command: sudo pm2 restart ${{ APP_LOCATION }}
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.SERVER_SSH_KEY }}
