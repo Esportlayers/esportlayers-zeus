@@ -13,6 +13,10 @@ export async function requireWatcher(twitchId: number, displayName: string, user
             [userId, twitchId, displayName, username]
         );
     }
+
+    if(rows.length === 1 && rows[0].displayName !== displayName) {
+        await conn.execute('UPDATE watchers SET display_name=?, username=? WHERE twitch_id=?', [displayName, username, twitchId]);
+    }
     await conn.end();
 
     return rows.length === 0 ? {
