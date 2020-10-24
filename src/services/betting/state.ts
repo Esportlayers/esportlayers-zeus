@@ -186,7 +186,7 @@ export async function resolveBet(channel: string, userId: number, result: string
                     winnerAnnouncement: ts + user?.streamDelay,
                 });
                 const roundId = await getRoundId(user.id);
-                await patchBetRound(roundId, {result: user?.teamAName.toLowerCase() === result.toLowerCase() ? user?.teamAName : user?.teamBName, status: 'finished'}, true, user.id);
+                await patchBetRound(roundId, {result: user?.teamAName.toLowerCase() === result.toLowerCase() ? user?.teamAName : user?.teamBName, status: 'finished'});
                 await updateListener(channel, userId);
             }
         }

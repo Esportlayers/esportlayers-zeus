@@ -92,7 +92,7 @@ export async function getBetSeasonRounds(seasonId: number): Promise<BetRoundStat
     return rows;
 }
 
-export async function createBetRound(userId: number, seasonId: number | null, notify: boolean = false): Promise<void> {
+export async function createBetRound(userId: number, seasonId: number | null): Promise<void> {
     if(seasonId) {
         const conn = await getConn();
         const round = (await getRound(userId)) + 1;
@@ -112,7 +112,7 @@ interface PatchableData {
     result: string;
 }
 
-export async function patchBetRound(roundId: number, data: Partial<PatchableData>, notify: boolean = false, userId: number | null = null): Promise<void> {
+export async function patchBetRound(roundId: number, data: Partial<PatchableData>): Promise<void> {
 const conn = await getConn();
 
     if(data.result) {

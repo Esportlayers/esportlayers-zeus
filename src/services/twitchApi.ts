@@ -67,7 +67,7 @@ export async function fetchUserStream(channelID: string): Promise<Stream> {
 }
 
 export async function fetchChatterCount(channel: string): Promise<number> {
-    const data = await fetch(`https://tmi.twitch.tv/group/user/${channel}/chatters`);
+    const data = await fetch(`https://tmi.twitch.tv/group/user/${channel.toLowerCase()}/chatters`);
     const {chatter_count} = await data.json();
 
     return chatter_count ?? 0;

@@ -29,7 +29,7 @@ export default (app: Router) => {
   route.patch('/:roundId', reuqireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
     const user = req.user as User;
     setTimeout(async () => {
-      await patchBetRound(+req.params.roundId, req.body, true, user.id);
+      await patchBetRound(+req.params.roundId, req.body);
     }, user.streamDelay * 1000);
     return res.sendStatus(204);
   });
