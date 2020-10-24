@@ -9,7 +9,7 @@ const route = Router();
 export default (app: Router, passport: PassportStatic) => {
     app.use('/auth', route);
     route.get("/twitch", (req, res, next) => {
-        const callbackURL = req.params.callbackURL;
+        const callbackURL = req.query.callbackURL;
         //@ts-ignore
         const auth = passport.authenticate("twitch", {callbackURL});
         auth(req, res, next)
