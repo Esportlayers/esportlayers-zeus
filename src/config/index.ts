@@ -41,4 +41,5 @@ export default {
   sentryDSN: process.env.SENTRY_DSN || '',
   steamApiKey: process.env.STEAM_API_KEY || '',
   debugGsi: process.env.DEBUG_GSI || false,
+  gsiRecordingKey: process.env.GSI_RECORDING_KEY || '',
 }

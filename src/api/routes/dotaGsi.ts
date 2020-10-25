@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { checkGSIAuth, gsiBodyParser, newGsiListener } from '../../middleware/dotaGsi';
+import { checkGSIAuth, checkRecordingGSIAuth, gsiBodyParser, newGsiListener } from '../../middleware/dotaGsi';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { createGsiAuthToken, resetDotaGsi } from '../../services/entity/User';
 import {User} from '@streamdota/shared-types';
@@ -8,6 +8,7 @@ import path from 'path';
 import ws from 'ws';
 import { heartbeat } from '../../tasks/websocketHeartbeat';
 import { checkUserFrameWebsocketApiKey } from '../../middleware/frameApi';
+import fs from 'fs';
 
 const route = Router();
 
@@ -38,5 +39,12 @@ export default (app: Router) => {
     conn.isAlive = true;
     conn.on('pong', heartbeat);
     newGsiListener((req.user as User).id);
+  });
+
+  route.post('/recording', checkRecordingGSIAuth, async (req: Request, res: Response) => {
+    const data = JSON.stringify(req.body);
+    const fileName = __dirname + '/../../static/recordedGsi/' + Date.now() + '.json'; 
+    await fs.promises.writeFile(fileName, data);
+    res.end();
   });
 };

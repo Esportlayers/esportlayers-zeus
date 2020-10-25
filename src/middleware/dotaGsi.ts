@@ -9,6 +9,7 @@ import {intializeNewConnection as initializeWards, process as wardsProcess, rese
 import {intializeNewConnection as initializeRoshan, process as roshanProcess, reset as roshanReset} from '../services/dotaGsi/handler/roshan';
 import {intializeNewConnection as initializeAegis, process as aegisProcess, reset as aegisReset} from '../services/dotaGsi/handler/aegis';
 import {intializeNewConnection as initializePlayer, process as playerProcess, reset as playerReset} from '../services/dotaGsi/handler/player';
+import config from '../config';
 
 export class GsiClient {
     auth: string;
@@ -100,6 +101,15 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
 
     console.log(grey('[Dota-GSI] Connected user ' + userData.displayName));
 
+    return next();
+}
+
+
+export async function checkRecordingGSIAuth(req: Request, res: Response, next: NextFunction) {
+    if(!req.body.auth || !req.body.auth.token || req.body.auth.token !== config.gsiRecordingKey) {
+        console.log(grey('[Dota-GSI-Recording] Rejected access; no auth key was given or is not the recording key'));
+        return res.status(403).json('Forbidden').end();
+    }
     return next();
 }
 
