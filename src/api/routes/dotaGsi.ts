@@ -43,7 +43,7 @@ export default (app: Router) => {
 
   route.post('/recording', checkRecordingGSIAuth, async (req: Request, res: Response) => {
     const data = JSON.stringify(req.body);
-    const fileName = __dirname + '/../../static/recordedGsi/' + Date.now() + '.json'; 
+    const fileName = __dirname + '/../../../static/recordedGsi/' + Date.now() + '.json'; 
     await fs.promises.writeFile(fileName, data);
     res.end();
   });
