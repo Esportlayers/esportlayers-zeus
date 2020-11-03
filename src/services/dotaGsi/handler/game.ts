@@ -94,7 +94,7 @@ export async function process(client: GsiClient, data: any): Promise<void> {
                 config.debugGsi && console.log(`[${client.displayName}] Game state changed: ${newData.game_state}`);
 
                 if(newData.game_state === GameState.preGame && oldData.type === 'playing') {
-                    await initializeBet(channel, client.userId);
+                    await initializeBet(channel, client.userId, true);
                 }
             }
             if(oldData.winner !== newData.win_team) {

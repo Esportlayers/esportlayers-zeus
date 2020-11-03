@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import { getObj, setObj } from "../../loader/redis";
 import { requireBetOverlay } from "../entity/BetOverlay";
 import { createBet, createBetRound, getRoundId, patchBetRound } from "../entity/BetRound";
+import { getBetSeason } from "../entity/BetSeasons";
 import { getUserByTrustedChannel, loadUserById } from "../entity/User";
 import { fetchChatterCount } from "../twitchApi";
 import { publish } from "../twitchChat";
@@ -115,11 +116,18 @@ async function closeVote(channel: string, user: User): Promise<void> {
     await updateListener(channel, user.id);
 }
 
-export async function initializeBet(channel: string, userId: number): Promise<void> {
+export async function initializeBet(channel: string, userId: number, fromGsi = false): Promise<void> {
     const user = await loadUserById(userId);
     const currentRound = await getObj<BetRoundData>(roundKey(channel));
+
+    if(fromGsi && user?.betSeasonId) {
+        const season = await getBetSeason(user?.betSeasonId);
+        if(season?.type !== 'ladder') {
+            return;
+        }
+    }
     
-    if(user && (! currentRound || currentRound.status === 'finished')) {
+    if(user && user.useBets && (! currentRound || currentRound.status === 'finished')) {
         const overlay = await requireBetOverlay(userId);
         const chatters = await fetchChatterCount(channel.substring(1));
         const ts = dayjs().unix();
