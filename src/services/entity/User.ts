@@ -310,8 +310,8 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
             const userSeasons = await getUserBetSeasons(userId);
             if(! userSeasons.length) {
                 await createBetCommands(userId);
-                clearChannelUserChannel(userId);
             }
+            clearChannelUserChannel(userId);
         }
     }
 
@@ -338,6 +338,7 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
         const user = await loadUserById(userId);
         await clearBettingCommandsCache('#' + user?.displayName.toLowerCase());
         sendMessage(userId, 'overlay', true);
+        clearChannelUserChannel(userId);
     }
 
     if(data.hasOwnProperty('teamAName')) {
@@ -345,6 +346,7 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
         const user = await loadUserById(userId);
         await clearBettingCommandsCache('#' + user?.displayName.toLowerCase());
         sendMessage(userId, 'overlay', true);
+        clearChannelUserChannel(userId);
     }
 
     if(data.hasOwnProperty('teamBName')) {
@@ -352,6 +354,7 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
         const user = await loadUserById(userId);
         await clearBettingCommandsCache('#' + user?.displayName.toLowerCase());
         sendMessage(userId, 'overlay', true);
+        clearChannelUserChannel(userId);
     }
     
     await conn.end();
