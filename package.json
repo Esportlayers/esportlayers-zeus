@@ -48,7 +48,7 @@
     "@types/express-fileupload": "^1.1.5",
     "@types/imagemagick": "^0.0.30",
     "@types/jest": "^26.0.14",
-    "@types/lodash": "^4.14.161",
+    "@types/lodash": "^4.14.165",
     "@types/mysql2": "types/mysql2",
     "@types/node": "^14.11.2",
     "@types/node-fetch": "^2.5.5",
