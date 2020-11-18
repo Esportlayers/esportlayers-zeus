@@ -365,3 +365,9 @@ export async function userConnected(userId: number): Promise<void> {
     await conn.execute('UPDATE user SET gsi_connected=TRUE WHERE id=?', [userId]);
     await conn.end();
 }
+
+export async function removeUser(userId: number): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('DELETE from user WHERE id = ?', [userId]);
+    await conn.end();
+}

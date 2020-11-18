@@ -21,15 +21,6 @@ export default {
     database: process.env.MYSQL_DATABASE || 'app'
   },
   port: process.env.PORT || 80,
-  server: {
-    secure: process.env.PORT === '443',
-    certs: {
-      basePath: process.env.SERVER_CERT_BASEPATH || '',
-      key: process.env.SERVER_CERT_KEY || '',
-      cert: process.env.SERVER_CERT_CERT || '',
-      chain: process.env.SERVER_CERT_CHAIN || '',
-    }
-  },
   twitch: {
     clientId: process.env.TWITCH_CLIENT_ID || '',
     clientSecret: process.env.TWITCH_CLIENT_SECRET || '',

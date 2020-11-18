@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { loadSteamConnections, loadStats, patchUser, removeDotaGames } from '../../services/entity/User';
+import { loadSteamConnections, loadStats, patchUser, removeDotaGames, removeUser } from '../../services/entity/User';
 import {User} from '@streamdota/shared-types';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
@@ -34,6 +34,12 @@ export default (app: Router) => {
         const user = (req.user as User);
         await removeDotaGames(user.id, +req.params.ts);
         sendMessage(user.id, 'dota_wl_reset', {});
+        return res.sendStatus(204);
+    });
+
+    route.delete('/deleteAccount', reuqireAuthorization, async (req: Request, res: Response) => {
+        const user = (req.user as User);
+        await removeUser(user.id);
         return res.sendStatus(204);
     });
 };
