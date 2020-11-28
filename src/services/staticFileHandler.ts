@@ -25,7 +25,7 @@ export async function streamFile(type: FileTypes = 'userAvatar', url: string, id
     const path = __dirname + `/../..${relativePath}`;
     const res = await fetch(url);
     const fileStream = fs.createWriteStream(path);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         res.body.pipe(fileStream);
         res.body.on('error', (err: string) => reject(err));
         fileStream.on('finish', () => resolve());
@@ -73,7 +73,7 @@ export async function saveFormFile(type: FileTypes, identifier: string, file: Up
     }
 
 
-    await new Promise((resolve) => {
+    await new Promise<void>((resolve) => {
         imagemagick.convert([__dirname + `/../..${jpegPath}`, '-quality', '0', __dirname + `/../..${jp2Path}`], () => resolve());
     });
 
