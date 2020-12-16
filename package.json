@@ -50,7 +50,7 @@
     "@types/jest": "^26.0.15",
     "@types/lodash": "^4.14.165",
     "@types/mysql2": "types/mysql2",
-    "@types/node": "^14.14.10",
+    "@types/node": "^14.14.14",
     "@types/node-fetch": "^2.5.5",
     "@types/passport": "^1.0.3",
     "@types/passport-anonymous": "^1.0.3",
