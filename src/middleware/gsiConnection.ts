@@ -17,8 +17,8 @@ async function checkClientHeartbeat(): Promise<void> {
     const maxLastPing = dayjs().unix() - 16;
     const heartbeatClients = [...heartbeat.entries()];
     for(const [userId, lastInteraction] of heartbeatClients) {
-        console.log(userId, lastInteraction);
         if(lastInteraction < maxLastPing) {
+            heartbeat.delete(userId);
             sendMessage(userId, 'gsi_connected', false);
             await patchUser(userId, {gsiActive: false});
             const user = await loadUserById(userId);
@@ -74,10 +74,12 @@ export async function newGSIListener(_ws: ws, req: Request, next: NextFunction) 
     const clientId = (req.user as User).id;
     if(clientId) {
         const events = await getEvents('' + clientId);
+        console.log(events);
         for(const {event, value} of events) {
             sendMessage(clientId, event, value);
         }
     }
+
     return next();
 }
 

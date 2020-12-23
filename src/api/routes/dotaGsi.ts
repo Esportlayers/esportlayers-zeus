@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { checkGSIAuth, checkRecordingGSIAuth, gsiBodyParser, newGsiListener } from '../../middleware/dotaGsi';
+import {  checkRecordingGSIAuth } from '../../middleware/dotaGsi';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { createGsiAuthToken, resetDotaGsi } from '../../services/entity/User';
 import {User} from '@streamdota/shared-types';
@@ -44,7 +44,7 @@ export default (app: Router) => {
     return res.sendStatus(204);
   });
 
-  route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, newGSIListener, async (conn: ws, req: Request) => {
+  route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, newGSIListener, (conn: ws) => {
     //@ts-ignore
     conn.isAlive = true;
     conn.on('pong', heartbeat);
