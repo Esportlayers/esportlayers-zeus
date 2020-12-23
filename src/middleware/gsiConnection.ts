@@ -13,11 +13,11 @@ const connectedIds = new Set();
 const knownRejections = new Set();
 
 async function checkClientHeartbeat(): Promise<void> {
-    const maxLastPing = dayjs().unix() - 31;
+    const maxLastPing = dayjs().unix() - 16;
     const heartbeatClients = [...heartbeat.entries()];
     for(const [userId, lastInteraction] of heartbeatClients) {
+        console.log(userId, lastInteraction);
         if(lastInteraction < maxLastPing) {
-            heartbeat.delete(userId);
             sendMessage(userId, 'gsi_connected', false);
             await patchUser(userId, {gsiActive: false});
             const user = await loadUserById(userId);
@@ -63,16 +63,16 @@ export async function checkGSIAuthToken(req: Request, res: Response, next: NextF
         connectedIds.add(userData.id);
         console.log(grey('[Dota-GSI] Connected user ' + userData.displayName));
     }
+    
+    heartbeat.set(userData.id, dayjs().unix());
 
     return next();
 }
 
 export async function newGSIListener(_ws: ws, req: Request, next: NextFunction) {
     const clientId = (req.user as User).id;
-    console.log(clientId);
     if(clientId) {
         const events = await getEvents('' + clientId);
-        console.log(events);
         for(const {event, value} of events) {
             sendMessage(clientId, event, value);
         }
