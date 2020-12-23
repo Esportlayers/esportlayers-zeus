@@ -74,7 +74,6 @@ export async function newGSIListener(_ws: ws, req: Request, next: NextFunction) 
     const clientId = (req.user as User).id;
     if(clientId) {
         const events = await getEvents('' + clientId);
-        console.log(events);
         for(const {event, value} of events) {
             sendMessage(clientId, event, value);
         }
