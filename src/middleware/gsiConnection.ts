@@ -1,11 +1,12 @@
-import { getEvents, resetEvents } from '@esportlayers/morphling';
+import { GameState, getEvents, MorphlingEvent, MorphlingEventTypes, resetEvents } from '@esportlayers/morphling';
 import { User } from '@streamdota/shared-types';
 import { grey } from 'chalk';
 import dayjs from 'dayjs';
 import { NextFunction, Request, Response } from 'express';
-import { gsiAuthTokenUnknown, loadUserById, patchUser, userConnected } from '../services/entity/User';
+import { gsiAuthTokenUnknown, loadUserById, patchUser, saveDotaGame, userConnected } from '../services/entity/User';
 import { sendMessage } from '../services/websocket';
 import ws from 'ws';
+import { initializeBet, resolveBet } from '../services/betting/state';
 
 //#region <heartbeat>
 const heartbeat: Map<number, number> = new Map();
@@ -78,4 +79,26 @@ export async function newGSIListener(_ws: ws, req: Request, next: NextFunction) 
         }
     }
     return next();
+}
+
+export async function handleMorphlingEvents(events: MorphlingEvent[], clientId: number): Promise<void> {
+    if(events.length > 0 ) {
+        const gameStateChange = events.find(({event}) => event === MorphlingEventTypes.gsi_game_state);
+        const allEvents = await getEvents('' + clientId);
+        const activity =  allEvents.find(({event}) => event === MorphlingEventTypes.gsi_game_activity);
+        const user = await loadUserById(clientId);
+        const channel = '#' + (user?.displayName || '').toLowerCase();
+        const winner = events.find(({event}) => event === MorphlingEventTypes.gsi_game_winner);
+
+        if(gameStateChange && activity && gameStateChange.value === GameState.preGame && activity.value === 'playing') {
+            await initializeBet(channel, clientId, true);
+        }
+
+        if(winner && winner.value !== 'none') {
+            if(activity && activity.value === 'playing') {
+                await saveDotaGame(clientId, winner.value.isPlayingWin);        
+            }
+            await resolveBet(channel, clientId, winner.value === 'radiant' ? (user?.teamAName.toLowerCase() || 'a') : (user?.teamBName.toLowerCase() || 'b'));
+        }
+    }
 }
