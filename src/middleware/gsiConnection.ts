@@ -74,7 +74,9 @@ export async function newGSIListener(_ws: ws, req: Request, next: NextFunction) 
     const clientId = (req.user as User).id;
     if(clientId) {
         const events = await getEvents('' + clientId);
-        for(const {event, value} of events) {
+        const connectedEvent: MorphlingEvent = {event: MorphlingEventTypes.gsi_connected, value: connectedIds.has(clientId)};
+        const allEvents = events.concat(connectedEvent);
+        for(const {event, value} of allEvents) {
             sendMessage(clientId, event, value);
         }
     }
