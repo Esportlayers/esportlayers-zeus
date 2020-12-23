@@ -24,7 +24,10 @@ async function checkClientHeartbeat(): Promise<void> {
             const user = await loadUserById(userId);
             connectedIds.delete(userId);
             console.log(grey('[Dota-GSI] User disconnected by heartbeat ' + user?.displayName));
-            await resetEvents('' + userId);
+            const events = await resetEvents('' + userId);
+            for(const {event, value} of events) {
+                sendMessage(userId, event, value);
+            }
         }
     }
 }
