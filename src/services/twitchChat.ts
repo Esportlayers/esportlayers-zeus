@@ -30,7 +30,7 @@ async function connect(): Promise<void> {
 			channels,
 		});
 		client!.setMaxListeners(0);
-        await client!.connect();
+		await client!.connect();
 		client!.on('message', messageListener);
 	}
 	
@@ -123,7 +123,7 @@ export function publish(channel: string, message: string): void {
 	if(customInstances.has(channel)) {
 		customInstances.get(channel).say(channel, message);
 	} else {
-		client && client.say(channel, message);
+		client && client.readyState() === 'OPEN' && client.say(channel, message);
 	}
 }
 
