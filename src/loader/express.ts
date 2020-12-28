@@ -9,6 +9,7 @@ export default async ({ app, passport }: { app: express.Application; passport: P
     app.use(cors({
         exposedHeaders: 'Content-Disposition'
     }));
+    //@ts-ignore
     app.options('*', cors())
 
     app.use('/static', express.static('static', {

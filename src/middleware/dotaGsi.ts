@@ -82,6 +82,7 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
         if (clients[i].userId === userData.id) {
             //@ts-ignore
             req.client = clients[i];
+            req.user = userData;
             return next();
         }
     }
@@ -98,6 +99,7 @@ export async function checkGSIAuth(req: Request, res: Response, next: NextFuncti
     clients.push(newClient);
     //@ts-ignore
     req.client = newClient;
+    req.user = userData;
 
     console.log(grey('[Dota-GSI] Connected user ' + userData.displayName));
 

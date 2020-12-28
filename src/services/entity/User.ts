@@ -63,7 +63,8 @@ SELECT
     dota_stats_menu_hidden as dotaStatsMenuHidden,
     stream_delay as streamDelay,
     team_a_name as teamAName,
-    team_b_name as teamBName
+    team_b_name as teamBName,
+    use_automatic_voting as useAutomaticVoting
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
@@ -332,6 +333,10 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
         await conn.execute('UPDATE user SET dota_stats_menu_hidden=? WHERE id=?', [data.dotaStatsMenuHidden, userId]);
     }
 
+    if(data.hasOwnProperty('useAutomaticVoting')) {
+        await conn.execute('UPDATE user SET use_automatic_voting=? WHERE id=?', [data.useAutomaticVoting, userId]);
+    }
+
     if(data.hasOwnProperty('streamDelay')) {
         await conn.execute('UPDATE user SET stream_delay=? WHERE id=?', [data.streamDelay, userId]);
         clearChannelUserChannel(userId);
@@ -363,5 +368,11 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
 export async function userConnected(userId: number): Promise<void> {
     const conn = await getConn();
     await conn.execute('UPDATE user SET gsi_connected=TRUE WHERE id=?', [userId]);
+    await conn.end();
+}
+
+export async function removeUser(userId: number): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('DELETE from user WHERE id = ?', [userId]);
     await conn.end();
 }

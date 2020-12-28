@@ -13,6 +13,7 @@ import castingRoute from './routes/casting';
 import simulationRoutes from './routes/simulate';
 import roshTimerRoutes from './routes/roshTimer';
 import antiSnipeRoutes from './routes/antiSnipe';
+import liveRoutes from './routes/live';
 import { PassportStatic } from 'passport';
 import config from "../config";
 
@@ -33,11 +34,11 @@ export default ({passport}: {passport: PassportStatic}) => {
 	castingRoute(app);
 	roshTimerRoutes(app);
 	antiSnipeRoutes(app);
+	liveRoutes(app);
 	
 	if(config.env === 'development') {
 		simulationRoutes(app);
 	}
 
-	
 	return app;
 }
