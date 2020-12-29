@@ -278,10 +278,10 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@esportlayers/morphling@^1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@esportlayers/morphling/-/morphling-1.2.0.tgz#a2022120073e27c51fb0e4ccd0f8af5775ef9a83"
-  integrity sha512-7yFdSj2cf8eHQFrZIP4gMoTG/DdooNYtx2RJSHT458Hcl0r3gkip0P8/UxUBugUOygg08UkIp9Y6Or2d5Rd3Gw==
+"@esportlayers/morphling@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@esportlayers/morphling/-/morphling-1.2.1.tgz#64ff28e5034bfc27bb301e8dc6adadb0315307f8"
+  integrity sha512-+Xmxweua55i1a8DpSoFiVSq+T03pNwan18t9jtxtHKZKrrEHfkE3IwGwQ4LEu8q8tubR4EbQ6LhB1CTI5HDnRQ==
   dependencies:
     dayjs "^1.9.7"
     lodash "^4.17.20"
