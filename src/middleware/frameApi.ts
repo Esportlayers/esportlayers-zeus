@@ -10,8 +10,8 @@ export async function checkUserFrameWebsocketApiKey(ws: ws, req: Request, next: 
     if(userData) {
         user = (await loadUserById(userData.id)) as User;
     }
+    
     req.user = user;
-
     //@ts-ignore
     ws.user = user;
 

@@ -4,6 +4,7 @@ import twitchOAuthLoader from './passportTwitchOAuth';
 import jwtVerify from './passportJWTVerify';
 import anonymous from './passportAnonymous';
 import './redis';
+import './gsi';
 
 import {cyan} from 'chalk';
 import { PassportStatic } from 'passport';

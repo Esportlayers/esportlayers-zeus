@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { checkGSIAuth, checkRecordingGSIAuth, gsiBodyParser, newGsiListener } from '../../middleware/dotaGsi';
+import {  checkRecordingGSIAuth } from '../../middleware/dotaGsi';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { createGsiAuthToken, resetDotaGsi } from '../../services/entity/User';
 import {User} from '@streamdota/shared-types';
@@ -9,13 +9,24 @@ import ws from 'ws';
 import { heartbeat } from '../../tasks/websocketHeartbeat';
 import { checkUserFrameWebsocketApiKey } from '../../middleware/frameApi';
 import fs from 'fs';
+import { parseEvents } from '@esportlayers/morphling';
+import { sendMessage } from '../../services/websocket';
+import { checkGSIAuthToken, handleMorphlingEvents, newGSIListener } from '../../middleware/gsiConnection';
 
 const route = Router();
 
 export default (app: Router) => {
   app.use('/dota-gsi', route);
 
-  route.post('/', checkGSIAuth, gsiBodyParser, (req: Request, res: Response) => res.end());
+  route.post('/', checkGSIAuthToken, async (req: Request, res: Response) => {
+    const user = req.user as User;
+    const events = await parseEvents(req.body, '' + user.id);
+    await handleMorphlingEvents(events, user.id);
+    for(const {event, value} of events) {
+      sendMessage(user.id, event, value);
+    }
+    return res.end()
+  });
 
   route.get('/generateConfig', reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
@@ -26,7 +37,6 @@ export default (app: Router) => {
     res.sendFile(path.resolve(configPath));
   });
 
-
   route.delete('/resetGsi', reuqireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     await resetDotaGsi(user.id);
@@ -34,11 +44,10 @@ export default (app: Router) => {
     return res.sendStatus(204);
   });
 
-  route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, async (conn: ws, req: Request) => {
+  route.ws('/live/:frameApiKey', checkUserFrameWebsocketApiKey, newGSIListener, (conn: ws) => {
     //@ts-ignore
     conn.isAlive = true;
     conn.on('pong', heartbeat);
-    newGsiListener((req.user as User).id);
   });
 
   route.post('/recording', checkRecordingGSIAuth, async (req: Request, res: Response) => {
