@@ -4,6 +4,8 @@ import { v4 } from "uuid";
 import {BetSeasonInvite, BetSeason, BetSeasonToplist} from '@streamdota/shared-types';
 import { loadUserById, patchUser } from "./User";
 import { deleteBetRound } from "./BetRound";
+import { createBetCommands } from "./Command";
+import { clearChannelUserChannel } from "../betting/state";
 
 export const rolePrio: {[x: string]: number} = {
     user: 0,
@@ -42,12 +44,14 @@ export async function getUserBetSeasons(userId: number): Promise<BetSeason[]> {
 
 export async function createUserBetSeason(userId: number, data: Omit<BetSeason, 'id'>): Promise<void> {
     const conn = await getConn();
-    const [{insertId}] = await conn.execute<OkPacket>('INSERT INTO bet_seasons (id, name, description, type) VALUES (NULL, ?, ?, ?)', [data.name, data.description, data.type]);
+    const [{insertId}] = await conn.execute<OkPacket>('INSERT INTO bet_seasons (id, name, description, type) VALUES (NULL, ?, ?, ?)', [data.name, '', 'other']);
     await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, insertId, 'owner']);
 
     const user = await loadUserById(userId);
     if(!user?.betSeasonId) {
         await patchUser(userId, {betSeasonId: insertId});
+        await createBetCommands(userId);
+        clearChannelUserChannel(userId);
     }
     await conn.end();
 }

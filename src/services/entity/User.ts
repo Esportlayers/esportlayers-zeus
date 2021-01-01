@@ -5,8 +5,7 @@ import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
 import { createInstance, deleteInstance, joinChannel } from "../twitchChat";
 import dayjs from 'dayjs';
-import { getUserBetSeasons } from "./BetSeasons";
-import { createBetCommands, getUserCommands } from "./Command";
+import { getUserCommands } from "./Command";
 import { clearBettingCommandsCache } from '../betting/chatCommands';
 import { sendMessage } from '../websocket';
 import { clearChannelUserChannel } from '../betting/state';
@@ -307,13 +306,6 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
 
     if(data.hasOwnProperty('useBets')) {
         await conn.execute('UPDATE user SET use_bets=? WHERE id=?', [data.useBets, userId]);
-        if(data.useBets) {
-            const userSeasons = await getUserBetSeasons(userId);
-            if(! userSeasons.length) {
-                await createBetCommands(userId);
-            }
-            clearChannelUserChannel(userId);
-        }
     }
 
     if(data.hasOwnProperty('gsiActive')) {
@@ -373,6 +365,8 @@ export async function userConnected(userId: number): Promise<void> {
 
 export async function removeUser(userId: number): Promise<void> {
     const conn = await getConn();
+    await conn.execute('DELETE from bet_season_users WHERE user_id = ?', [userId]);
+    await conn.execute('DELETE from bet_rounds WHERE user_id = ?', [userId]);
     await conn.execute('DELETE from dota_games WHERE user_id = ?', [userId]);
     await conn.execute('DELETE from bot_commands WHERE user_id = ?', [userId]);
     await conn.execute('DELETE from bet_overlays WHERE user_id = ?', [userId]);
