@@ -96,7 +96,7 @@ export async function handleMorphlingEvents(events: MorphlingEvent[], clientId: 
         const channel = '#' + (user?.displayName || '').toLowerCase();
         const winner = events.find(({event}) => event === MorphlingEventTypes.gsi_game_winner);
 
-        if(gameStateChange && activity && gameStateChange.value === GameState.preGame && (activity.value === 'playing' || (user?.useAutomaticVoting))) {
+        if(gameStateChange?.value === GameState.preGame && (activity?.value === 'playing' || user?.useAutomaticVoting)) {
             await initializeBet(channel, clientId, true);
         }
 
