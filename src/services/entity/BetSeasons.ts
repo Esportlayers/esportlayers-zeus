@@ -44,7 +44,7 @@ export async function getUserBetSeasons(userId: number): Promise<BetSeason[]> {
 
 export async function createUserBetSeason(userId: number, data: Omit<BetSeason, 'id'>): Promise<void> {
     const conn = await getConn();
-    const [{insertId}] = await conn.execute<OkPacket>('INSERT INTO bet_seasons (id, name, description, type) VALUES (NULL, ?, ?, ?)', [data.name, '', 'other']);
+    const [{insertId}] = await conn.execute<OkPacket>('INSERT INTO bet_seasons (id, name, description, type) VALUES (NULL, ?, ?, ?)', [data.name, '', data?.type ?? 'other']);
     await conn.execute('INSERT INTO bet_season_users (user_id, bet_season_id, userRole) VALUES (?, ?, ?)', [userId, insertId, 'owner']);
 
     const user = await loadUserById(userId);
