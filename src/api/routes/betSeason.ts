@@ -19,11 +19,7 @@ export default (app: Router) => {
     await createUserBetSeason((req.user as User).id, req.body);
     return res.sendStatus(201);
   });
-
-  route.post('/1', reuqireAuthorization, async (req: Request, res: Response) => {
-    return res.sendStatus(500);
-  });
-
+  
   route.get('/rounds/:seasonId', reuqireAuthorization, requireBetSeasonAccess('user'), async (req: Request, res: Response) => {
     const rounds = await getBetSeasonRounds(+req.params.seasonId);
     return res.json(rounds).status(200);
