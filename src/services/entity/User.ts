@@ -3,7 +3,7 @@ import { RowDataPacket, OkPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 import { streamFile } from '../staticFileHandler';
 import {v4} from 'uuid';
-import { createInstance, deleteInstance, joinChannel } from "../twitchChat";
+import { createInstance, deleteInstance, joinChannel, resetKeywordListener } from "../twitchChat";
 import dayjs from 'dayjs';
 import { getUserCommands } from "./Command";
 import { clearBettingCommandsCache } from '../betting/chatCommands';
@@ -63,7 +63,9 @@ SELECT
     stream_delay as streamDelay,
     team_a_name as teamAName,
     team_b_name as teamBName,
-    use_automatic_voting as useAutomaticVoting
+    use_automatic_voting as useAutomaticVoting,
+    keyword_listening as keywordListener,
+    use_keyword_listener as useKeywordListener
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
@@ -249,6 +251,7 @@ export async function patchBotData(userId: number, data: Partial<BotData>, chann
     if(data.customBotName || data.customBotToken) {
         await checkChannelBotInstanceComplete(userId, channelName);
     }
+
     await conn.end();
 }
 
@@ -327,6 +330,16 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
 
     if(data.hasOwnProperty('useAutomaticVoting')) {
         await conn.execute('UPDATE user SET use_automatic_voting=? WHERE id=?', [data.useAutomaticVoting, userId]);
+    }
+
+    if(data.hasOwnProperty('useKeywordListener')) {
+        await conn.execute('UPDATE user SET use_keyword_listener=? WHERE id=?', [data.useKeywordListener, userId]);
+        await resetKeywordListener(userId);
+    }
+
+    if(data.hasOwnProperty('keywordListener')) {
+        await conn.execute('UPDATE user SET keyword_listening=? WHERE id=?', [data.keywordListener, userId]);
+        await resetKeywordListener(userId);
     }
 
     if(data.hasOwnProperty('streamDelay')) {

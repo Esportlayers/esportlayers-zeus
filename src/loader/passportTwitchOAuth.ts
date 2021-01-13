@@ -35,6 +35,7 @@ export default async ({ app, passport }: { app: express.Application, passport: P
     });
 
     passport.deserializeUser(function(user, done) {
+        //@ts-ignore
         done(null, user);
     });
 

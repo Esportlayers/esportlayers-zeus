@@ -24,4 +24,9 @@ export default (app: Router) => {
             }
         }).status(200);
     });
+    
+    route.post('/keywordQuestion', reuqireAuthorization, async (req: Request, res: Response) => {
+        console.log(req.body);
+        return res.sendStatus(204);
+    });
 };

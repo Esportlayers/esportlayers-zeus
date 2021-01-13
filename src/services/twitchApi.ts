@@ -3,8 +3,6 @@ import config from '../config';
 import fetch from 'node-fetch';
 
 api.clientID = config.twitch.clientId;
-
-
 interface ChannelStream {
     _id: number;
     game: string;
@@ -71,4 +69,26 @@ export async function fetchChatterCount(channel: string): Promise<number> {
     const {chatter_count} = await data.json();
 
     return chatter_count ?? 0;
+}
+
+interface TwitchUser {
+    _id: string;
+    bio: string;
+    created_at: string;
+    display_name: string;
+    logo: string;
+    name: string;
+    type: string;
+    updated_at: string;
+}
+
+export async function fetchUserById(userID: string): Promise<TwitchUser> {
+    return new Promise((resolve, reject) => {
+        api.users.userByID({userID}, (err, response) => {
+            if(err) {
+                reject(err);
+            }
+            resolve(response);
+        });
+    });    
 }

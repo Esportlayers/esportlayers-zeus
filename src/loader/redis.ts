@@ -46,6 +46,18 @@ export async function set(key: string, data: string = ''): Promise<void> {
     });
 }
 
+export async function del(key: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        client.del(key, (err) => {
+            if(err) {
+                reject(err);
+            }
+
+            resolve();
+        })
+    });
+}
+
 export async function get(key: string): Promise<string | null> {
     return new Promise((resolve, reject) => {
         client.get(key, (err, reply) => {

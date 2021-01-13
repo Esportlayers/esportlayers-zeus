@@ -2,12 +2,14 @@ import {ChatUserstate, Client} from 'tmi.js';
 import config from '../config';
 import { getDeaultChannels, getCustomBots, getChannelCommands, loadUserById, getUserByTrustedChannel, loadStats } from './entity/User';
 import { processCommands, clearBettingCommandsCache } from './betting/chatCommands';
-import { getObj, setObj } from '../loader/redis';
+import { del, get, getObj, set, setObj } from '../loader/redis';
 import { Command } from '@streamdota/shared-types';
+import { fetchUserById } from './twitchApi';
+import { sendMessage } from './websocket';
 const tmi = require('tmi.js');
 
 const defaultConfig = {
-	options: { debug: false },
+	options: { debug: true },
 	connection: {
 		reconnect: true,
 		secure: true
@@ -79,6 +81,10 @@ export function getCommandsCacheKey(channel: string, types: string[], type: 'ent
 	return `commands_${channel.toLowerCase()}_${type}_${types.join('-')}`;
 }
 
+export function keywordListenerKey(channel: string): string {
+	return `keyword_listener${channel.toLowerCase()}`;
+}
+
 async function messageListener(channel: string, tags: ChatUserstate, message: string, self: boolean) {
 	if(self) return;
 
@@ -105,7 +111,33 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 		publish(channel, msg);
 	}
 
+	let keyword = await get(keywordListenerKey(channel));
+
+	if(!keyword || keyword !== 'none') {
+		const {id} = await getUserByTrustedChannel(channel);
+		const user = await loadUserById(id);
+		keyword = user?.useKeywordListener && user?.keywordListener || 'none';
+		await set(keywordListenerKey(channel), keyword);
+	}
+
+	if(keyword !== 'none' && lowerMessage.includes(keyword) && tags['user-id']) {
+		const twitchUser = await fetchUserById(tags['user-id']);
+		const {id} = await getUserByTrustedChannel(channel);
+		sendMessage(id, 'keyword_message', {
+			message,
+			name: twitchUser.display_name,
+			logo: twitchUser.logo,
+			time: tags['tmi-sent-ts'],
+		});
+	}
+
 	processCommands(channel, tags, message);
+}
+
+export async function resetKeywordListener(userId: number): Promise<void> {
+	const {displayName}  = (await loadUserById(userId))!;
+	const fullChannel = '#' + displayName.toLowerCase();
+	await del(keywordListenerKey(fullChannel));
 }
 
 export function joinChannel(channel: string): void {
