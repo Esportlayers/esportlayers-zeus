@@ -267,3 +267,8 @@ export async function newBettingListener(userId: number, displayName: string): P
     await updateListener('#' + displayName.toLowerCase(), userId);
 
 }
+
+export async function resetRound(channel: string, userId: number): Promise<void> {
+    await setObj(roundKey(channel), null);
+    await updateListener(channel, userId);
+}

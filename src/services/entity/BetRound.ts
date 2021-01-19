@@ -2,8 +2,9 @@ import { loadUserById } from "./User";
 import { getConn } from "../../loader/db";
 import { RowDataPacket } from "mysql2";
 import { requireWatcher } from "./Watcher";
-import {BetRound, BetRoundStats} from '@streamdota/shared-types';
+import {BetRound, BetRoundStats, User} from '@streamdota/shared-types';
 import { fetchChatterCount } from "../twitchApi";
+import { resetRound } from "../betting/state";
 
 async function getRound(userId: number): Promise<number> {
     const user = await loadUserById(userId);
@@ -112,8 +113,8 @@ interface PatchableData {
     result: string;
 }
 
-export async function patchBetRound(roundId: number, data: Partial<PatchableData>): Promise<void> {
-const conn = await getConn();
+export async function patchBetRound(roundId: number, data: Partial<PatchableData>, user?: User): Promise<void> {
+    const conn = await getConn();
 
     if(data.result) {
         await conn.execute('UPDATE bet_rounds SET result=? WHERE id=?', [data.result, roundId]);
@@ -121,6 +122,10 @@ const conn = await getConn();
 
     if(data.status) {
         await conn.execute('UPDATE bet_rounds SET status=? WHERE id=?', [data.status, roundId]);
+    }
+
+    if(user && data.status === 'finished' && data.result) {
+        await resetRound('#' + user.displayName.toLowerCase(), user.id);
     }
 
     await conn.end();
