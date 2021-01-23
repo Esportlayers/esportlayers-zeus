@@ -183,7 +183,9 @@ export async function loadStats(userId: number, statsFrom?: User['dotaStatsFrom'
         }
     }
 
-    await clearUserStats(userId, Math.min(startOfDay, startTs));
+    if(statsFrom !== 'manual') {
+        await clearUserStats(userId, Math.min(startOfDay, startTs));
+    }
 
     const [rows] = await conn.execute<StatsRow[]>('SELECT UNIX_TIMESTAMP(finished) as date, won FROM dota_games WHERE UNIX_TIMESTAMP(finished) >= ? AND user_id = ?;', [startTs, userId]);
     await conn.end();
