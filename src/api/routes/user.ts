@@ -4,6 +4,7 @@ import {User} from '@streamdota/shared-types';
 import { reuqireAuthorization } from '../../middleware/requireAuthorization';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
 import { sendMessage } from '../../services/websocket';
+import dayjs from 'dayjs';
 
 const route = Router();
 
@@ -39,7 +40,7 @@ export default (app: Router) => {
 
     route.delete('/dotaStats', reuqireAuthorization, async (req: Request, res: Response) => {
         const user = (req.user as User);
-        await clearUserStats(user.id, 0);
+        await clearUserStats(user.id, dayjs().unix());
         sendMessage(user.id, 'dota_wl_reset', {});
         return res.sendStatus(204);
     });

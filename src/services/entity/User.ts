@@ -172,7 +172,7 @@ export async function loadStats(userId: number, statsFrom?: User['dotaStatsFrom'
     }
 
     const startOfDay = dayjs().startOf('day').unix();
-    let startTs = startOfDay;
+    let startTs = statsFrom !== 'manual' ? startOfDay : 0;
 
     if(statsFrom === 'session') {
         const onlineSince = await getOnlineSince(userId);
