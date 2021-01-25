@@ -3,7 +3,7 @@ import config from "../config";
 import { loadUserById } from "../services/entity/User";
 import { User } from "@streamdota/shared-types";
 
-export async function reuqireAuthorization(req: Request, res: Response, next: NextFunction) {
+export async function requireAuthorization(req: Request, res: Response, next: NextFunction) {
     if(config.env === 'development') {//Bypass rights for dev enviorements
         const user = await loadUserById(1);
         if(user) {

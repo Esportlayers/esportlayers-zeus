@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { reuqireAuthorization } from '../../middleware/requireAuthorization';
+import { requireAuthorization } from '../../middleware/requireAuthorization';
 import { getGoogleFonts } from '../../services/googleFonts';
 
 const route = Router();
@@ -7,7 +7,7 @@ const route = Router();
 export default (app: Router) => {
     app.use('/googleFonts', route);
 
-    route.get('/', reuqireAuthorization, async (req: Request, res: Response) => {
+    route.get('/', requireAuthorization, async (req: Request, res: Response) => {
         const fonts = await getGoogleFonts();
         return res.json(fonts).status(200);
     });

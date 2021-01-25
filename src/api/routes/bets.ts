@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { reuqireAuthorization } from '../../middleware/requireAuthorization';
+import { requireAuthorization } from '../../middleware/requireAuthorization';
 import { patchBetRound, deleteBetRound, getRoundId, getRoundById } from '../../services/entity/BetRound';
 import {User} from '@streamdota/shared-types';
 import { requireBetRoundAccess } from '../../middleware/requireBetSeasonAccess';
@@ -13,20 +13,20 @@ const route = Router();
 export default (app: Router) => {
   app.use('/bets', route);
 
-  route.get('/current', checkUserFrameAPIKey, reuqireAuthorization, async (req: Request, res: Response) => {
+  route.get('/current', checkUserFrameAPIKey, requireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     const roundId = await getRoundId(user.id);
     const round = await getRoundById(roundId);
     return res.json(round).status(200);
   });
 
-  route.post('/', reuqireAuthorization, async (req: Request, res: Response) => {
+  route.post('/', requireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     await initializeBet('#' + user.displayName.toLowerCase(), user.id);
     return res.sendStatus(201);
   });
 
-  route.patch('/:roundId', reuqireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
+  route.patch('/:roundId', requireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
     const user = req.user as User;
     setTimeout(async () => {
       await patchBetRound(+req.params.roundId, req.body, user);
@@ -34,7 +34,7 @@ export default (app: Router) => {
     return res.sendStatus(204);
   });
 
-  route.delete('/:roundId', reuqireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
+  route.delete('/:roundId', requireAuthorization, requireBetRoundAccess('owner'), async (req: Request, res: Response) => {
     await deleteBetRound(+req.params.roundId);
     return res.sendStatus(204);
   });

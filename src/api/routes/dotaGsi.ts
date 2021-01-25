@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
-import {  checkRecordingGSIAuth } from '../../middleware/dotaGsi';
-import { reuqireAuthorization } from '../../middleware/requireAuthorization';
+import { requireAuthorization } from '../../middleware/requireAuthorization';
 import { createGsiAuthToken, resetDotaGsi } from '../../services/entity/User';
 import {User} from '@streamdota/shared-types';
 import { generateConfig } from '../../services/gsiConfigGenerator';
@@ -8,7 +7,6 @@ import path from 'path';
 import ws from 'ws';
 import { heartbeat } from '../../tasks/websocketHeartbeat';
 import { checkUserFrameWebsocketApiKey } from '../../middleware/frameApi';
-import fs from 'fs';
 import { parseEvents } from '@esportlayers/morphling';
 import { sendMessage } from '../../services/websocket';
 import { checkGSIAuthToken, handleMorphlingEvents, newGSIListener } from '../../middleware/gsiConnection';
@@ -28,7 +26,7 @@ export default (app: Router) => {
     return res.end()
   });
 
-  route.get('/generateConfig', reuqireAuthorization, async (req: Request, res: Response) => {
+  route.get('/generateConfig', requireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     const gsiAuth = await createGsiAuthToken(user.id);
     const [filename, configPath] = generateConfig(gsiAuth, user.displayName);
@@ -37,7 +35,7 @@ export default (app: Router) => {
     res.sendFile(path.resolve(configPath));
   });
 
-  route.delete('/resetGsi', reuqireAuthorization, async (req: Request, res: Response) => {
+  route.delete('/resetGsi', requireAuthorization, async (req: Request, res: Response) => {
     const user = req.user as User;
     await resetDotaGsi(user.id);
 
@@ -48,12 +46,5 @@ export default (app: Router) => {
     //@ts-ignore
     conn.isAlive = true;
     conn.on('pong', heartbeat);
-  });
-
-  route.post('/recording', checkRecordingGSIAuth, async (req: Request, res: Response) => {
-    const data = JSON.stringify(req.body);
-    const fileName = __dirname + '/../../../static/recordedGsi/' + Date.now() + '.json'; 
-    await fs.promises.writeFile(fileName, data);
-    res.end();
   });
 };

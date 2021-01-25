@@ -1,4 +1,4 @@
-import { GameState, getEvents, MorphlingEvent, MorphlingEventTypes, resetEvents } from '@esportlayers/morphling';
+import { GameState, getEvents, MorphlingEvent, MorphlingEventTypes } from '@esportlayers/morphling';
 import { User } from '@streamdota/shared-types';
 import { grey } from 'chalk';
 import dayjs from 'dayjs';
@@ -24,10 +24,6 @@ async function checkClientHeartbeat(): Promise<void> {
             const user = await loadUserById(userId);
             connectedIds.delete(userId);
             console.log(grey('[Dota-GSI] User disconnected by heartbeat ' + user?.displayName));
-            const events = await resetEvents('' + userId);
-            for(const {event, value} of events) {
-                sendMessage(userId, event, value);
-            }
         }
     }
 }
