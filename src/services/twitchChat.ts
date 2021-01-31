@@ -41,7 +41,9 @@ async function connect(): Promise<void> {
 		await createInstance('#' + channel.toLowerCase(), name, password);
 	}
 }
-connect();
+if(process.env.NODE_ENV === 'production') {
+	connect();
+}
 
 export function hasAccess(tags: ChatUserstate, command: Command): boolean {
 	const subscriberBadge = tags.badges && tags.badges.subscriber;
