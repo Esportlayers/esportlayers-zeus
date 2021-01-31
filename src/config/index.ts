@@ -33,5 +33,5 @@ export default {
   steamApiKey: process.env.STEAM_API_KEY || '',
   debugGsi: process.env.DEBUG_GSI || false,
   gsiRecordingKey: process.env.GSI_RECORDING_KEY || '',
-  provableWinnerSeed: process.env.PROVABLE_WINNER_SEED || 'oic2165GO653GDFgfkljGFD',
+  provableServerSeed: process.env.PROVABLE_SERVER_SEED || 'ac67a205-a526-45a5-bf7b-e1254d112785',
 }

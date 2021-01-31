@@ -95,7 +95,7 @@ export default (app: Router) => {
   route.get('/:seasonId/provableWinner/:clientSeed', async (req: Request, res: Response) => {
     const list = await getProvablyFairList(+req.params.seasonId)
     const arbitrarySequence = await spadille.prng.generate({
-      secret: config.provableWinnerSeed,
+      secret: config.provableServerSeed,
       payload: req.params.clientSeed,
       minimum: 0,
       maximum: list.length - 1,
@@ -106,6 +106,6 @@ export default (app: Router) => {
     const winnerEntry = arbitrarySequence[0];
     const winner = list[winnerEntry];
 
-    return res.json({serverSeed: config.provableWinnerSeed, count: list.length, ticket: winnerEntry, winner}).status(200);
+    return res.json({serverSeed: config.provableServerSeed, count: list.length, ticket: winnerEntry, winner}).status(200);
   });
 };
