@@ -23,7 +23,7 @@ export async function getBetSeason(id: number): Promise<BetSeason | null> {
 export async function getUserBetSeasons(userId: number): Promise<BetSeason[]> {
     const conn = await getConn();
     const [rows] = await conn.execute<Array<BetSeason & RowDataPacket>>(`
-        SELECT bs.id as id, bs.name as name, bs.description as description, bs.type as type, bsu.userRole as userRole
+        SELECT bs.id as id, bs.name as name, bs.description as description, bs.type as type, bsu.userRole as userRole, bs.winner_count as winnerCount
           FROM bet_seasons bs 
     INNER JOIN bet_season_users bsu ON bsu.bet_season_id = bs.id AND bsu.user_id = ?`, 
         [userId]
@@ -69,6 +69,10 @@ export async function patchUserBetSeason(seasonId: number, data: Partial<BetSeas
 
     if(data.type) {
         await conn.execute('UPDATE bet_seasons SET type = ? WHERE id = ?', [data.type, seasonId]);
+    }
+
+    if(data.winnerCount) {
+        await conn.execute('UPDATE bet_seasons SET winner_count = ? WHERE id = ?', [data.winnerCount, seasonId]);
     }
 
     await conn.end();
