@@ -106,6 +106,6 @@ export default (app: Router) => {
     const winnerEntry = arbitrarySequence[0];
     const winner = list[winnerEntry];
 
-    return res.json({list: list.length, winnerEntry, winner}).status(200);
+    return res.json({serverSeed: config.provableWinnerSeed, count: list.length, ticket: winnerEntry, winner}).status(200);
   });
 };
