@@ -227,6 +227,7 @@ async function getSeasonParticipants(betSeasonId: number): Promise<number> {
         `SELECT COUNT(b.id) as count FROM bets b INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ?;`,
         [betSeasonId],
     );
+    await conn.end();
 
     return users.length ? users[0].count : 0;
 }
@@ -237,6 +238,7 @@ async function getSeasonUniqueParticipants(betSeasonId: number): Promise<number>
         `SELECT COUNT(b.id) FROM bets b INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? GROUP BY b.watcher_id;`,
         [betSeasonId],
     );
+    await conn.end();
 
     return users.length ?? 0;
 }
@@ -247,6 +249,7 @@ async function getCorrectVotes(betSeasonId: number): Promise<number> {
         `SELECT COUNT(b.id) as count FROM bets b INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? AND b.bet = br.result;`,
         [betSeasonId],
     );
+    await conn.end();
 
     return users.length ? users[0].count : 0;
 }
@@ -257,6 +260,7 @@ async function getSeasonChattersParticipations(betSeasonId: number): Promise<{mi
         'SELECT MIN((SELECT COUNT(b.id) FROM bets b WHERE b.bet_round_id = br.id) / br.chatters) * 100 as `min`, MAX((SELECT COUNT(b.id) FROM bets b WHERE b.bet_round_id = br.id) / br.chatters) * 100 as `max`, AVG((SELECT COUNT(b.id) FROM bets b WHERE b.bet_round_id = br.id) / br.chatters) * 100 as `avg` FROM bet_rounds br WHERE br.bet_season_id = ?;',
         [betSeasonId],
     );
+    await conn.end();
 
     return result.length ? result[0] : {min: 0, max: 0, avg: 0};   
 }
@@ -273,6 +277,7 @@ async function getSeasonRounds(betSeasonId: number): Promise<VoteSeasonRoundStat
         'SELECT round, chatters, (SELECT COUNT(b.id) FROM bets b WHERE b.bet_round_id = br.id) as participants FROM bet_rounds br WHERE br.bet_season_id = ?;',
         [betSeasonId],
     );
+    await conn.end();
 
     return result;
 }
