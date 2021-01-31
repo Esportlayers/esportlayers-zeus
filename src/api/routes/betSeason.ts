@@ -1,10 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { requireAuthorization } from '../../middleware/requireAuthorization';
 import {User} from '@streamdota/shared-types';
-import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers, seasonTopList, seasonStats } from '../../services/entity/BetSeasons';
+import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers, seasonTopList, seasonStats, getProvablyFairList } from '../../services/entity/BetSeasons';
 import { requireBetSeasonAccess } from '../../middleware/requireBetSeasonAccess';
 import { getBetSeasonRounds } from '../../services/entity/BetRound';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
+import spadille from 'spadille';
+import config from '../../config';
+
 const route = Router();
 
 export default (app: Router) => {
@@ -87,5 +90,22 @@ export default (app: Router) => {
   route.get('/:seasonId/stats', requireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
     const stats = await seasonStats(+req.params.seasonId);
     return res.json(stats).status(200);
+  });
+
+  route.get('/:seasonId/provableWinner/:clientSeed', async (req: Request, res: Response) => {
+    const list = await getProvablyFairList(+req.params.seasonId)
+    const arbitrarySequence = await spadille.prng.generate({
+      secret: config.provableWinnerSeed,
+      payload: req.params.clientSeed,
+      minimum: 0,
+      maximum: list.length - 1,
+      amount: 1,
+      distinct: false,
+    });
+
+    const winnerEntry = arbitrarySequence[0];
+    const winner = list[winnerEntry];
+
+    return res.json({list: list.length, winnerEntry, winner}).status(200);
   });
 };

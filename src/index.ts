@@ -5,7 +5,7 @@ import {green} from 'chalk';
 import passport from 'passport';
 import expressWs from 'express-ws';
 import './tasks';
-import './services/twitchChat';
+//import './services/twitchChat';
 import * as Sentry from '@sentry/node';
 import * as Apm from '@sentry/apm';
 

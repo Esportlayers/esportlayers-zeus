@@ -317,3 +317,18 @@ export async function seasonStats(betSeasonId: number): Promise<BetSeasonStats> 
         chatParticipation: chatterParticipations,
     }
 }
+
+export async function getProvablyFairList(betSeasonId: number): Promise<string[]> {
+    const conn = await getConn();
+    const [result] = await conn.execute<Array<{name: string} & RowDataPacket>>(`
+        SELECT w.display_name as name 
+            FROM bets b 
+        INNER JOIN watchers w ON b.watcher_id = w.id
+        INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? AND b.bet = br.result
+        ORDER BY w.display_name
+        ;`,
+        [betSeasonId]
+    );
+    await conn.end();
+    return (result || []).map(({name}) => name);
+}
