@@ -3,7 +3,7 @@ import { RowDataPacket, OkPacket } from "mysql2";
 import { v4 } from "uuid";
 import {BetSeasonInvite, BetSeason, BetSeasonToplist} from '@streamdota/shared-types';
 import { loadUserById, patchUser } from "./User";
-import { deleteBetRound } from "./BetRound";
+import { deleteBetRound, getBetSeasonRounds } from "./BetRound";
 import { createBetCommands } from "./Command";
 import { clearChannelUserChannel } from "../betting/state";
 
@@ -219,5 +219,96 @@ export async function getUserSeasonStats(username: string, betSeasonId: number):
     await conn.end();
 
     return toplist.length > 0 ? {won: toplist[0].won ?? 0, total: toplist[0].total} : {won: 0, total: 0};
+}
 
+async function getSeasonParticipants(betSeasonId: number): Promise<number> {
+    const conn = await getConn();
+    const [users] = await conn.execute<Array<{count: number} & RowDataPacket>>(
+        `SELECT COUNT(b.id) as count FROM bets b INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ?;`,
+        [betSeasonId],
+    );
+
+    return users.length ? users[0].count : 0;
+}
+
+async function getSeasonUniqueParticipants(betSeasonId: number): Promise<number> {
+    const conn = await getConn();
+    const [users] = await conn.execute<Array<{count: number} & RowDataPacket>>(
+        `SELECT COUNT(b.id) FROM bets b INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? GROUP BY b.watcher_id;`,
+        [betSeasonId],
+    );
+
+    return users.length ?? 0;
+}
+
+async function getCorrectVotes(betSeasonId: number): Promise<number> {
+    const conn = await getConn();
+    const [users] = await conn.execute<Array<{count: number} & RowDataPacket>>(
+        `SELECT COUNT(b.id) as count FROM bets b INNER JOIN bet_rounds br ON br.id = b.bet_round_id AND br.bet_season_id = ? AND b.bet = br.result;`,
+        [betSeasonId],
+    );
+
+    return users.length ? users[0].count : 0;
+}
+
+async function getSeasonChattersParticipations(betSeasonId: number): Promise<{min: number; max: number; avg: number}> {
+    const conn = await getConn();
+    const [result] = await conn.execute<Array<{min: number; max: number; avg: number} & RowDataPacket>>(
+        'SELECT MIN((SELECT COUNT(b.id) FROM bets b WHERE b.bet_round_id = br.id) / br.chatters) * 100 as `min`, MAX((SELECT COUNT(b.id) FROM bets b WHERE b.bet_round_id = br.id) / br.chatters) * 100 as `max`, AVG((SELECT COUNT(b.id) FROM bets b WHERE b.bet_round_id = br.id) / br.chatters) * 100 as `avg` FROM bet_rounds br WHERE br.bet_season_id = ?;',
+        [betSeasonId],
+    );
+
+    return result.length ? result[0] : {min: 0, max: 0, avg: 0};   
+}
+
+interface VoteSeasonRoundStats {
+    round: number;
+    chatters: number;
+    participants: number;
+}
+
+async function getSeasonRounds(betSeasonId: number): Promise<VoteSeasonRoundStats[]> {
+    const conn = await getConn();
+    const [result] = await conn.execute<Array<VoteSeasonRoundStats & RowDataPacket>>(
+        'SELECT round, chatters, (SELECT COUNT(b.id) FROM bets b WHERE b.bet_round_id = br.id) as participants FROM bet_rounds br WHERE br.bet_season_id = ?;',
+        [betSeasonId],
+    );
+
+    return result;
+}
+
+interface BetSeasonStats {
+    id: number;
+    rounds: number;
+    roundsData: VoteSeasonRoundStats[];
+    votes: number;
+    uniqueVoters: number;
+    correct: number;
+    wrong: number;
+    chatParticipation: {
+        avg: number;
+        max: number;
+        min: number;
+    }
+}
+
+export async function seasonStats(betSeasonId: number): Promise<BetSeasonStats> {
+    const rounds = (await getBetSeasonRounds(betSeasonId)).length;
+    const participants = await getSeasonParticipants(betSeasonId);
+    const uniqueParticipants = await getSeasonUniqueParticipants(betSeasonId);
+    const correctVotes = await getCorrectVotes(betSeasonId);
+    const wrongVotes = participants - correctVotes;
+    const chatterParticipations = await getSeasonChattersParticipations(betSeasonId);
+    const roundsData = await getSeasonRounds(betSeasonId);
+
+    return {
+        id: betSeasonId,
+        rounds,
+        roundsData,
+        votes: participants,
+        uniqueVoters: uniqueParticipants,
+        correct: correctVotes,
+        wrong: wrongVotes,
+        chatParticipation: chatterParticipations,
+    }
 }

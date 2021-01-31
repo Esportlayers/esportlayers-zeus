@@ -380,6 +380,12 @@ export async function userConnected(userId: number): Promise<void> {
 
 export async function removeUser(userId: number): Promise<void> {
     const conn = await getConn();
+    await conn.execute('DELETE from watchers WHERE user_id = ?', [userId]);
+    await conn.execute('DELETE from anti_snipe_overlay WHERE user_id = ?', [userId]);
+    await conn.execute('DELETE from dota_overlays WHERE user_id = ?', [userId]);
+    await conn.execute('DELETE from rosh_overlays WHERE user_id = ?', [userId]);
+    await conn.execute('DELETE from watchers WHERE user_id = ?', [userId]);
+    await conn.execute('DELETE from bets WHERE bet_round_id IN (SELECT id FROM bet_rounds WHERE user_id = ?)', [userId]);
     await conn.execute('DELETE from bet_season_users WHERE user_id = ?', [userId]);
     await conn.execute('DELETE from bet_rounds WHERE user_id = ?', [userId]);
     await conn.execute('DELETE from dota_games WHERE user_id = ?', [userId]);

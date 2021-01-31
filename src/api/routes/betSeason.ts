@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuthorization } from '../../middleware/requireAuthorization';
 import {User} from '@streamdota/shared-types';
-import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers, seasonTopList } from '../../services/entity/BetSeasons';
+import { getUserBetSeasons, createUserBetSeason, patchUserBetSeason, deleteUserBetSeason, createSeasonInvite, acceptSeasonInvite, denySeasonInvite, deleteInviteByKey, patchUserBetSeasonRole, deleteBetSeason, listInvites, listUsers, seasonTopList, seasonStats } from '../../services/entity/BetSeasons';
 import { requireBetSeasonAccess } from '../../middleware/requireBetSeasonAccess';
 import { getBetSeasonRounds } from '../../services/entity/BetRound';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
@@ -82,5 +82,10 @@ export default (app: Router) => {
       await deleteUserBetSeason(+req.params.seasonId, +req.params.userId);
     }
     return res.sendStatus(204);
+  });
+
+  route.get('/:seasonId/stats', requireAuthorization, requireBetSeasonAccess('owner'), async (req: Request, res: Response) => {
+    const stats = await seasonStats(+req.params.seasonId);
+    return res.json(stats).status(200);
   });
 };
