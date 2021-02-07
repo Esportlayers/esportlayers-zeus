@@ -65,7 +65,14 @@ SELECT
     team_b_name as teamBName,
     use_automatic_voting as useAutomaticVoting,
     keyword_listening as keywordListener,
-    use_keyword_listener as useKeywordListener
+    use_keyword_listener as useKeywordListener,
+    individual_overlay_vote_distribution as individualOverlayVoteDistribution,
+    individual_overlay_vote_toplist as individualOverlayVoteToplist,
+    individual_overlay_vote_timer as individualOverlayVoteTimer,
+    individual_overlay_wl_stats as individualOverlayWLStats,
+    individual_overlay_minimap as individualOverlayMinimap,
+    individual_overlay_draft_stats as individualOverlayDraftStats,
+    individual_overlay_hero_stats as individualOverlayVoteHeroStats
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {
@@ -369,6 +376,43 @@ export async function patchUser(userId: number, data: Partial<User>): Promise<vo
         clearChannelUserChannel(userId);
     }
     
+
+    if(data.hasOwnProperty('individualOverlayVoteDistribution')) {
+        await conn.execute('UPDATE user SET individual_overlay_vote_distribution=? WHERE id=?', [data.individualOverlayVoteDistribution, userId]);
+        sendMessage(userId, 'overlay', true);
+    }
+
+    if(data.hasOwnProperty('individualOverlayVoteToplist')) {
+        await conn.execute('UPDATE user SET individual_overlay_vote_toplist=? WHERE id=?', [data.individualOverlayVoteToplist, userId]);
+        sendMessage(userId, 'overlay', true);
+    }
+
+    if(data.hasOwnProperty('individualOverlayVoteTimer')) {
+        await conn.execute('UPDATE user SET individual_overlay_vote_timer=? WHERE id=?', [data.individualOverlayVoteTimer, userId]);
+        sendMessage(userId, 'overlay', true);
+    }
+
+    if(data.hasOwnProperty('individualOverlayWLStats')) {
+        await conn.execute('UPDATE user SET individual_overlay_wl_stats=? WHERE id=?', [data.individualOverlayWLStats, userId]);
+        sendMessage(userId, 'overlay', true);
+    }
+
+    if(data.hasOwnProperty('individualOverlayMinimap')) {
+        await conn.execute('UPDATE user SET individual_overlay_minimap=? WHERE id=?', [data.individualOverlayMinimap, userId]);
+        sendMessage(userId, 'overlay', true);
+    }
+
+    if(data.hasOwnProperty('individualOverlayDraftStats')) {
+        await conn.execute('UPDATE user SET individual_overlay_draft_stats=? WHERE id=?', [data.individualOverlayDraftStats, userId]);
+        sendMessage(userId, 'overlay', true);
+    }
+
+    if(data.hasOwnProperty('individualOverlayVoteHeroStats')) {
+        await conn.execute('UPDATE user SET individual_overlay_hero_stats=? WHERE id=?', [data.individualOverlayVoteHeroStats, userId]);
+        sendMessage(userId, 'overlay', true);
+    }
+
+
     await conn.end();
 }
 
