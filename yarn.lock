@@ -619,10 +619,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@streamdota/shared-types@^1.3.6":
-  version "1.3.6"
-  resolved "https://registry.yarnpkg.com/@streamdota/shared-types/-/shared-types-1.3.6.tgz#7b11f7d984bd8457fd09cec0d4da5feb54ae1f39"
-  integrity sha512-7LHMhgshpKoNqUJMdAkseKHWzXkkO3FhYuK1VWKEp7ccNLw50Ynugkgfu4CGpq8XnfCFLpoUW0TvlM8AcameFA==
+"@streamdota/shared-types@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@streamdota/shared-types/-/shared-types-1.4.0.tgz#87cf230980c0784b072a2cf98ec2a5414375f342"
+  integrity sha512-BDDW2dzNKmeck9+u5y9iP8v0p+CLoE7/lZaW6PvoAuYW5SN8s/n7vgppCBSaZTGO5l/CVDKDBIVkN6gCzLn/Lg==
 
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.7":
   version "7.1.12"
