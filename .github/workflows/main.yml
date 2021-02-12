@@ -1,6 +1,6 @@
 name: Automatic deploy
 env:
-  APP_LOCATION: streamdota/api
+  APP_LOCATION: streamdota/zeus
 
 on:
   push:
