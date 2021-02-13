@@ -73,7 +73,7 @@ jobs:
     - name: Restart API
       uses: garygrossgarten/github-action-ssh@release
       with:
-        command: sudo pm2 restart ${{ env.APP_LOCATION }}
+        command: pm2 restart ${{ env.APP_LOCATION }}
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.SERVER_SSH_KEY }}
