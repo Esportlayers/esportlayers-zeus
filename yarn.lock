@@ -619,10 +619,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@streamdota/shared-types@^1.4.0":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@streamdota/shared-types/-/shared-types-1.4.0.tgz#87cf230980c0784b072a2cf98ec2a5414375f342"
-  integrity sha512-BDDW2dzNKmeck9+u5y9iP8v0p+CLoE7/lZaW6PvoAuYW5SN8s/n7vgppCBSaZTGO5l/CVDKDBIVkN6gCzLn/Lg==
+"@streamdota/shared-types@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@streamdota/shared-types/-/shared-types-1.4.1.tgz#3a39f65d1ff2a36ca437562562dd00ce8db34789"
+  integrity sha512-I0ZJxcI3CCQqFGPJl0aWWgjy1PHyE0DXyT/1ka/z6J1V/cmuuRpPwHMNsvLTLRrQU1XKMNtSbZ9QcTLbkzCxcA==
 
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.7":
   version "7.1.12"
@@ -830,9 +830,9 @@
     "@types/express" "*"
 
 "@types/prettier@^2.0.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@types/prettier/-/prettier-2.2.0.tgz#a4e8205a4955690eef712a6d0394a1d2e121e721"
-  integrity sha512-O3SQC6+6AySHwrspYn2UvC6tjo6jCTMMmylxZUFhE1CulVu5l3AxU6ca9lrJDTQDVllF62LIxVSx5fuYL6LiZg==
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@types/prettier/-/prettier-2.2.1.tgz#374e31645d58cb18a07b3ecd8e9dede4deb2cccd"
+  integrity sha512-DxZZbyMAM9GWEzXL+BMZROWz9oo6A9EilwwOMET2UVu2uZTqMWS5S69KVtuVKaRjCUpcrOXRalet86/OpG4kqw==
 
 "@types/qs@*":
   version "6.9.5"

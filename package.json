@@ -10,7 +10,7 @@
         "@esportlayers/morphling": "^1.2.2",
         "@sentry/apm": "^5.27.1",
         "@sentry/node": "^6.1.0",
-        "@streamdota/shared-types": "^1.4.0",
+        "@streamdota/shared-types": "^1.4.1",
         "@types/express-ws": "^3.0.0",
         "@types/tmi.js": "^1.7.1",
         "body-parser": "^1.19.0",
