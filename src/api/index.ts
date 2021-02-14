@@ -14,6 +14,7 @@ import simulationRoutes from './routes/simulate';
 import roshTimerRoutes from './routes/roshTimer';
 import antiSnipeRoutes from './routes/antiSnipe';
 import liveRoutes from './routes/live';
+import chatKeyWordRoutes from './routes/chatKeyWords';
 import { PassportStatic } from 'passport';
 import config from "../config";
 
@@ -35,6 +36,7 @@ export default ({passport}: {passport: PassportStatic}) => {
 	roshTimerRoutes(app);
 	antiSnipeRoutes(app);
 	liveRoutes(app);
+	chatKeyWordRoutes(app);
 	
 	if(config.env === 'development') {
 		simulationRoutes(app);
