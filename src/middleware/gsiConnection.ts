@@ -70,7 +70,7 @@ export async function checkGSIAuthToken(req: Request, res: Response, next: NextF
 }
 
 export async function newGSIListener(_ws: ws, req: Request, next: NextFunction) {
-    const clientId = (req.user as User).id;
+    const clientId = (req.user as User)?.id;
     if(clientId) {
         const events = await getEvents('' + clientId);
         const connectedEvent: MorphlingEvent = {event: MorphlingEventTypes.gsi_connected, value: connectedIds.has(clientId)};
