@@ -1,5 +1,24 @@
 import { Word, WordGroup, WordMessage } from "@streamdota/shared-types";
+import { RowDataPacket } from "mysql2";
 import { getConn } from "../../loader/db";
+
+export async function getUserWordGroups(userId: number): Promise<WordGroup[]> {
+    const conn = await getConn();
+    const [wordGroups] = await conn.execute<Array<WordGroup & RowDataPacket>>('SELECT id, active, name FROM word_groups WHERE user_id = ?', [userId]);
+    await conn.end();
+
+    const data = [];
+
+    for(const group of wordGroups) {
+        const words = await getUserWordsForGroup(group.id);
+        data.push({
+            ...group,
+            words
+        });
+    }
+
+    return data;
+}
 
 export async function createWordGroup(userId: number, name: string): Promise<void> {
     const conn = await getConn();
@@ -32,6 +51,13 @@ export async function deleteWordGroup(id: number): Promise<void> {
     await conn.end();
 }
 
+export async function getUserWordsForGroup(wordGroupId: number): Promise<Word[]> {
+    const conn = await getConn();
+    const [words] = await conn.execute<Array<Word & RowDataPacket>>('SELECT id, word_group_id as wordGroup, word, use_sentiment_analysis as useSentimentAnalysis FROM words WHERE word_group_id = ?', [wordGroupId]);
+    await conn.end();
+    return words;
+}
+
 export async function createWordForGroup(wordGroup: number, name: string): Promise<void> {
     const conn = await getConn();
 
@@ -54,7 +80,6 @@ export async function updateWordForGroup(id: number, data: Partial<Omit<Word, 'i
     }
 
     await conn.end();
-
 }
 
 export async function deleteWordForGroup(id: number): Promise<void> {
