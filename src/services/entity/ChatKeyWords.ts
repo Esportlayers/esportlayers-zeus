@@ -2,7 +2,11 @@ import { Word, WordGroup, WordMessage } from "@streamdota/shared-types";
 import { RowDataPacket } from "mysql2";
 import { getConn } from "../../loader/db";
 
-export async function getUserWordGroups(userId: number): Promise<WordGroup[]> {
+interface WordGroupWithWords extends WordGroup {
+    words: Word[];
+}
+
+export async function getUserWordGroups(userId: number): Promise<WordGroupWithWords[]> {
     const conn = await getConn();
     const [wordGroups] = await conn.execute<Array<WordGroup & RowDataPacket>>('SELECT id, active, name FROM word_groups WHERE user_id = ?', [userId]);
     await conn.end();

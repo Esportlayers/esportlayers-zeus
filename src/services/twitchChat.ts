@@ -6,6 +6,7 @@ import { del, get, getObj, set, setObj } from '../loader/redis';
 import { Command } from '@streamdota/shared-types';
 import { fetchUserById } from './twitchApi';
 import { sendMessage } from './websocket';
+import processChatMessage from './wordStats';
 const tmi = require('tmi.js');
 
 const defaultConfig = {
@@ -131,6 +132,7 @@ async function messageListener(channel: string, tags: ChatUserstate, message: st
 			time: tags['tmi-sent-ts'],
 		});
 	}
+	await processChatMessage(channel, message);
 
 	processCommands(channel, tags, message);
 }

@@ -34,4 +34,5 @@ export default {
   debugGsi: process.env.DEBUG_GSI || false,
   gsiRecordingKey: process.env.GSI_RECORDING_KEY || '',
   provableServerSeed: process.env.PROVABLE_SERVER_SEED || 'ac67a205-a526-45a5-bf7b-e1254d112785',
+  naixApiKey: process.env.NAIX_API_KEY || '',
 }
