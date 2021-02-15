@@ -5,6 +5,8 @@ import { requireWatcher } from "./Watcher";
 import {BetRound, BetRoundStats, User} from '@streamdota/shared-types';
 import { fetchChatterCount } from "../twitchApi";
 import { resetRound } from "../betting/state";
+import { getBettingCommands } from "../betting/chatCommands";
+import { publish } from "../twitchChat";
 
 async function getRound(userId: number): Promise<number> {
     const user = await loadUserById(userId);
@@ -125,7 +127,10 @@ export async function patchBetRound(roundId: number, data: Partial<PatchableData
     }
 
     if(user && data.status === 'finished' && data.result) {
-        await resetRound('#' + user.displayName.toLowerCase(), user.id);
+        const channel = '#' + user.displayName.toLowerCase();
+        await resetRound(channel, user.id);
+        const {winner: winnerCommand} = await getBettingCommands(channel);
+        publish(channel, winnerCommand.message.replace(/\{WINNER\}/g, data.result));
     }
 
     await conn.end();
