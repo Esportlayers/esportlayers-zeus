@@ -81,7 +81,8 @@ SELECT
     use_hero_stats_overlay as useHeroStatsOverlay,
     use_vote_toplist_overlay as useVoteToplistOverlay,
     use_vote_timer_overlay as useVoteTimerOverlay,
-    use_vote_distribution_overlay as useVoteDistributionOverlay
+    use_vote_distribution_overlay as useVoteDistributionOverlay,
+    casting_stats_source as castingStatsSource
 FROM user`;
 
 export async function loadUserByTwitchId(twitchId: number): Promise<User | null> {

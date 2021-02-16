@@ -14,10 +14,11 @@ export default (app: Router) => {
 
     route.get('/heroStats/:leagueId/:heroId', requireAuthorization, async (req: Request, res: Response) => {
         let heroStats = null;
-        if(req.params.leagueId.includes('.')) {
+        const league = (req.user as User).castingStatsSource ?? req.params.leagueId;
+        if(league.includes('.')) {
             heroStats = await fetchCurrentPatchHeroStats(+req.params.heroId);
         } else {
-            heroStats = await fetchHeroStats(+req.params.leagueId, +req.params.heroId);
+            heroStats = await fetchHeroStats(+league, +req.params.heroId);
         }
 
         if(heroStats === null) {
