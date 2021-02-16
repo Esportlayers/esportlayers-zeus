@@ -16,7 +16,6 @@ import antiSnipeRoutes from './routes/antiSnipe';
 import liveRoutes from './routes/live';
 import chatKeyWordRoutes from './routes/chatKeyWords';
 import { PassportStatic } from 'passport';
-import config from "../config";
 
 export default ({passport}: {passport: PassportStatic}) => {
 	const app = Router();
@@ -37,10 +36,7 @@ export default ({passport}: {passport: PassportStatic}) => {
 	antiSnipeRoutes(app);
 	liveRoutes(app);
 	chatKeyWordRoutes(app);
-	
-	if(config.env === 'development') {
-		simulationRoutes(app);
-	}
+	simulationRoutes(app);
 
 	return app;
 }

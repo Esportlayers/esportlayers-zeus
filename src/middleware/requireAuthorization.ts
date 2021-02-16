@@ -21,3 +21,15 @@ export async function requireAuthorization(req: Request, res: Response, next: Ne
 
     return next();
 }
+
+export async function requireRootUser(req: Request, res: Response, next: NextFunction) {
+    if(config.env === 'development') {//Bypass rights for dev enviorements
+        return next();
+    }
+
+    if((req.user as User).id !== 2) {
+        return res.status(403).json({msg: 'Forbidden'});
+    }
+
+    return next();
+}
