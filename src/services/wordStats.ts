@@ -24,7 +24,7 @@ async function getUserKeyWords(id: number): Promise<string[]> {
             }
         }
 
-        setObj(getKeywordListKey(id), list);
+        await setObj(getKeywordListKey(id), list);
         keywords = list;
     }
 
@@ -56,4 +56,8 @@ export default async function processChatMessage(channel: string, message: strin
             await saveMessageForKeyword(match, message, channel.substr(1), id);
         }
     }
+}
+
+export async function resetUserStorage(id: number): Promise<void> {
+    await setObj(getKeywordListKey(id), null);
 }

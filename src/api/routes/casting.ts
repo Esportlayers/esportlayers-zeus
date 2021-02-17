@@ -3,8 +3,7 @@ import { Router, Request, Response } from 'express';
 import { checkUserFrameAPIKey } from '../../middleware/frameApi';
 import { requireAuthorization } from '../../middleware/requireAuthorization';
 import { patchCastingOverlay, requireCastingOverlay } from '../../services/entity/CastingOverlay';
-import { fetchHeroStats } from '../../services/stratzApi';
-import { fetchCurrentPatchHeroStats } from '../../services/datdotaApi';
+import { fetchCurrentPatchHeroStats, fetchLeagueHeroStats } from '../../services/datdotaApi';
 import { sendMessage } from '../../services/websocket';
 
 const route = Router();
@@ -18,7 +17,7 @@ export default (app: Router) => {
         if(league.includes('.')) {
             heroStats = await fetchCurrentPatchHeroStats(+req.params.heroId);
         } else {
-            heroStats = await fetchHeroStats(+league, +req.params.heroId);
+            heroStats = await fetchLeagueHeroStats(+league, +req.params.heroId);
         }
 
         if(heroStats === null) {

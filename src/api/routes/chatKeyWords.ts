@@ -30,17 +30,17 @@ export default (app: Router) => {
     });
 
     route.post('/word/:wordGroupId', requireAuthorization, async (req: Request, res: Response) => {
-        await createWordForGroup(+req.params.wordGroupId, req.body.name);
+        await createWordForGroup(+req.params.wordGroupId, req.body.name, +(req.user as User).id);
         return res.sendStatus(201);
     });
     
     route.patch('/word/:wordId', requireAuthorization, async (req: Request, res: Response) => {
-        await updateWordForGroup(+req.params.wordId, req.body);
+        await updateWordForGroup(+req.params.wordId, req.body, +(req.user as User).id);
         return res.sendStatus(204);
     });
 
     route.delete('/word/:wordId', requireAuthorization, async (req: Request, res: Response) => {
-        await deleteWordForGroup(+req.params.wordId);
+        await deleteWordForGroup(+req.params.wordId, +(req.user as User).id);
         return res.sendStatus(204);
     });
 };

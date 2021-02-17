@@ -1,6 +1,7 @@
 import { Word, WordGroup, WordMessage } from "@streamdota/shared-types";
 import { RowDataPacket } from "mysql2";
 import { getConn } from "../../loader/db";
+import { resetUserStorage } from "../wordStats";
 
 interface WordGroupWithWords extends WordGroup {
     words: Word[];
@@ -50,7 +51,13 @@ export async function updateWordGroup(id: number, data: Partial<Omit<WordGroup, 
 }
 
 export async function deleteWordGroup(id: number): Promise<void> {
+    const words = await getUserWordsForGroup(id);
+    for(const {id} of words) {
+        await deleteWordMessageByWord(id);
+    }
+
     const conn = await getConn();
+    await conn.execute('DELETE FROM words WHERE word_group_id = ?', [id]);
     await conn.execute('DELETE FROM word_groups WHERE id = ?', [id]);
     await conn.end();
 }
@@ -62,17 +69,18 @@ export async function getUserWordsForGroup(wordGroupId: number): Promise<Word[]>
     return words;
 }
 
-export async function createWordForGroup(wordGroup: number, name: string): Promise<void> {
+export async function createWordForGroup(wordGroup: number, name: string, userId: number): Promise<void> {
     const conn = await getConn();
 
     await conn.execute(
         'INSERT INTO words (id, word_group_id, word, use_sentiment_analysis) VALUES (NULL, ?, ?, TRUE)',
         [wordGroup, name]
     );
+    await resetUserStorage(userId);
     await conn.end();
 }
 
-export async function updateWordForGroup(id: number, data: Partial<Omit<Word, 'id'>>): Promise<void> {
+export async function updateWordForGroup(id: number, data: Partial<Omit<Word, 'id'>>, userId: number): Promise<void> {
     const conn = await getConn();
 
     if(data.word) {
@@ -83,12 +91,15 @@ export async function updateWordForGroup(id: number, data: Partial<Omit<Word, 'i
         await conn.execute('UPDATE use_sentiment_analysis SET name = ? WHERE id = ?', [data.useSentimentAnalysis, id]);
     }
 
+    await resetUserStorage(userId);
     await conn.end();
 }
 
-export async function deleteWordForGroup(id: number): Promise<void> {
+export async function deleteWordForGroup(id: number, userId: number): Promise<void> {
+    await deleteWordMessageByWord(id);
     const conn = await getConn();
     await conn.execute('DELETE FROM words WHERE id = ?', [id]);
+    await resetUserStorage(userId);
     await conn.end();
 }
 
@@ -123,5 +134,11 @@ export async function updateWordMessage(id: number, data: Partial<Pick<WordMessa
 export async function deleteWordMessage(id: number): Promise<void> {
     const conn = await getConn();
     await conn.execute('DELETE FROM word_messages WHERE id = ?', [id]);
+    await conn.end();
+}
+
+export async function deleteWordMessageByWord(wordId: number): Promise<void> {
+    const conn = await getConn();
+    await conn.execute('DELETE FROM word_messages WHERE word_id = ?', [wordId]);
     await conn.end();
 }
