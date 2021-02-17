@@ -1,11 +1,24 @@
 import fetch from 'node-fetch';
-import {HeroOverview} from './stratzApi';
 import dayjs from 'dayjs';
 import { getObj, setObj } from '../loader/redis';
 
 const BASE_URL = 'https://www.datdota.com/api';
 const DRAFTS = '/drafts?default=true';
 const DRAFT_BY_LEAGUE = '/drafts?leagues=12720';
+
+export interface HeroOverview {
+    index: number;
+    heroId: number;
+    matchCount: number;
+    matchWins: number;
+    pickPhaseOne: number;
+    pickPhaseTwo: number;
+    pickPhaseThree: number;
+    banCount: number;
+    banPhaseOne: number;
+    banPhaseTwo: number;
+    banPhaseThree: number;
+}
 
 interface HeroData {
     hero: number;
