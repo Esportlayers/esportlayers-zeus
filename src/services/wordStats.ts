@@ -61,3 +61,7 @@ export default async function processChatMessage(channel: string, message: strin
 export async function resetUserStorage(id: number): Promise<void> {
     await setObj(getKeywordListKey(id), null);
 }
+
+export async function resetWordStorage(id: number, name: string): Promise<void> {
+    await setObj(getWordByName(name.toLowerCase(), id), null);
+}

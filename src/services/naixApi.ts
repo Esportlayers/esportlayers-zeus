@@ -13,8 +13,6 @@ export async function fetchSentimentScore(message: string): Promise<{score: numb
             headers: { 'Content-Type': 'application/json' },
         },
     );
-
-    console.log(response.status, response.statusText)
     if(response.ok) {
         return await response.json();
     }

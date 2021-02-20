@@ -1,7 +1,7 @@
 import { Word, WordGroup, WordMessage } from "@streamdota/shared-types";
 import { RowDataPacket } from "mysql2";
 import { getConn } from "../../loader/db";
-import { resetUserStorage } from "../wordStats";
+import { resetUserStorage, resetWordStorage } from "../wordStats";
 
 interface WordGroupWithWords extends WordGroup {
     words: Word[];
@@ -38,7 +38,7 @@ export async function createWordGroup(userId: number, name: string): Promise<voi
 export async function updateWordGroup(id: number, data: Partial<Omit<WordGroup, 'id'>>): Promise<void> {
     const conn = await getConn();
 
-    if(data.active) {
+    if(data.hasOwnProperty('active')) {
         await conn.execute('UPDATE word_groups SET active = ? WHERE id = ?', [data.active, id]);
     }
 
@@ -84,14 +84,17 @@ export async function updateWordForGroup(id: number, data: Partial<Omit<Word, 'i
     const conn = await getConn();
 
     if(data.word) {
-        await conn.execute('UPDATE word_groups SET word = ? WHERE id = ?', [data.word, id]);
+        await conn.execute('UPDATE words SET word = ? WHERE id = ?', [data.word, id]);
     }
 
-    if(data.useSentimentAnalysis) {
-        await conn.execute('UPDATE use_sentiment_analysis SET name = ? WHERE id = ?', [data.useSentimentAnalysis, id]);
+    if(data.hasOwnProperty('useSentimentAnalysis')) {
+        await conn.execute('UPDATE words SET use_sentiment_analysis = ? WHERE id = ?', [data.useSentimentAnalysis, id]);
     }
+
+    const [[{word}]] = await conn.execute<Array<RowDataPacket & {word: string}>>('SELECT word FROM words WHERE id = ?', [id]);
 
     await resetUserStorage(userId);
+    await resetWordStorage(userId, word);
     await conn.end();
 }
 
