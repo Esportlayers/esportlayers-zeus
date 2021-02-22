@@ -1,6 +1,9 @@
-import { Router, Request, Response } from 'express';
-import { requireAuthorization } from '../../middleware/requireAuthorization';
+import { Request, Response, Router } from 'express';
+
+import { User } from '@streamdota/shared-types';
 import { fetchMatchTeams } from '../../services/steamWebApi';
+import { requireAuthorization } from '../../middleware/requireAuthorization';
+import { sendMessage } from '../../services/websocket';
 
 const route = Router();
 
@@ -26,7 +29,8 @@ export default (app: Router) => {
     });
     
     route.post('/keywordQuestion', requireAuthorization, async (req: Request, res: Response) => {
-        console.log(req.body);
+		sendMessage((req.user as User).id, 'keyword_message_overlay', req.body);
+
         return res.sendStatus(204);
     });
 };
