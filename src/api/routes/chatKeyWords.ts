@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import {User} from '@streamdota/shared-types';
 import { requireAuthorization } from '../../middleware/requireAuthorization';
-import { createWordForGroup, createWordGroup, deleteWordForGroup, deleteWordGroup, getUserWordGroups, updateWordForGroup, updateWordGroup } from '../../services/entity/ChatKeyWords';
+import { createWordForGroup, createWordGroup, deleteWordForGroup, deleteWordGroup, getUserWordGroups, getWordGroupAnalyses, updateWordForGroup, updateWordGroup } from '../../services/entity/ChatKeyWords';
 
 const route = Router();
 
@@ -12,6 +12,11 @@ export default (app: Router) => {
         const user = req.user as User;
         const wordGroups = await getUserWordGroups(user.id);
         return res.json(wordGroups).status(200);
+    });
+
+    route.get('/wordGroupAnalyses/:wordGroupId', requireAuthorization, async (req: Request, res: Response) => {
+        const analyses = await getWordGroupAnalyses(+req.params.wordGroupId);
+        return res.json(analyses).status(200);
     });
 
     route.post('/wordGroup', requireAuthorization, async (req: Request, res: Response) => {

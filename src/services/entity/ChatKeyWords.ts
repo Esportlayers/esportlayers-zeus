@@ -25,6 +25,32 @@ export async function getUserWordGroups(userId: number): Promise<WordGroupWithWo
     return data;
 }
 
+interface WordsWithMessage extends Word {
+    messages: WordMessage[];
+}
+
+export async function getWordGroupAnalyses(wordGroupId: number): Promise<WordsWithMessage[]> {
+    const words = await getUserWordsForGroup(wordGroupId);
+    const data = [];
+
+    for(const word of words) {
+        data.push({
+            ...word,
+            messages: await loadWordMessages(word.id),
+        })
+    }
+
+    return data;
+}
+
+export async function loadWordMessages(wordId: number): Promise<WordMessage[]> {
+    const conn = await getConn();
+    const [wordMessages] = await conn.execute<Array<WordMessage & RowDataPacket>>('SELECT id, word_id as word, message, chatter as chatters, visibility, sentiment_score as sentimentScore, sentiment_magnitude as sentimentMagnitude FROM word_messages WHERE word_id = ?', [wordId]);
+    await conn.end();
+    return wordMessages;
+
+}
+
 export async function createWordGroup(userId: number, name: string): Promise<void> {
     const conn = await getConn();
 
