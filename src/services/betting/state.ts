@@ -119,13 +119,6 @@ async function closeVote(channel: string, user: User): Promise<void> {
 export async function initializeBet(channel: string, userId: number, fromGsi = false): Promise<void> {
     const user = await loadUserById(userId);
     const currentRound = await getObj<BetRoundData>(roundKey(channel));
-
-    if(fromGsi && user?.betSeasonId) {
-        const season = await getBetSeason(user?.betSeasonId);
-        if(season?.type !== 'ladder') {
-            return;
-        }
-    }
     
     if(user && user.useBets && (! currentRound || currentRound.status === 'finished')) {
         const overlay = await requireBetOverlay(userId);
