@@ -7,9 +7,9 @@
     "author": "Michael Ketzer <46134133+michaelketzer@users.noreply.github.com>",
     "license": "MIT",
     "dependencies": {
-        "@esportlayers/morphling": "^1.2.3",
+        "@esportlayers/morphling": "^1.2.4",
         "@sentry/apm": "^5.27.1",
-        "@sentry/node": "^6.2.0",
+        "@sentry/node": "^6.2.1",
         "@streamdota/shared-types": "^1.5.2",
         "@types/express-ws": "^3.0.0",
         "@types/tmi.js": "^1.7.1",
