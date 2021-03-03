@@ -98,7 +98,8 @@ SELECT
     use_vote_toplist_overlay as useVoteToplistOverlay,
     use_vote_timer_overlay as useVoteTimerOverlay,
     use_vote_distribution_overlay as useVoteDistributionOverlay,
-    casting_stats_source as castingStatsSource
+    casting_stats_source as castingStatsSource,
+    use_keyword_listener_overlay as useKeywordListenerOverlay
 FROM user`;
 
 export async function loadUserByTwitchId(
@@ -671,6 +672,14 @@ export async function patchUser(
     await conn.execute(
       "UPDATE user SET use_vote_distribution_overlay=? WHERE id=?",
       [data.useVoteDistributionOverlay, userId]
+    );
+    sendMessage(userId, "overlay", true);
+  }
+
+  if (data.hasOwnProperty("useKeywordListenerOverlay")) {
+    await conn.execute(
+      "UPDATE user SET use_keyword_listener_overlay=? WHERE id=?",
+      [data.useKeywordListenerOverlay, userId]
     );
     sendMessage(userId, "overlay", true);
   }
