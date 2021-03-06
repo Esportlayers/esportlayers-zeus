@@ -1,9 +1,13 @@
 import { Request, Response, Router } from "express";
 
 import { User } from "@streamdota/shared-types";
+import { checkUserFrameWebsocketApiKey } from "../../middleware/frameApi";
 import { fetchMatchTeams } from "../../services/steamWebApi";
+import { heartbeat } from "../../tasks/websocketHeartbeat";
+import { newGSIListener } from "../../middleware/gsiConnection";
 import { requireAuthorization } from "../../middleware/requireAuthorization";
 import { sendMessage } from "../../services/websocket";
+import ws from "ws";
 
 const route = Router();
 
@@ -45,5 +49,18 @@ export default (app: Router) => {
 
       return res.sendStatus(204);
     }
+  );
+
+  route.ws(
+    "/scoped/:frameApiKey",
+    checkUserFrameWebsocketApiKey,
+    (conn: ws) => {
+      //@ts-ignore
+      conn.isAlive = true;
+      //@ts-ignore
+      conn.scopes = new Set(req.query.scopes || []);
+      conn.on("pong", heartbeat);
+    },
+    newGSIListener
   );
 };

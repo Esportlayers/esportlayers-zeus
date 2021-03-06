@@ -8,7 +8,7 @@ export function sendMessage(userId: number, type: string, value: any): void {
       //@ts-ignore
       c.user.id === userId &&
       //@ts-ignore
-      (!type.includes("gsi") || !c.noGsiEvents)
+      (!c.scopes || !c.scopes.size || c.scopes.has(type))
   );
   connections.forEach((client) => client.send(JSON.stringify({ type, value })));
 }
