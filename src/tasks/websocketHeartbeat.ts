@@ -1,6 +1,5 @@
 import { WebsocketInstance } from "..";
 
-
 function noop() {}
 
 export function heartbeat() {
@@ -8,17 +7,17 @@ export function heartbeat() {
   this.isAlive = true;
 }
 
-if(process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== "test") {
   setInterval(() => {
-      WebsocketInstance.getWss().clients.forEach((ws) => {
-        //@ts-ignore
-        if (ws.isAlive === false) {
-            return ws.terminate();
-        }
-    
-        //@ts-ignore
-        ws.isAlive = false;
-        ws.ping(noop);
-      });
+    WebsocketInstance.getWss().clients.forEach((ws) => {
+      //@ts-ignore
+      if (ws.isAlive === false) {
+        return ws.terminate();
+      }
+
+      //@ts-ignore
+      ws.isAlive = false;
+      ws.ping(noop);
+    });
   }, 15000);
 }

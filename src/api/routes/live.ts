@@ -54,11 +54,11 @@ export default (app: Router) => {
   route.ws(
     "/scoped/:frameApiKey",
     checkUserFrameWebsocketApiKey,
-    (conn: ws) => {
-      //@ts-ignore
-      conn.isAlive = true;
+    (conn: ws, req: Request) => {
       //@ts-ignore
       conn.scopes = new Set(req.query.scopes || []);
+      //@ts-ignore
+      conn.isAlive = true;
       conn.on("pong", heartbeat);
     },
     newGSIListener
