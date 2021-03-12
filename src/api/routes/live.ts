@@ -55,8 +55,17 @@ export default (app: Router) => {
     "/scoped/:frameApiKey",
     checkUserFrameWebsocketApiKey,
     (conn: ws, req: Request) => {
+      let scopes: string | string[] | undefined = req.query.scopes as
+        | string
+        | string[]
+        | undefined;
+
+      if (scopes && !(scopes instanceof Array)) {
+        scopes = [scopes];
+      }
+
       //@ts-ignore
-      conn.scopes = new Set(req.query.scopes || []);
+      conn.scopes = new Set(scopes);
       //@ts-ignore
       conn.isAlive = true;
       conn.on("pong", heartbeat);
