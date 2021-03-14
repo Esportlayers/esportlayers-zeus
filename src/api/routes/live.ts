@@ -1,8 +1,11 @@
-import { Request, Response, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
+import {
+  checkUserFrameAPIKey,
+  checkUserFrameWebsocketApiKey,
+} from "../../middleware/frameApi";
 
 import { User } from "@streamdota/shared-types";
-import { checkUserFrameWebsocketApiKey } from "../../middleware/frameApi";
-import { fetchMatchTeams } from "../../services/steamWebApi";
+import { fetchMatchDetails } from "../../services/steamWebApi";
 import { heartbeat } from "../../tasks/websocketHeartbeat";
 import { newGSIListener } from "../../middleware/gsiConnection";
 import { requireAuthorization } from "../../middleware/requireAuthorization";
@@ -15,10 +18,11 @@ export default (app: Router) => {
   app.use("/live", route);
 
   route.get(
-    "/teams/:matchId",
+    "/matchDetails/:matchId",
+    checkUserFrameAPIKey,
     requireAuthorization,
     async (req: Request, res: Response) => {
-      const teamsData = await fetchMatchTeams(+req.params.matchId);
+      const teamsData = await fetchMatchDetails(+req.params.matchId);
       if (teamsData) {
         return res.json({ id: +req.params.matchId, ...teamsData }).status(200);
       }
@@ -28,11 +32,14 @@ export default (app: Router) => {
           radiant: {
             name: "Radiant",
             logo: null,
+            wins: 0,
           },
           dire: {
             name: "Dire",
             logo: null,
+            wins: 0,
           },
+          seriesType: 1,
         })
         .status(200);
     }
@@ -54,7 +61,7 @@ export default (app: Router) => {
   route.ws(
     "/scoped/:frameApiKey",
     checkUserFrameWebsocketApiKey,
-    (conn: ws, req: Request) => {
+    (conn: ws, req: Request, next: NextFunction) => {
       let scopes: string | string[] | undefined = req.query.scopes as
         | string
         | string[]
@@ -69,6 +76,8 @@ export default (app: Router) => {
       //@ts-ignore
       conn.isAlive = true;
       conn.on("pong", heartbeat);
+
+      next();
     },
     newGSIListener
   );
