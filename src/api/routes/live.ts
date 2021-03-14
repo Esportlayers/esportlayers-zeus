@@ -5,7 +5,9 @@ import {
 } from "../../middleware/frameApi";
 
 import { User } from "@streamdota/shared-types";
+import config from "../../config";
 import { fetchMatchDetails } from "../../services/steamWebApi";
+import getOnlineStatus from "../../services/streamer";
 import { heartbeat } from "../../tasks/websocketHeartbeat";
 import { newGSIListener } from "../../middleware/gsiConnection";
 import { requireAuthorization } from "../../middleware/requireAuthorization";
@@ -13,6 +15,16 @@ import { sendMessage } from "../../services/websocket";
 import ws from "ws";
 
 const route = Router();
+
+function checkStreamerApiKey(req: Request, res: Response, next: NextFunction) {
+  const key = (req.params.apiKey as string) || (req.query.apiKey as string);
+
+  if (!key || key !== config.streamerApiKey) {
+    return res.status(401).json({ msg: "Unauthorized" });
+  }
+
+  return next();
+}
 
 export default (app: Router) => {
   app.use("/live", route);
@@ -80,5 +92,15 @@ export default (app: Router) => {
       next();
     },
     newGSIListener
+  );
+
+  route.get(
+    "/streamer",
+    checkStreamerApiKey,
+    async (req: Request, res: Response) => {
+      const streamer = req.query.streamer;
+      const data = await getOnlineStatus(streamer as string[]);
+      return res.json(data).status(200);
+    }
   );
 };
