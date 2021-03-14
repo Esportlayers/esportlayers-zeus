@@ -98,7 +98,15 @@ export default (app: Router) => {
     "/streamer",
     checkStreamerApiKey,
     async (req: Request, res: Response) => {
-      const streamer = req.query.streamer;
+      let streamer: string | string[] | undefined = req.query.streamer as
+        | string
+        | string[]
+        | undefined;
+
+      if (streamer && !(streamer instanceof Array)) {
+        streamer = [streamer];
+      }
+
       const data = await getOnlineStatus(streamer as string[]);
       return res.json(data).status(200);
     }

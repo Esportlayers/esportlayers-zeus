@@ -10,14 +10,17 @@ interface Streamer {
   preview: string | null;
 }
 
-let lastUpdate: null | number = null;
-const key = "eslm_s3_twitch_streamer_data";
+let lastUpdate: { [x: number]: null | number } = {};
+const key = (len: number): string => "eslm_s3_twitch_streamer_data_" + len;
 
 export default async function getOnlineStatus(
   streamer: string[]
 ): Promise<Streamer[]> {
   let data: Streamer[] = [];
-  if (!lastUpdate || lastUpdate! + 300 < dayjs().unix()) {
+  if (
+    !lastUpdate[streamer.length] ||
+    lastUpdate[streamer.length]! + 300 < dayjs().unix()
+  ) {
     const streamers = await fetchStreamerByNames(streamer);
 
     for (const streamer of streamers) {
@@ -29,10 +32,10 @@ export default async function getOnlineStatus(
         preview: !!streamData.stream ? streamData.stream.preview.medium : null,
       });
     }
-    await setObj(key, data);
-    lastUpdate = dayjs().unix();
+    await setObj(key(streamer.length), data);
+    lastUpdate[streamer.length] = dayjs().unix();
   } else {
-    data = (await getObj<Streamer[]>(key)) || [];
+    data = (await getObj<Streamer[]>(key(streamer.length))) || [];
   }
 
   return data;
