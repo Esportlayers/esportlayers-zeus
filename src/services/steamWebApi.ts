@@ -168,6 +168,7 @@ async function fetchTeamLogo(logo: string): Promise<string> {
   const response = await cdnQuery(logo);
   if (response.ok) {
     const data = await response.json();
+    console.log(data.data);
     return data.data.url;
   }
 
