@@ -17,7 +17,9 @@ import { Command } from "@streamdota/shared-types";
 import config from "../config";
 import { fetchUserById } from "./twitchApi";
 import processChatMessage from "./wordStats";
+import processMessage from "./plugins/chat";
 import { sendMessage } from "./websocket";
+
 const tmi = require("tmi.js");
 
 const defaultConfig = {
@@ -139,6 +141,7 @@ async function messageListener(
   self: boolean
 ) {
   if (self) return;
+  if (await processMessage(channel, tags, message)) return;
 
   let userCommands = await getObj<ChannelCommand>(
     getCommandsCacheKey(channel, ["default", "dotaWinLoss"])
