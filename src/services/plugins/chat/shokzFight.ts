@@ -1,7 +1,7 @@
 import { ChatUserstate } from "tmi.js";
 import { publish } from "../../twitchChat";
 
-const channelsToBeChecked = new Set(["#shokztv", "#griefcode"]);
+const channelsToBeChecked = new Set(["#griefcode"]);
 const timeouts = [60, 120, 300];
 interface Fight {
   id: string;
