@@ -37,4 +37,7 @@ export default {
     process.env.PROVABLE_SERVER_SEED || "ac67a205-a526-45a5-bf7b-e1254d112785",
   naixApiKey: process.env.NAIX_API_KEY || "",
   streamerApiKey: process.env.STREAMER_API_KEY || "",
+  twitterBearerToken: process.env.TWITTER_TOKEN || "",
+  twitterListeningUserId: process.env.TWITTER_LISTENING_USER_ID || 0,
+  twitterListeningValue: process.env.TWITTER_LISTENING_VALUE || "",
 };
