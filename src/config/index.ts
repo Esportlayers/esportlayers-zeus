@@ -38,6 +38,6 @@ export default {
   naixApiKey: process.env.NAIX_API_KEY || "",
   streamerApiKey: process.env.STREAMER_API_KEY || "",
   twitterBearerToken: process.env.TWITTER_TOKEN || "",
-  twitterListeningUserId: process.env.TWITTER_LISTENING_USER_ID || 0,
+  twitterListeningUserId: +(process.env.TWITTER_LISTENING_USER_ID || 0),
   twitterListeningValue: process.env.TWITTER_LISTENING_VALUE || "",
 };
