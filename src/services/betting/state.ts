@@ -98,7 +98,7 @@ async function startVote(channel: string, user: User): Promise<void> {
     );
     message = message.replace(/\{TEAM_A\}/g, user?.teamAName || "a");
     message = message.replace(/\{TEAM_B\}/g, user?.teamBName || "b");
-    publish(channel, message);
+    await publish(channel, message);
     await createBetRound(user.id, user.betSeasonId);
     await setObj(roundKey(channel), {
       ...currentRound,
@@ -112,7 +112,7 @@ async function startVote(channel: string, user: User): Promise<void> {
 async function finishVote(channel: string, user: User): Promise<void> {
   const roundId = await getRoundId(user.id);
   await patchBetRound(roundId, { status: "running" });
-  publish(channel, "Die Votes sind geschlossen.");
+  await publish(channel, "Die Votes sind geschlossen.");
   const currentRound = await getObj<BetRoundData>(roundKey(channel));
   await setObj(roundKey(channel), {
     ...currentRound,
@@ -126,7 +126,7 @@ async function finishVote(channel: string, user: User): Promise<void> {
 async function closeVote(channel: string, user: User): Promise<void> {
   const currentRound = await getObj<BetRoundData>(roundKey(channel));
   const { winner: winnerCommand } = await getBettingCommands(channel);
-  publish(
+  await publish(
     channel,
     winnerCommand.message.replace(/\{WINNER\}/g, currentRound!.winner!)
   );

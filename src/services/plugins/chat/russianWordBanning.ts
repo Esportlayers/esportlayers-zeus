@@ -22,13 +22,13 @@ export default async function processMessage(
     const name = tags["display-name"] || tags["username"];
     const lastDetection = +((await get(getKey(channel, name!))) || 0);
     if (lastDetection !== 0 && lastDetection + 600 > dayjs().unix()) {
-      publish(
+      await publish(
         channel,
         `/ban ${name} Detected Cyrillic in at least 2 messages the last 10 Minutes - warning was given prior.`
       );
     } else {
-      publish(channel, `/timeout ${name} 60 Cyrillic chars detected.`);
-      publish(
+      await publish(channel, `/timeout ${name} 60 Cyrillic chars detected.`);
+      await publish(
         channel,
         `@${name} Please speak only German or English. You will be permanently banned on your next Cyrillic message.`
       );

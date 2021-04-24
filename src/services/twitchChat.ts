@@ -183,7 +183,7 @@ async function messageListener(
       tags,
       channel
     );
-    publish(channel, msg);
+    await publish(channel, msg);
   }
 
   let keyword = await get(keywordListenerKey(channel));
@@ -227,7 +227,9 @@ export function partChannel(channel: string): void {
   }
 }
 
-export function publish(channel: string, message: string): void {
+export async function publish(channel: string, message: string): Promise<void> {
+  await processChatMessage(channel, message, "streamdotabot");
+
   if (customInstances.has(channel)) {
     customInstances.get(channel).say(channel, message);
   } else {

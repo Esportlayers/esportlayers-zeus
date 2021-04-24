@@ -41,7 +41,7 @@ async function checkTimerUpdates(): Promise<void> {
     for (const timer of timers) {
       if (timer.lastPublish <= currentTS) {
         timer.lastPublish = currentTS + timer.period;
-        publish(channel, timer.message);
+        await publish(channel, timer.message);
         break;
       }
     }

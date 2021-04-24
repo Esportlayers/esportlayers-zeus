@@ -18,11 +18,11 @@ const COMMANDS = {
 
 let fights: Fight[] = [];
 
-export function processChatMessage(
+export async function processChatMessage(
   channel: string,
   tags: ChatUserstate,
   message: string
-): boolean {
+): Promise<boolean> {
   if (!channelsToBeChecked.has(channel)) {
     return false;
   }
@@ -35,7 +35,10 @@ export function processChatMessage(
     const payload = message.substr(COMMANDS.FIGHT.length + 1);
     const fight = fights.find(({ fighter1 }) => fighter1 === username);
     if (fight && payload.length) {
-      publish(channel, `${username} du kämpfst schon gegen ${fight.fighter2}!`);
+      await publish(
+        channel,
+        `${username} du kämpfst schon gegen ${fight.fighter2}!`
+      );
       return true;
     }
 
@@ -62,7 +65,7 @@ export function processChatMessage(
     }
 
     if (proposed && message.toLowerCase().startsWith(COMMANDS.DENY)) {
-      publish(
+      await publish(
         channel,
         `PepeLaugh ${username} möchte nicht gegen ${proposed.fighter1} kämpfen PepeLaugh`
       );
@@ -76,7 +79,7 @@ export function processChatMessage(
       payload.indexOf(" ") === -1
     ) {
       const enemy = payload.substr(1);
-      publish(
+      await publish(
         channel,
         `shokzFight shokzFight ${username} fordert ${enemy} heraus. Akzeptiere den Kampf mit '${COMMANDS.FIGHT}' oder lehne ab mit '${COMMANDS.DENY}' shokzFight shokzFight`
       );
@@ -97,10 +100,10 @@ export function processChatMessage(
 }
 
 function expireFight(fight: Fight, channel: string) {
-  setTimeout(() => {
+  setTimeout(async () => {
     const expired = fights.find(({ id }) => id === fight.id);
     if (expired) {
-      publish(
+      await publish(
         channel,
         `FeelsBadMan ${expired.fighter2} hat nicht geantwortet. Es kommt nicht zum Kampf mit ${expired.fighter1} FeelsBadMan`
       );
@@ -109,7 +112,7 @@ function expireFight(fight: Fight, channel: string) {
   }, 90000);
 }
 
-function startFight(fight: Fight, channel: string): void {
+async function startFight(fight: Fight, channel: string): Promise<void> {
   const timeoutTime = timeouts[Math.floor(Math.random() * 3)];
   let rand = Math.random() * 100;
   let winner = rand > 60 ? 2 : rand < 40 ? 1 : 0;
@@ -120,26 +123,26 @@ function startFight(fight: Fight, channel: string): void {
   }
 
   if (winner === 1) {
-    publish(
+    await publish(
       channel,
       `Der Kampf wurde entschieden für ${fight.fighter1} PogChamp PepeLaugh Damit bekommt @${fight.fighter2} einen Timeout von ${timeoutTime} Sekunden PepeLaugh OMEGALUTSCH`
     );
-    publish(channel, `/timeout @${fight.fighter2} ${timeoutTime}`);
+    await publish(channel, `/timeout @${fight.fighter2} ${timeoutTime}`);
   } else if (winner === 2) {
-    publish(
+    await publish(
       channel,
       `Der Kampf wurde entschieden für ${fight.fighter2} PogChamp PepeLaugh Damit bekommt @${fight.fighter1} einen Timeout von ${timeoutTime} Sekunden PepeLaugh OMEGALUTSCH`
     );
-    publish(channel, `/timeout @${fight.fighter1} ${timeoutTime}`);
+    await publish(channel, `/timeout @${fight.fighter1} ${timeoutTime}`);
   } else if (winner === 0 && rand > 50) {
-    publish(
+    await publish(
       channel,
       `PepeLaugh PepeLaugh Es haben sich @${fight.fighter1} und @${fight.fighter2} gleichzeitig KO gehauen PepeLaugh Damit bekommen beide einen Timeout von ${timeoutTime} Sekunden PepeLaugh PepeLaugh`
     );
-    publish(channel, `/timeout @${fight.fighter1} ${timeoutTime}`);
-    publish(channel, `/timeout @${fight.fighter2} ${timeoutTime}`);
+    await publish(channel, `/timeout @${fight.fighter1} ${timeoutTime}`);
+    await publish(channel, `/timeout @${fight.fighter2} ${timeoutTime}`);
   } else if (winner === 0) {
-    publish(
+    await publish(
       channel,
       `@${fight.fighter1} und @${fight.fighter2} sind beides die letzten Pepega. Keiner von beiden hat den anderen getroffen! Keiner bekommt einen Timeout SwiftLove`
     );

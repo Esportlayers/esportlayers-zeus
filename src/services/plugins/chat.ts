@@ -9,6 +9,6 @@ export default async function processMessage(
 ): Promise<boolean> {
   return (
     (await processRussianCheckMessage(channel, tags, message)) ||
-    processShokzFightMessage(channel, tags, message)
+    (await processShokzFightMessage(channel, tags, message))
   );
 }
