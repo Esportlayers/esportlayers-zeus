@@ -104,7 +104,7 @@ SELECT
     u.prediction_duration as predictionDuration,
     tusa.user_id as hasPredictionAccess
 FROM user u
-INNER JOIN twitch_user_scopes_access tusa ON tusa.user_id = u.id`;
+LEFT JOIN twitch_user_scopes_access tusa ON tusa.user_id = u.id`;
 
 export async function loadUserByTwitchId(
   twitchId: number
