@@ -6,6 +6,10 @@ import {
 } from "@esportlayers/morphling";
 import { NextFunction, Request, Response } from "express";
 import {
+  createPrediction,
+  resolvePrediction,
+} from "../services/twitchPredictionApi";
+import {
   gsiAuthTokenUnknown,
   loadUserById,
   patchUser,
@@ -16,6 +20,7 @@ import { initializeBet, resolveBet } from "../services/betting/state";
 
 import { User } from "@streamdota/shared-types";
 import dayjs from "dayjs";
+import { getUserScopeAccess } from "../services/entity/TwitchOAuthScopes";
 import { grey } from "chalk";
 import { sendMessage } from "../services/websocket";
 import ws from "ws";
@@ -146,10 +151,64 @@ export async function handleMorphlingEvents(
       await initializeBet(channel, clientId);
     }
 
+    if (gameStateChange?.value === GameState.preGame && user?.usePredictions) {
+      const { accessToken, refreshToken } = (await getUserScopeAccess(
+        user.id,
+        "predictions"
+      )) || { accessToken: "", refreshToken: "" };
+      if (accessToken.length > 0 && refreshToken.length > 0) {
+        if (activity?.value === "playing") {
+          await createPrediction(
+            user,
+            accessToken,
+            refreshToken,
+            "Will I win?",
+            "Yes",
+            "No",
+            user.predictionDuration
+          );
+        } else if (activity?.value === "observing") {
+          await createPrediction(
+            user,
+            accessToken,
+            refreshToken,
+            "Who will win?",
+            "Radiant",
+            "Dire",
+            user.predictionDuration
+          );
+        }
+      }
+    }
+
     if (winner && winner.value.winnerTeam !== "none") {
       if (activity && activity.value === "playing") {
         await saveDotaGame(clientId, winner.value.isPlayingWin);
       }
+
+      if (user?.usePredictions) {
+        const { accessToken, refreshToken } = (await getUserScopeAccess(
+          user.id,
+          "predictions"
+        )) || { accessToken: "", refreshToken: "" };
+
+        if (activity?.value === "playing") {
+          await resolvePrediction(
+            user,
+            accessToken,
+            refreshToken,
+            winner.value.isPlayingWin
+          );
+        } else {
+          await resolvePrediction(
+            user,
+            accessToken,
+            refreshToken,
+            winner.value.winnerTeam === "radiant"
+          );
+        }
+      }
+
       await resolveBet(
         channel,
         clientId,

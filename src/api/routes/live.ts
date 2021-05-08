@@ -3,11 +3,16 @@ import {
   checkUserFrameAPIKey,
   checkUserFrameWebsocketApiKey,
 } from "../../middleware/frameApi";
+import {
+  createPrediction,
+  resolvePrediction,
+} from "../../services/twitchPredictionApi";
 
 import { User } from "@streamdota/shared-types";
 import config from "../../config";
 import { fetchMatchDetails } from "../../services/steamWebApi";
 import getOnlineStatus from "../../services/streamer";
+import { getUserScopeAccess } from "../../services/entity/TwitchOAuthScopes";
 import { heartbeat } from "../../tasks/websocketHeartbeat";
 import { newGSIListener } from "../../middleware/gsiConnection";
 import { requireAuthorization } from "../../middleware/requireAuthorization";
@@ -109,6 +114,51 @@ export default (app: Router) => {
 
       const data = await getOnlineStatus(streamer as string[]);
       return res.json(data).status(200);
+    }
+  );
+
+  route.post(
+    "/twitchPrediction",
+    requireAuthorization,
+    async (req: Request, res: Response) => {
+      const user = req.user as User;
+      const { accessToken, refreshToken } = (await getUserScopeAccess(
+        user.id,
+        "predictions"
+      )) || { accessToken: "", refreshToken: "" };
+
+      if (accessToken.length && refreshToken.length) {
+        await createPrediction(user, accessToken, refreshToken);
+        return res.json({}).status(200);
+      }
+
+      return res.json({}).status(409);
+    }
+  );
+
+  route.patch(
+    "/twitchPrediction",
+    requireAuthorization,
+    async (req: Request, res: Response) => {
+      const user = req.user as User;
+      const { accessToken, refreshToken } = (await getUserScopeAccess(
+        user.id,
+        "predictions"
+      )) || { accessToken: "", refreshToken: "" };
+
+      const { winnerA } = req.body;
+
+      if (accessToken.length && refreshToken.length) {
+        await resolvePrediction(
+          user,
+          accessToken,
+          refreshToken,
+          Boolean(winnerA)
+        );
+        return res.json({}).status(200);
+      }
+
+      return res.json({}).status(409);
     }
   );
 };

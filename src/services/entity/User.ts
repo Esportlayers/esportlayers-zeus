@@ -58,56 +58,60 @@ export async function findOrCreateUser(
 
 const userQry = `
 SELECT 
-    id, 
-    twitch_id as twitchId,
-    display_name as displayName, 
-    avatar, 
-    avatar_webp as avatarWEBP, 
-    avatar_jp2 as avatarJP2, 
-    profile_url as profileUrl, 
-    gsi_auth as gsiAuth, 
-    frame_api_key as frameApiKey, 
-    dota_stats_from as dotaStatsFrom, 
-    bet_season_id as betSeasonId, 
-    gsi_connected as gsiConnected, 
-    use_bets as useBets,
-    gsi_active as gsiActive,
-    status,
-    UNIX_TIMESTAMP(created) as created,
-    dota_stats_pick_hidden as dotaStatsPickHidden,
-    dota_stats_menu_hidden as dotaStatsMenuHidden,
-    stream_delay as streamDelay,
-    team_a_name as teamAName,
-    team_b_name as teamBName,
-    use_automatic_voting as useAutomaticVoting,
-    keyword_listening as keywordListener,
-    use_keyword_listener as useKeywordListener,
-    individual_overlay_vote_distribution as individualOverlayVoteDistribution,
-    individual_overlay_vote_toplist as individualOverlayVoteToplist,
-    individual_overlay_vote_timer as individualOverlayVoteTimer,
-    individual_overlay_wl_stats as individualOverlayWLStats,
-    individual_overlay_minimap as individualOverlayMinimap,
-    individual_overlay_draft_stats as individualOverlayDraftStats,
-    individual_overlay_hero_stats as individualOverlayVoteHeroStats,
-    individual_rosh_timer_overlay as individualOverlayRoshTimer,
-    use_dota_stats_overlay as useDotaStatsOverlay,
-    use_minimap_overlay as useMinimapOverlay,
-    use_roshan_timer_overlay as useRoshanTimerOverlay,
-    use_draft_stats_overlay as useDraftStatsOverlay,
-    use_hero_stats_overlay as useHeroStatsOverlay,
-    use_vote_toplist_overlay as useVoteToplistOverlay,
-    use_vote_timer_overlay as useVoteTimerOverlay,
-    use_vote_distribution_overlay as useVoteDistributionOverlay,
-    casting_stats_source as castingStatsSource,
-    use_keyword_listener_overlay as useKeywordListenerOverlay
-FROM user`;
+    u.id as id, 
+    u.twitch_id as twitchId,
+    u.display_name as displayName, 
+    u.avatar as avatar, 
+    u.avatar_webp as avatarWEBP, 
+    u.avatar_jp2 as avatarJP2, 
+    u.profile_url as profileUrl, 
+    u.gsi_auth as gsiAuth, 
+    u.frame_api_key as frameApiKey, 
+    u.dota_stats_from as dotaStatsFrom, 
+    u.bet_season_id as betSeasonId, 
+    u.gsi_connected as gsiConnected, 
+    u.use_bets as useBets,
+    u.gsi_active as gsiActive,
+    u.status as status,
+    UNIX_TIMESTAMP(u.created) as created,
+    u.dota_stats_pick_hidden as dotaStatsPickHidden,
+    u.dota_stats_menu_hidden as dotaStatsMenuHidden,
+    u.stream_delay as streamDelay,
+    u.team_a_name as teamAName,
+    u.team_b_name as teamBName,
+    u.use_automatic_voting as useAutomaticVoting,
+    u.keyword_listening as keywordListener,
+    u.use_keyword_listener as useKeywordListener,
+    u.individual_overlay_vote_distribution as individualOverlayVoteDistribution,
+    u.individual_overlay_vote_toplist as individualOverlayVoteToplist,
+    u.individual_overlay_vote_timer as individualOverlayVoteTimer,
+    u.individual_overlay_wl_stats as individualOverlayWLStats,
+    u.individual_overlay_minimap as individualOverlayMinimap,
+    u.individual_overlay_draft_stats as individualOverlayDraftStats,
+    u.individual_overlay_hero_stats as individualOverlayVoteHeroStats,
+    u.individual_rosh_timer_overlay as individualOverlayRoshTimer,
+    u.use_dota_stats_overlay as useDotaStatsOverlay,
+    u.use_minimap_overlay as useMinimapOverlay,
+    u.use_roshan_timer_overlay as useRoshanTimerOverlay,
+    u.use_draft_stats_overlay as useDraftStatsOverlay,
+    u.use_hero_stats_overlay as useHeroStatsOverlay,
+    u.use_vote_toplist_overlay as useVoteToplistOverlay,
+    u.use_vote_timer_overlay as useVoteTimerOverlay,
+    u.use_vote_distribution_overlay as useVoteDistributionOverlay,
+    u.casting_stats_source as castingStatsSource,
+    u.use_keyword_listener_overlay as useKeywordListenerOverlay,
+    u.use_predictions as usePredictions,
+    u.prediction_duration as predictionDuration,
+    tusa.user_id as hasPredictionAccess
+FROM user u
+INNER JOIN twitch_user_scopes_access tusa ON tusa.user_id = u.id`;
 
 export async function loadUserByTwitchId(
   twitchId: number
 ): Promise<User | null> {
   const conn = await getConn();
   const [userRows] = await conn.query<UserResponse[]>(
-    `${userQry} WHERE twitch_id = ?;`,
+    `${userQry} WHERE u.twitch_id = ?;`,
     [twitchId]
   );
   let user = null;
@@ -123,7 +127,7 @@ export async function loadUserByTwitchId(
 export async function loadUserById(id: number): Promise<User | null> {
   const conn = await getConn();
   const [userRows] = await conn.query<UserResponse[]>(
-    `${userQry} WHERE id = ?;`,
+    `${userQry} WHERE u.id = ?;`,
     [id]
   );
   let user = null;
@@ -682,6 +686,20 @@ export async function patchUser(
       [data.useKeywordListenerOverlay, userId]
     );
     sendMessage(userId, "overlay", true);
+  }
+
+  if (data.hasOwnProperty("usePredictions")) {
+    await conn.execute("UPDATE user SET use_predictions=? WHERE id=?", [
+      data.usePredictions,
+      userId,
+    ]);
+  }
+
+  if (data.hasOwnProperty("predictionDuration")) {
+    await conn.execute("UPDATE user SET prediction_duration=? WHERE id=?", [
+      data.predictionDuration,
+      userId,
+    ]);
   }
 
   await conn.end();
