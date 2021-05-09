@@ -102,7 +102,13 @@ SELECT
     u.use_keyword_listener_overlay as useKeywordListenerOverlay,
     u.use_predictions as usePredictions,
     u.prediction_duration as predictionDuration,
-    tusa.user_id as hasPredictionAccess
+    tusa.user_id as hasPredictionAccess,
+    u.prediction_playing_title as predictionPlayingTitle,
+    u.prediction_playing_option_a as predictionPlayingOptionA,
+    u.prediction_playing_option_b as predictionPlayingOptionB,
+    u.prediction_observing_title as predictionObservingTitle,
+    u.prediction_observing_option_a as predictionObservingOptionA,
+    u.prediction_observing_option_b as predictionObservingOptionB
 FROM user u
 LEFT JOIN twitch_user_scopes_access tusa ON tusa.user_id = u.id`;
 
@@ -700,6 +706,48 @@ export async function patchUser(
       data.predictionDuration,
       userId,
     ]);
+  }
+
+  if (data.hasOwnProperty("predictionPlayingTitle")) {
+    await conn.execute(
+      "UPDATE user SET prediction_playing_title=? WHERE id=?",
+      [data.predictionPlayingTitle, userId]
+    );
+  }
+
+  if (data.hasOwnProperty("predictionPlayingOptionA")) {
+    await conn.execute(
+      "UPDATE user SET prediction_playing_option_a=? WHERE id=?",
+      [data.predictionPlayingOptionA, userId]
+    );
+  }
+
+  if (data.hasOwnProperty("predictionPlayingOptionB")) {
+    await conn.execute(
+      "UPDATE user SET prediction_playing_option_b=? WHERE id=?",
+      [data.predictionPlayingOptionB, userId]
+    );
+  }
+
+  if (data.hasOwnProperty("predictionObservingTitle")) {
+    await conn.execute(
+      "UPDATE user SET prediction_observing_title=? WHERE id=?",
+      [data.predictionObservingTitle, userId]
+    );
+  }
+
+  if (data.hasOwnProperty("predictionObservingOptionA")) {
+    await conn.execute(
+      "UPDATE user SET prediction_observing_option_a=? WHERE id=?",
+      [data.predictionObservingOptionA, userId]
+    );
+  }
+
+  if (data.hasOwnProperty("predictionObservingOptionB")) {
+    await conn.execute(
+      "UPDATE user SET prediction_observing_option_b=? WHERE id=?",
+      [data.predictionObservingOptionB, userId]
+    );
   }
 
   await conn.end();

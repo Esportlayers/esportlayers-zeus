@@ -162,9 +162,9 @@ export async function handleMorphlingEvents(
             user,
             accessToken,
             refreshToken,
-            "Will I win?",
-            "Yes",
-            "No",
+            user.predictionPlayingTitle || "Will I win?",
+            user.predictionPlayingOptionA || "Yes",
+            user.predictionPlayingOptionB || "No",
             user.predictionDuration
           );
         } else if (activity?.value === "observing") {
@@ -172,9 +172,9 @@ export async function handleMorphlingEvents(
             user,
             accessToken,
             refreshToken,
-            "Who will win?",
-            "Radiant",
-            "Dire",
+            user.predictionObservingTitle || "Who will win?",
+            user.predictionObservingOptionA || "Radiant",
+            user.predictionObservingOptionB || "Dire",
             user.predictionDuration
           );
         }
