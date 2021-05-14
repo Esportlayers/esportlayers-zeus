@@ -44,7 +44,7 @@ async function saveMessageForKeyword(
   if (word) {
     let score = 0,
       magnitude = 0;
-    if (!ignoreAnalyses && Boolean(word.useSentimentAnalysis)) {
+    if (!ignoreAnalyses && Boolean(word.useSentimentAnalysis) && false) {
       const data = await fetchSentimentScore(message);
       score = data.score;
       magnitude = data.magnitude;
