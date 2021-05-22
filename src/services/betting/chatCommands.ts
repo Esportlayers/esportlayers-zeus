@@ -10,14 +10,14 @@ import {
   ChannelCommand,
   getCommandsCacheKey,
   hasAccess,
-  publish,
-} from "../twitchChat";
+} from "../chat/message";
 import { Command, User } from "@streamdota/shared-types";
 import { getObj, setObj } from "../../loader/redis";
 import { getUserSeasonStats, seasonTopList } from "../entity/BetSeasons";
 
 import { ChatUserstate } from "tmi.js";
 import { getChannelCommands } from "../entity/User";
+import { publish } from "../twitchChat";
 
 export async function requireUserCommands(
   channel: string

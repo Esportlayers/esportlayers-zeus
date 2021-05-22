@@ -1,17 +1,13 @@
 import { Command, SteamConnection, User } from "@streamdota/shared-types";
 import { OkPacket, RowDataPacket } from "mysql2";
-import {
-  createInstance,
-  deleteInstance,
-  joinChannel,
-  resetKeywordListener,
-} from "../twitchChat";
+import { joinChannel, partChannel } from "../twitchChat";
 
 import { clearBettingCommandsCache } from "../betting/chatCommands";
 import { clearChannelUserChannel } from "../betting/state";
 import dayjs from "dayjs";
 import { getConn } from "../../loader/db";
 import { getUserCommands } from "./Command";
+import { resetKeywordListener } from "../chat/message";
 import { sendMessage } from "../websocket";
 import { streamFile } from "../staticFileHandler";
 import { v4 } from "uuid";
@@ -178,9 +174,7 @@ export async function createGsiAuthToken(userId: number): Promise<string> {
   return auth;
 }
 
-export async function gsiAuthTokenUnknown(
-  gsiAuthToken: string
-): Promise<{
+export async function gsiAuthTokenUnknown(gsiAuthToken: string): Promise<{
   id: number;
   displayName: string;
   status: "active" | "disabled";
@@ -389,23 +383,7 @@ export async function patchBotData(
     );
   }
 
-  if (data.customBotName || data.customBotToken) {
-    await checkChannelBotInstanceComplete(userId, channelName);
-  }
-
   await conn.end();
-}
-
-export async function checkChannelBotInstanceComplete(
-  userId: number,
-  channel: string
-): Promise<void> {
-  const data = await loadBotData(userId);
-  if (data.customBotToken.length > 0 && data.customBotName.length > 0) {
-    await createInstance(channel, data.customBotName, data.customBotToken);
-  } else {
-    await deleteInstance(channel);
-  }
 }
 
 export async function getUserByTrustedChannel(
@@ -783,6 +761,17 @@ export async function removeUser(userId: number): Promise<void> {
   await conn.execute("DELETE from dota_games WHERE user_id = ?", [userId]);
   await conn.execute("DELETE from bot_commands WHERE user_id = ?", [userId]);
   await conn.execute("DELETE from bet_overlays WHERE user_id = ?", [userId]);
+  await conn.execute(
+    "DELETE from words WHERE word_group_id IN (SELECT id from word_groups WHERE user_id = ?)",
+    [userId]
+  );
+  await conn.execute("DELETE from word_groups WHERE user_id = ?", [userId]);
+  await conn.execute(
+    "DELETE from twitch_user_scopes_access WHERE user_id = ?",
+    [userId]
+  );
   await conn.execute("DELETE from user WHERE id = ?", [userId]);
   await conn.end();
+
+  await partChannel("#" + user?.displayName.toLowerCase());
 }
