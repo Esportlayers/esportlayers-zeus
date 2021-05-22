@@ -11,7 +11,7 @@ const CHUNK_SIZE = 20;
 const tmi = require("tmi.js");
 
 const defaultConfig = {
-  options: { debug: true },
+  options: { debug: false },
   connection: {
     reconnect: true,
     secure: true,
