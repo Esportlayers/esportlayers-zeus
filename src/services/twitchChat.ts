@@ -11,7 +11,7 @@ const CHUNK_SIZE = 20;
 const tmi = require("tmi.js");
 
 const defaultConfig = {
-  options: { debug: process.env.NODE_ENV === "development" },
+  options: { debug: false },
   connection: {
     reconnect: true,
     secure: true,
@@ -61,7 +61,7 @@ async function connect(): Promise<void> {
 connect();
 
 export function joinChannel(channel: string): void {
-  const instanceId = instanceIds[random(instanceIds.length)];
+  const instanceId = instanceIds[random(instanceIds.length - 1)];
   instances.get(instanceId)!.join(channel);
   channelMap.set(channel, instanceId);
 }
