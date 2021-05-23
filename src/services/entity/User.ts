@@ -7,7 +7,7 @@ import { clearChannelUserChannel } from "../betting/state";
 import dayjs from "dayjs";
 import { getConn } from "../../loader/db";
 import { getUserCommands } from "./Command";
-import { resetKeywordListener } from "../chat/message";
+import { resetKeywordListener } from "../plugins/chat/chatListener";
 import { sendMessage } from "../websocket";
 import { streamFile } from "../staticFileHandler";
 import { v4 } from "uuid";

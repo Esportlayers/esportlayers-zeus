@@ -3,6 +3,7 @@ import {
   clearUserStats,
   loadStats,
   loadSteamConnections,
+  loadUserById,
   patchUser,
   removeDotaGames,
   removeUser,
@@ -33,7 +34,8 @@ export default (app: Router) => {
     requireAuthorization,
     async (req: Request, res: Response) => {
       await patchUser((req.user as User).id, req.body);
-      return res.json(req.user).status(200);
+      const user = await loadUserById((req.user as User).id);
+      return res.json(user).status(200);
     }
   );
 

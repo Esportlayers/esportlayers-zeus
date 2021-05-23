@@ -6,7 +6,7 @@ export function sendMessage(userId: number, type: string, value: any): void {
       //@ts-ignore
       c.user &&
       //@ts-ignore
-      c.user.id === userId &&
+      (c.user.id === userId || c.scopedUserId === userId) &&
       //@ts-ignore
       (!c.scopes || !c.scopes.size || c.scopes.has(type))
   );

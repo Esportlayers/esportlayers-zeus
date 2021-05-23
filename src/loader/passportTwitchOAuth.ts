@@ -43,6 +43,36 @@ export default async ({
       }
     )
   );
+  passport.use(
+    "twitch-login-new",
+    new Strategy(
+      {
+        callbackURL: config.twitch.callbackURLNew,
+        clientID: config.twitch.clientId,
+        clientSecret: config.twitch.clientSecret,
+        scope: "",
+        customHeaders: {
+          "client-id": config.twitch.clientId,
+        },
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const user = await findOrCreateUser(
+            +profile.id,
+            profile.display_name,
+            profile.profile_image_url
+          );
+          if (user.status !== "active") {
+            done("Account is disabled");
+          } else {
+            done(null, user);
+          }
+        } catch (err) {
+          done(err);
+        }
+      }
+    )
+  );
 
   passport.use(
     "twitch-prediction-scope",

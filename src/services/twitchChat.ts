@@ -11,7 +11,7 @@ const CHUNK_SIZE = 20;
 const tmi = require("tmi.js");
 
 const defaultConfig = {
-  options: { debug: false },
+  options: { debug: process.env.NODE_ENV === "development" },
   connection: {
     reconnect: true,
     secure: true,
@@ -45,13 +45,11 @@ async function connect(): Promise<void> {
     config.twitch.defaultBotToken.length > 0
   ) {
     const allChannels = await getDeaultChannels();
-    console.log(allChannels);
     const chunks = chunk(allChannels, CHUNK_SIZE);
     for (const channels of chunks) {
       const instanceId = v4();
       instanceIds.push(instanceId);
       const client = await generateNewInstance(channels);
-      console.log(instanceId, channels);
       instances.set(instanceId, client);
       for (const channel of channels) {
         channelMap.set(channel, instanceId);
@@ -98,7 +96,7 @@ export function info(channel: string): {
 
   return {
     instanceId,
-    channels: client?.getChannels().length || 0,
+    channels: (client?.getChannels().length || 0) + 1,
     readyState: client?.readyState(),
   };
 }

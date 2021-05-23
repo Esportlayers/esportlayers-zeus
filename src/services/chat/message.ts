@@ -2,21 +2,19 @@ import {
   clearBettingCommandsCache,
   processCommands,
 } from "../betting/chatCommands";
-import { del, get, getObj, set, setObj } from "../../loader/redis";
 import {
   getChannelCommands,
   getUserByTrustedChannel,
   loadStats,
   loadUserById,
 } from "../entity/User";
+import { getObj, setObj } from "../../loader/redis";
 import { info, publish } from "../twitchChat";
 
 import { ChatUserstate } from "tmi.js";
 import { Command } from "@streamdota/shared-types";
-import { fetchUserById } from "../twitchApi";
 import processChatMessage from "../wordStats";
 import processMessage from "../plugins/chat";
-import { sendMessage } from "../websocket";
 
 export function hasAccess(tags: ChatUserstate, command: Command): boolean {
   const subscriberBadge = tags.badges && tags.badges.subscriber;
@@ -87,10 +85,6 @@ export function getCommandsCacheKey(
   return `commands_${channel.toLowerCase()}_${type}_${types.join("-")}`;
 }
 
-export function keywordListenerKey(channel: string): string {
-  return `keyword_listener${channel.toLowerCase()}`;
-}
-
 export async function messageListener(
   channel: string,
   tags: ChatUserstate,
@@ -150,34 +144,9 @@ export async function messageListener(
     await publish(channel, msg);
   }
 
-  let keyword = await get(keywordListenerKey(channel));
-
-  if (!keyword || keyword !== "none") {
-    const { id } = await getUserByTrustedChannel(channel);
-    const user = await loadUserById(id);
-    keyword = (user?.useKeywordListener && user?.keywordListener) || "none";
-    await set(keywordListenerKey(channel), keyword);
-  }
-
-  if (keyword !== "none" && lowerMessage.includes(keyword) && tags["user-id"]) {
-    const twitchUser = await fetchUserById(tags["user-id"]);
-    const { id } = await getUserByTrustedChannel(channel);
-    sendMessage(id, "keyword_message", {
-      message,
-      name: twitchUser.display_name,
-      logo: twitchUser.logo,
-      time: tags["tmi-sent-ts"],
-    });
-  }
   await processChatMessage(channel, message, tags["username"]!);
 
   processCommands(channel, tags, message);
-}
-
-export async function resetKeywordListener(userId: number): Promise<void> {
-  const { displayName } = (await loadUserById(userId))!;
-  const fullChannel = "#" + displayName.toLowerCase();
-  await del(keywordListenerKey(fullChannel));
 }
 
 export async function clearUserCommandsChache(userId: number): Promise<void> {
