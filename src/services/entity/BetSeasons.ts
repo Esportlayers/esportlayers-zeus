@@ -477,7 +477,7 @@ export async function getProvablyFairList(
 export async function getWinner(seasonId: number): Promise<BetSeasonToplist[]> {
   const season = await getBetSeason(seasonId);
   const toplist = await seasonTopList(seasonId);
-  return toplist.slice(0, season?.winnerCount);
+  return toplist.slice(0, season?.winnerCount || 3);
 }
 
 export async function getProvablyFairListWithoutWinner(
