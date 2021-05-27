@@ -225,7 +225,9 @@ export default (app: Router) => {
     "/current/randomWinner/:clientSeed",
     checkUserFrameAPIKey,
     async (req: Request, res: Response) => {
-      const list = await getProvablyFairListWithoutWinner(+req.params.seasonId);
+      const list = await getProvablyFairListWithoutWinner(
+        (req.user as User).betSeasonId!
+      );
       const arbitrarySequence = await spadille.prng.generate({
         secret: config.provableServerSeed,
         payload: req.params.clientSeed,
