@@ -26,6 +26,7 @@ import { getBetSeasonRounds } from "../../services/entity/BetRound";
 import { requireAuthorization } from "../../middleware/requireAuthorization";
 import { requireBetSeasonAccess } from "../../middleware/requireBetSeasonAccess";
 import spadille from "spadille";
+import { v4 } from "uuid";
 
 const route = Router();
 
@@ -190,8 +191,9 @@ export default (app: Router) => {
     "/:seasonId/provableWinner/:clientSeed",
     async (req: Request, res: Response) => {
       const list = await getProvablyFairList(+req.params.seasonId);
+      const serverSeed = v4();
       const arbitrarySequence = await spadille.prng.generate({
-        secret: config.provableServerSeed,
+        secret: serverSeed,
         payload: req.params.clientSeed,
         minimum: 0,
         maximum: list.length - 1,
@@ -204,7 +206,7 @@ export default (app: Router) => {
 
       return res
         .json({
-          serverSeed: config.provableServerSeed,
+          serverSeed: serverSeed,
           count: list.length,
           ticket: winnerEntry,
           winner,
@@ -228,8 +230,9 @@ export default (app: Router) => {
       const list = await getProvablyFairListWithoutWinner(
         (req.user as User).betSeasonId!
       );
+      const serverSeed = v4();
       const arbitrarySequence = await spadille.prng.generate({
-        secret: config.provableServerSeed,
+        secret: serverSeed,
         payload: req.params.clientSeed,
         minimum: 0,
         maximum: list.length - 1,
@@ -242,7 +245,7 @@ export default (app: Router) => {
 
       return res
         .json({
-          serverSeed: config.provableServerSeed,
+          serverSeed: serverSeed,
           count: list.length,
           ticket: winnerEntry,
           winner,
