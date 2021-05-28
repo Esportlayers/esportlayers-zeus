@@ -218,7 +218,7 @@ export default (app: Router) => {
       return res
         .json({
           serverSeed: serverSeed,
-          count: list.length,
+          count: list.length - 1,
           ticket: winnerEntry,
           winner,
         })
@@ -268,7 +268,7 @@ export default (app: Router) => {
         .json({
           serverSeed: serverSeed,
           count: list.length,
-          ticket: winnerEntry,
+          ticket: winnerEntry - 1,
           winner,
         })
         .status(200);
