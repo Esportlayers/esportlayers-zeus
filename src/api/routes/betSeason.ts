@@ -21,8 +21,8 @@ import {
 
 import { User } from "@streamdota/shared-types";
 import { checkUserFrameAPIKey } from "../../middleware/frameApi";
-import config from "../../config";
 import { getBetSeasonRounds } from "../../services/entity/BetRound";
+import { publish } from "../../services/twitchChat";
 import { requireAuthorization } from "../../middleware/requireAuthorization";
 import { requireBetSeasonAccess } from "../../middleware/requireBetSeasonAccess";
 import spadille from "spadille";
@@ -189,6 +189,8 @@ export default (app: Router) => {
 
   route.get(
     "/:seasonId/provableWinner/:clientSeed",
+    requireAuthorization,
+    requireBetSeasonAccess("owner"),
     async (req: Request, res: Response) => {
       const list = await getProvablyFairList(+req.params.seasonId);
       const serverSeed = v4();
@@ -203,6 +205,15 @@ export default (app: Router) => {
 
       const winnerEntry = arbitrarySequence[0];
       const winner = list[winnerEntry];
+
+      setTimeout(async () => {
+        await publish(
+          "#" + (req.user as User).displayName.toLocaleLowerCase(),
+          `Congratulations ${winner}! Verify winner on  fairplay.streamdota.com | Server seed: ${serverSeed} | Client seed: ${
+            req.params.clientSeed
+          } | Entries: ${list.length - 1} | Ticket: ${winnerEntry}`
+        );
+      }, (req.user as User).streamDelay * 1000);
 
       return res
         .json({
@@ -223,6 +234,7 @@ export default (app: Router) => {
       return res.json(top3).status(200);
     }
   );
+
   route.get(
     "/current/randomWinner/:clientSeed",
     checkUserFrameAPIKey,
@@ -242,6 +254,15 @@ export default (app: Router) => {
 
       const winnerEntry = arbitrarySequence[0];
       const winner = list[winnerEntry];
+
+      setTimeout(async () => {
+        await publish(
+          "#" + (req.user as User).displayName.toLocaleLowerCase(),
+          `Congratulations ${winner}! Verify winner on  fairplay.streamdota.com | Server seed: ${serverSeed} | Client seed: ${
+            req.params.clientSeed
+          } | Entries: ${list.length - 1} | Ticket: ${winnerEntry}`
+        );
+      }, (req.user as User).streamDelay * 1000);
 
       return res
         .json({
