@@ -43,9 +43,13 @@ const channeUserCache = new Map<string, User>();
 export async function requireUser(channel: string): Promise<User> {
   const lowerChannel = channel.toLowerCase();
   if (!channeUserCache.has(lowerChannel)) {
-    const { id } = await getUserByTrustedChannel(channel);
-    const user = (await loadUserById(id))!;
-    channeUserCache.set(lowerChannel, user);
+    const userFromChannel = await getUserByTrustedChannel(channel);
+    if(userFromChannel) {
+      const user = (await loadUserById(id))!;
+      channeUserCache.set(lowerChannel, user);
+    } else {
+      console.log('Unknown channel', channel);
+    }
   }
   return channeUserCache.get(lowerChannel)!;
 }
