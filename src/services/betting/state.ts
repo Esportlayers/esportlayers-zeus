@@ -48,7 +48,8 @@ export async function requireUser(channel: string): Promise<User> {
       const user = (await loadUserById(userFromChannel.id))!;
       channeUserCache.set(lowerChannel, user);
     } else {
-      console.log('Unknown channel', channel);
+      console.log('Unknown channel', channel, 'removed from stack');+
+      await removeChannel(channel);
     }
   }
   return channeUserCache.get(lowerChannel)!;
