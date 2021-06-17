@@ -45,7 +45,7 @@ export async function requireUser(channel: string): Promise<User> {
   if (!channeUserCache.has(lowerChannel)) {
     const userFromChannel = await getUserByTrustedChannel(channel);
     if(userFromChannel) {
-      const user = (await loadUserById(id))!;
+      const user = (await loadUserById(userFromChannel.id))!;
       channeUserCache.set(lowerChannel, user);
     } else {
       console.log('Unknown channel', channel);
